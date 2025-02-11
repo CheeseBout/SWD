@@ -3,6 +3,7 @@ const catchAsync = require("../utils/catchAsync");
 const { OK } = require("../utils/response");
 
 class UserController {
+  //res -> msg -> await function
   getAllUser = catchAsync(async (req, res) => {
     return OK(res, "Success", await userServices.getAllUsers());
   });

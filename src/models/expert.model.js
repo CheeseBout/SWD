@@ -1,11 +1,6 @@
 const mongoose = require("mongoose");
 
 const expertSchema = new mongoose.Schema({
-  expertID: {
-    type: String,
-    required: true,
-    unique: true,
-  },
   userID: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",

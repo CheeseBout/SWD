@@ -64,6 +64,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     select: false,
   },
+  userAnswers: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserAnswers",
+    },
+  ],
 });
 
 userSchema.pre("save", async function (next) {

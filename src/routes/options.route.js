@@ -11,9 +11,10 @@ router.get("/:id", optionsController.getOptionById);
 //Protected Routes
 
 router.post("/create-option", auth, optionsController.createOption);
+router.post("/select-option", auth, optionsController.selectOption);
 
-router.put("/update-option/:id", auth, optionsController.updateOption);
+router.put("/update-option", auth, optionsController.updateOption);
 
-router.delete("/delete-option/:id", auth, optionsController.deleteOption);
+router.put("/delete-option", auth, optionsController.deleteOption);
 
 module.exports = router;

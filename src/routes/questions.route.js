@@ -6,7 +6,7 @@ const questionsController = require("../controllers/questions.controller");
 //Public Routes
 router.get("/", questionsController.getAllQuestions);
 
-router.get("/:id", questionsController.getQuestionById);
+router.get("/:questionId", questionsController.getQuestionById);
 //Protected Routes
 
 //Questions

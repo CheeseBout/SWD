@@ -47,7 +47,9 @@ class QuestionsBankService {
   }
 
   async getQuestionById(questionId) {
-    const data = await QUESTIONS.findById(questionId).populate("topic", "name");
+    console.log("questionId", questionId);
+    const data = await QUESTIONS.findById(questionId);
+    console.log(data);
     if (!data) {
       throw new APIError(400, "Question not found");
     }

@@ -1,12 +1,6 @@
 const mongoose = require("mongoose");
 
 const quizzesSchema = new mongoose.Schema({
-  userAnswer: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "UserAnswers",
-    },
-  ],
   quizName: {
     type: String,
     required: true,
@@ -21,13 +15,9 @@ const quizzesSchema = new mongoose.Schema({
       ref: "Questions",
     },
   ],
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  lastEdited: {
-    type: Date,
-    default: Date.now,
+  userAnswer: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "UserAnswers",
   },
   status: {
     type: String,
@@ -36,6 +26,14 @@ const quizzesSchema = new mongoose.Schema({
   },
   deletedReason: {
     type: String,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  lastEdited: {
+    type: Date,
+    default: Date.now,
   },
 });
 

@@ -19,6 +19,10 @@ class OptionsController {
     return OK(res, "Success", await optionsServices.createOptions(req));
   });
 
+  selectOption = catchAsync(async (req, res) => {
+    return OK(res, "Success", await optionsServices.selectOption(req));
+  });
+
   updateOption = catchAsync(async (req, res) => {
     return OK(res, "Success", await optionsServices.updateOptions(req));
   });
@@ -27,7 +31,7 @@ class OptionsController {
     return OK(
       res,
       "Success",
-      await optionsServices.deleteOptions(req.params.optionId)
+      await optionsServices.deleteOptions(req)
     );
   });
 }

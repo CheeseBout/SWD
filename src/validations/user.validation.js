@@ -8,4 +8,24 @@ const getUserByIdValidation = {
   }),
 };
 
-module.exports = { getUserByIdValidation };
+const createUserValidation = {
+  params: Joi.object().keys({
+    password: Joi.string()
+      .required()
+      .min(8)
+      .uppercase()
+      .lowercase()
+      .numeric()
+      .symbol()
+      .message(
+        "Password must be at least 8 characters, including uppercase, lowercase, number and symbol"
+      ),
+    email: Joi.string()
+      .required()
+      .pattern(/^[a-zA-Z0-9._%+-]+@gmail\.com$/)
+      .message("Email must be a valid Gmail address"),
+    name: Joi.string().required(),
+  }),
+};
+
+module.exports = { getUserByIdValidation, createUserValidation };

@@ -3,7 +3,6 @@ const expertAvailabilitySchema = new mongoose.Schema({
   availabilityID: {
     type: String,
     required: true,
-    uniqure: true,
   },
   expertID: {
     type: mongoose.Schema.Types.ObjectId,

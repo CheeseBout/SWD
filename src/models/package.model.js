@@ -1,9 +1,9 @@
 const { required } = require("joi");
 const mongoose = require("mongoose");
 const packageSchema = new mongoose.Schema({
-  expertID: {
+  coupleTherapistID: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Expert",
+    ref: "CoupleTherapist",
     required: true,
   },
   discount: {

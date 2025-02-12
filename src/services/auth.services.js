@@ -1,11 +1,11 @@
 const USER = require("../models/user.model");
-const EXPERT = require("../models/expert.model");
 const APIError = require("../utils/ApiError");
 const bcrypt = require("bcryptjs");
 const tokenServices = require("./token.services");
 const emailServices = require("./email.services");
 const crypto = require("crypto");
 const CERTIFICATE = require("../models/certificate.model");
+const COUPLETHERAPIST = require("../models/coupleTherapist.model");
 
 class AuthService {
   async register({
@@ -56,7 +56,7 @@ class AuthService {
     }
 
     // Check if expert profile already exists
-    let expert = await EXPERT.findOne({ userID: userId });
+    let expert = await COUPLETHERAPIST.findOne({ userID: userId });
     if (expert) {
       throw new APIError(400, "Expert profile already exists");
     }
@@ -71,7 +71,7 @@ class AuthService {
     });
 
     // Create expert profile with the new certificate
-    expert = await EXPERT.create({
+    expert = await COUPLETHERAPIST.create({
       expertID: `EXP${Date.now()}`,
       userID: userId,
       certificate: certificate._id,
@@ -79,7 +79,7 @@ class AuthService {
     });
 
     // Populate and return expert details
-    const populatedExpert = await EXPERT.findById(expert._id)
+    const populatedExpert = await COUPLETHERAPIST.findById(expert._id)
       .populate("userID")
       .populate("certificate");
 

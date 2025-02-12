@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const expertSchema = new mongoose.Schema({
+const coupleTherapistSchema = new mongoose.Schema({
   userID: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -17,5 +17,8 @@ const expertSchema = new mongoose.Schema({
   },
 });
 
-const EXPERT = mongoose.model("Expert", expertSchema);
-module.exports = EXPERT;
+const COUPLETHERAPIST = mongoose.model(
+  "CoupleTherapist",
+  coupleTherapistSchema
+);
+module.exports = COUPLETHERAPIST;

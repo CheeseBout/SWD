@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
 const expertAvailabilitySchema = new mongoose.Schema({
-  expertID: {
+  coupleTherapistID: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Expert",
+    ref: "CoupleTherapist",
     required: true,
   },
   timeAvailable: {
@@ -13,8 +13,8 @@ const expertAvailabilitySchema = new mongoose.Schema({
   },
 });
 
-const EXPERTAVAILABILITY = mongoose.model(
+const COUPLETHERAPIST_AVAILABILITY = mongoose.model(
   "ExpertAvailability",
   expertAvailabilitySchema
 );
-module.exports = EXPERTAVAILABILITY;
+module.exports = COUPLETHERAPIST_AVAILABILITY;

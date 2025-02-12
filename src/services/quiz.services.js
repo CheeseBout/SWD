@@ -41,21 +41,6 @@ class QuizService {
     const { quizName, quizDescription, questions } = req.body;
 
     try {
-      // Kiểm tra questions có tồn tại không
-      if (questions && questions.length > 0) {
-        const existingQuestions = await QUESTIONS.find({
-          _id: { $in: questions },
-          status: "active",
-        });
-
-        if (existingQuestions.length !== questions.length) {
-          throw new APIError(
-            400,
-            "One or more questions not found or inactive"
-          );
-        }
-      }
-
       const createdQuiz = await QUIZZES.create({
         quizName,
         quizDescription,
@@ -64,6 +49,14 @@ class QuizService {
       });
 
       const populatedQuiz = await createdQuiz.populate("questions");
+
+      await QUESTIONS.findOneAndUpdate(
+        {},
+        {
+          $push: { quizzes: createdQuiz._id },
+        },
+        { new: true }
+      );
 
       return {
         success: true,
@@ -86,6 +79,7 @@ class QuizService {
     const updateData = { ...req.body, lastEdited: Date.now() };
 
     try {
+      console.log(quizId);
       const updatedQuiz = await QUIZZES.findByIdAndUpdate(quizId, updateData, {
         new: true,
       }).populate("questions");

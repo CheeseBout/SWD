@@ -53,6 +53,11 @@ const questionsSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  status: {
+    type: String,
+    enum: ["active", "inactive"],
+    default: "active",
+  },
 });
 
 const QUESTIONS = mongoose.model("Questions", questionsSchema);

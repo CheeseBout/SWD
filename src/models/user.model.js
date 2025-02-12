@@ -70,6 +70,12 @@ const userSchema = new mongoose.Schema({
       ref: "UserAnswers",
     },
   ],
+  reservationID: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Reservation",
+    },
+  ],
 });
 
 userSchema.pre("save", async function (next) {

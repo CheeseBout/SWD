@@ -12,14 +12,34 @@ router.get("/:questionId", questionsController.getQuestionById);
 //Questions
 router.post("/create-question", auth, questionsController.createQuestion);
 
-router.put("/update-question/:id", auth, questionsController.updateQuestion);
+router.put(
+  "/update-question/:questionId",
+  auth,
+  questionsController.updateQuestion
+);
 
-router.delete("/delete-question/:id", auth, questionsController.deleteQuestion);
+router.put(
+  "/delete-question/:questionId",
+  auth,
+  questionsController.deleteQuestion
+);
 
 //Question Banks
 router.post(
   "/create-question-bank",
   auth,
   questionsController.createQuestionsBank
+);
+
+router.put(
+  "/update-question-bank/:questionBankId",
+  auth,
+  questionsController.updateQuestionsBank
+);
+
+router.put(
+  "/delete-question-bank/:questionBankId",
+  auth,
+  questionsController.deleteQuestionsBank
 );
 module.exports = router;

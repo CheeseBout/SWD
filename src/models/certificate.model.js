@@ -1,6 +1,10 @@
 const mongoose = require("mongoose");
 
 const certificateSchema = new mongoose.Schema({
+  coupleTherapistID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CoupleTherapist",
+  },
   title: {
     type: String,
     required: true,

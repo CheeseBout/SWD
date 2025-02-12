@@ -32,12 +32,78 @@ class QuestionsBankService {
       throw new APIError(400, "Question bank already exist");
     }
     const questionBank = await QUESTION_BANK.create(requestBody);
-    return { data, topic };
+
+    return {
+      data: {
+        questionBank,
+        topic,
+      },
+    };
   }
 
   async getAllQuestionBanks() {
     const data = await QUESTION_BANK.find();
     return { data };
+  }
+
+  async getQuestionBankById(questionBankId) {
+    const data = await QUESTION_BANK.findById(questionBankId).populate(
+      "questions"
+    );
+    if (!data) {
+      throw new APIError(400, "Question Bank not found");
+    }
+    return { data };
+  }
+
+  async updateQuestionBank(req) {
+    const questionBankId = req.params.questionBankId;
+    console.log("questionBankId", questionBankId);
+    const questionBank = await QUESTION_BANK.findById(questionBankId);
+    if (!questionBank) {
+      throw new APIError(400, "Question Bank not found");
+    }
+
+    if (req.user.role !== "admin") {
+      throw new APIError(403, "Only admin can update question bank");
+    }
+
+    const { questionBankName, description } = req.body;
+
+    const updatedQuestionBank = await QUESTION_BANK.findByIdAndUpdate(
+      questionBankId,
+      { questionBankName, description },
+      {
+        new: true,
+      }
+    );
+    return { updatedQuestionBank };
+  }
+
+  async deleteQuestionBank(req) {
+    const questionBankId = req.params.questionBankId;
+    const questionBank = await QUESTION_BANK.findById(questionBankId);
+    if (!questionBank) {
+      throw new APIError(400, "Question Bank not found");
+    }
+
+    try {
+      // Update question status to inactive instead of deleting
+      await QUESTION_BANK.findByIdAndUpdate(
+        questionBankId,
+        { status: "inactive" },
+        { new: true }
+      );
+
+      return {
+        message: "Question deleted successfully",
+      };
+    } catch (error) {
+      if (error.name === "CastError") {
+        throw new APIError(400, "Invalid ID format");
+      }
+      throw error;
+    }
   }
 
   //Questions
@@ -103,25 +169,25 @@ class QuestionsBankService {
   }
 
   async updateQuestion(req) {
-    const userID = req.user._id;
     const questionId = req.params.questionId;
+    const { questionContent } = req.body; // Only extract questionContent
+
+    if (!questionContent) {
+      throw new APIError(400, "Question content is required");
+    }
+
     const question = await QUESTIONS.findById(questionId);
     if (!question) {
       throw new APIError(400, "Question not found");
-    }
-
-    if (!userID) {
-      throw new APIError(400, "User not found");
     }
 
     if (req.user.role !== "admin") {
       throw new APIError(403, "Only admin can update questions");
     }
 
-    const requestBody = { ...req.body };
     const updatedQuestion = await QUESTIONS.findByIdAndUpdate(
       questionId,
-      requestBody,
+      { questionContent }, // Only update questionContent
       {
         new: true,
       }
@@ -129,12 +195,10 @@ class QuestionsBankService {
     return { updatedQuestion };
   }
 
-  async deleteQuestion(questionId) {
+  async deleteQuestion(req) {
+    const questionId = req.params.questionId;
+    console.log("questionId", questionId);
     const question = await QUESTIONS.findById(questionId);
-    const userID = req.user._id;
-    if (!userID) {
-      throw new APIError(400, "User not found");
-    }
 
     if (!question) {
       throw new APIError(400, "Question not found");
@@ -144,8 +208,31 @@ class QuestionsBankService {
       throw new APIError(403, "Only admin can delete questions");
     }
 
-    const deletedQuestion = await QUESTIONS.findByIdAndDelete(questionId);
-    return { deletedQuestion };
+    try {
+      // Update question status to inactive instead of deleting
+      const updatedQuestion = await QUESTIONS.findByIdAndUpdate(
+        questionId,
+        { status: "inactive" },
+        { new: true }
+      );
+
+      // Update question bank to remove reference to this question
+      await QUESTION_BANK.findOneAndUpdate(
+        { questions: questionId },
+        {
+          $pull: { questions: questionId },
+        }
+      );
+
+      return {
+        message: "Question deleted successfully",
+      };
+    } catch (error) {
+      if (error.name === "CastError") {
+        throw new APIError(400, "Invalid ID format");
+      }
+      throw error;
+    }
   }
 
   async getQuestionByTopic(topicId) {

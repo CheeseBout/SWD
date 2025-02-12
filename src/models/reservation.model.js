@@ -5,22 +5,22 @@ const reservationSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  expertID: {
+  coupleTherapistID: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Expert",
+    ref: "CoupleTherapist",
     required: true,
   },
-  topic: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Topic",
+  title: {
+    type: String,
     required: true,
   },
   content: {
     type: String,
+    required: true,
   },
   packageID: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Package",
+    ref: "CoupleTherapist",
   },
   createdAt: {
     type: Date,

@@ -5,7 +5,7 @@ const paymentSchema = new mongoose.Schema({
     ref: "Reservation",
     required: true,
   },
-  total: {
+  totalPrice: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Reservation",
     required: true,

@@ -6,14 +6,24 @@ const coupleTherapistSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  certificate: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Certificate",
-    required: true,
-  },
+  certificate: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Certificate",
+      required: true,
+    },
+  ],
   description: {
     type: String,
     required: true,
+  },
+  packageID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Package",
+  },
+  reservationID: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Reservation",
   },
 });
 

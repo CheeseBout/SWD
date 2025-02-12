@@ -15,10 +15,12 @@ const quizzesSchema = new mongoose.Schema({
       ref: "Questions",
     },
   ],
-  userAnswer: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "UserAnswers",
-  },
+  userAnswer: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserAnswers",
+    },
+  ],
   status: {
     type: String,
     enum: ["active", "inactive"],

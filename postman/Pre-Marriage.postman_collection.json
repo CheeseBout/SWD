@@ -1,0 +1,746 @@
+{
+	"info": {
+		"_postman_id": "ca7c9f98-b5ae-470e-a601-c254bff54068",
+		"name": "Pre-Marriage",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "35948300"
+	},
+	"item": [
+		{
+			"name": "auth",
+			"item": [
+				{
+					"name": "register",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"fullname\": \"Chu Phan Nhat Longg\",\r\n    \"username\": \"nhatlong2\",\r\n    \"email\": \"minhha4675@gmail.com\",\r\n    \"password\": \"12345678\",\r\n    \"dob\": \"11/11/2025\",\r\n    \"gender\": \"Male\",\r\n    \"photoURL\": \"https://media.discordapp.net/attachments/716566493424254979/1338106555551449098/7e1bc5afc3fe3cdebaefd90e7dc8fbcc.jpg?ex=67a9e057&is=67a88ed7&hm=32ca005e823f93933df6a199614eb8572063000023f2b3c05e3bab9044b3287a&=&format=webp\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/v1/auth/register",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"narutogaming4675@gmail.com\",\r\n    \"password\": \"12345678\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/v1/auth/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update-expert-profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2E4OTk2YTRhYTRhZDQyZjQzZDcyYmEiLCJpYXQiOjE3MzkxMDI1NzgsImV4cCI6MTczOTE4ODk3OH0.Y3U-F1EScjLO4EzQHw_9trHtoIYHt7MllyIqnRunkio",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Bearer",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2E4OTUwODM3NzI3MDhjZWVkZWI2ZTciLCJpYXQiOjE3MzkxMDIyMjYsImV4cCI6MTczOTE4ODYyNn0.AXmrLP2q2i-2ItfJnXo5fluRJyxC-YdEtDxP03T6YiA",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"title\": \"abc\",\r\n    \"issuedDate\": \"09/02/2025\",\r\n    \"expiryDate\": \"09/02/2030\",\r\n    \"documentURL\": \"https://media.discordapp.net/attachments/716566493424254979/1338106555551449098/7e1bc5afc3fe3cdebaefd90e7dc8fbcc.jpg?ex=67a9e057&is=67a88ed7&hm=32ca005e823f93933df6a199614eb8572063000023f2b3c05e3bab9044b3287a&=&format=webp\",\r\n    \"description\":\"abcxzc\"\r\n\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/v1/auth/update-expert-profile",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"update-expert-profile"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "user",
+			"item": [
+				{
+					"name": "getAllUsers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/api/v1/users/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"v1",
+								"users",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update-profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2E4OTAzYjdkYzU2YmYzOTg1M2UyNTciLCJpYXQiOjE3MzkyMzUwNzAsImV4cCI6MTczOTMyMTQ3MH0.1xKxrVa47KfUm3ROtAl80QsxVKcS4blA2PpLn1fQUcY",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"password\": \"123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/v1/users/update-profile",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"update-profile"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "topic",
+			"item": [
+				{
+					"name": "getAllTopics",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "getTopicById",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "create-topic",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2E4OTAzYjdkYzU2YmYzOTg1M2UyNTciLCJpYXQiOjE3MzkyNjE2NDUsImV4cCI6MTczOTM0ODA0NX0.j-lbt9kYoiBr4-fKm3GDKQwig1whF8uZK_sQd3sp6uU",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/api/v1/topics/create-topic",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"v1",
+								"topics",
+								"create-topic"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "questions",
+			"item": [
+				{
+					"name": "getAllQuestions",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "getQuestionByID",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "create-question",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2FiMDdhN2QyODRjODYyNDA0OWFlMjMiLCJpYXQiOjE3MzkyNjE5MTksImV4cCI6MTczOTM0ODMxOX0.1TCC_JOwXdYgOydMv_pSumZibQbXP50ljBS9fOu6q6g",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"questionContent\": \"2. Điều gì quan trọng nhất trong một cuộc hôn nhân bền vững?\",\r\n    \"questionBank\": \"67ab320765210147eb05a72a\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/v1/questions/create-question",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"v1",
+								"questions",
+								"create-question"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update-question",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2FjMjU2N2MwNjRlYzE5YzFkZjU0MDIiLCJpYXQiOjE3MzkzMzUwMzIsImV4cCI6MTczOTQyMTQzMn0.ew9P0sbZHC2jnOXR4jF-BReVlQxRyBT71_RDTjlOlRY",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/v1/questions/update-question/67ac2382f16cb78b36e1fea2",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"v1",
+								"questions",
+								"update-question",
+								"67ac2382f16cb78b36e1fea2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delete-question",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2FjMjU2N2MwNjRlYzE5YzFkZjU0MDIiLCJpYXQiOjE3MzkzMzUwMzIsImV4cCI6MTczOTQyMTQzMn0.ew9P0sbZHC2jnOXR4jF-BReVlQxRyBT71_RDTjlOlRY",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/api/v1/questions/delete-question/67ac21c0a46e74d752d3b541",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"v1",
+								"questions",
+								"delete-question",
+								"67ac21c0a46e74d752d3b541"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createQuestionsBank",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2FiMDdhN2QyODRjODYyNDA0OWFlMjMiLCJpYXQiOjE3MzkyNjE5MTksImV4cCI6MTczOTM0ODMxOX0.1TCC_JOwXdYgOydMv_pSumZibQbXP50ljBS9fOu6q6g",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"questionName\": \"Example Bank\",\r\n  \"description\": \"Example description\",\r\n  \"topicName\": \"New Topic Name\",\r\n  \"topicDescription\": \"Optional topic description\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/v1/questions/create-question-bank",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"v1",
+								"questions",
+								"create-question-bank"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update-question-bank",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2FjMjU2N2MwNjRlYzE5YzFkZjU0MDIiLCJpYXQiOjE3MzkzMzUwMzIsImV4cCI6MTczOTQyMTQzMn0.ew9P0sbZHC2jnOXR4jF-BReVlQxRyBT71_RDTjlOlRY",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"questionBankName\": \"Your QB Name 34123\",\r\n    \"description\": \"Your QB Description 3123123123\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/v1/questions/update-question-bank/67ab320765210147eb05a72a",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"v1",
+								"questions",
+								"update-question-bank",
+								"67ab320765210147eb05a72a"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delete-question-bank",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "options",
+			"item": [
+				{
+					"name": "getAllOptions",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "getOptionsById",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "createOption",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2FiMDdhN2QyODRjODYyNDA0OWFlMjMiLCJpYXQiOjE3MzkyNjE5MTksImV4cCI6MTczOTM0ODMxOX0.1TCC_JOwXdYgOydMv_pSumZibQbXP50ljBS9fOu6q6g",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"questionID\": \"67ab126bd198a8a8ec657cd1\",\r\n  \"options\": [\r\n    { \"optionContent\": \"Option 1\", \"score\": 1 },\r\n    { \"optionContent\": \"Option 2\", \"score\": 2 },\r\n    { \"optionContent\": \"Option 3\", \"score\": 3 },\r\n    { \"optionContent\": \"Option 4\", \"score\": 4 }\r\n  ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/v1/options/create-option",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"v1",
+								"options",
+								"create-option"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "select-option",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2FjMWVkMjEzZjY2NDk3ZjIwZGI0ZDEiLCJpYXQiOjE3MzkzMzMzNDMsImV4cCI6MTczOTQxOTc0M30.0jxC5TrqogyKoNgnspzYQB6ep4zGy0I65CrQi_K4OQw",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"optionID\": \"67ab392f339dd51ec409ba86\",\r\n    \"questionID\": \"67ac2382f16cb78b36e1fea2\",\r\n    \r\n\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/v1/options/select-option",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"v1",
+								"options",
+								"select-option"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delete-option/:id",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2FjMWVkMjEzZjY2NDk3ZjIwZGI0ZDEiLCJpYXQiOjE3MzkzMzMzNDMsImV4cCI6MTczOTQxOTc0M30.0jxC5TrqogyKoNgnspzYQB6ep4zGy0I65CrQi_K4OQw",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/v1/options/delete-option/67ac238bf16cb78b36e1feac",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"v1",
+								"options",
+								"delete-option",
+								"67ac238bf16cb78b36e1feac"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update-option/:id",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2FjMjU2N2MwNjRlYzE5YzFkZjU0MDIiLCJpYXQiOjE3MzkzMzUwMzIsImV4cCI6MTczOTQyMTQzMn0.ew9P0sbZHC2jnOXR4jF-BReVlQxRyBT71_RDTjlOlRY",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"optionID\": \"67ac238bf16cb78b36e1feab\",\r\n  \"questionID\": \"67ac2382f16cb78b36e1fea2\",\r\n    \"optionContent\": \"TEST 123\",\r\n    \"score\": 5\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/v1/options/update-option/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"v1",
+								"options",
+								"update-option",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "quiz",
+			"item": [
+				{
+					"name": "get All QUIZ",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "create-quiz",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2N2FjMjU2N2MwNjRlYzE5YzFkZjU0MDIiLCJpYXQiOjE3MzkzMzUwMzIsImV4cCI6MTczOTQyMTQzMn0.ew9P0sbZHC2jnOXR4jF-BReVlQxRyBT71_RDTjlOlRY",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"questions\": \"67ac2382f16cb78b36e1fea2\",\r\n    \"quizName\": \"TEST QUIZ QUESTION\",\r\n    \"quizDescription\": \"TEST QUIZ DESCRIPTION\"\r\n\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3000/api/v1/quiz/create-quiz",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"v1",
+								"quiz",
+								"create-quiz"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update-quiz",
+					"request": {
+						"method": "PUT",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "delete-quiz/:id",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000/api/v1/quiz/delete-quiz/",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3000",
+							"path": [
+								"api",
+								"v1",
+								"quiz",
+								"delete-quiz",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

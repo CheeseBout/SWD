@@ -2,6 +2,8 @@ const { options } = require("joi");
 const OPTIONS = require("../models/options.model");
 const QUESTIONS = require("../models/question.model");
 const APIError = require("../utils/ApiError");
+const mongoose = require("mongoose");
+const USER_ANSWERS = require("../models/userAnswer.model");
 
 class OptionsServices {
   async getAllOptions() {
@@ -169,56 +171,121 @@ class OptionsServices {
   }
 
   async selectOption(req) {
-    const { optionID, questionID } = req.body;
+    const selections = Array.isArray(req.body) ? req.body : [req.body];
     const userID = req.user._id;
 
     try {
-      console.log(optionID, questionID, userID);
-      const option = await OPTIONS.findById(optionID);
-      if (!option) {
-        throw new APIError(404, "Option not found");
-      }
+      // Validate tất cả ID trước khi xử lý
+      selections.forEach((selection) => {
+        if (
+          !mongoose.Types.ObjectId.isValid(selection.optionID) ||
+          !mongoose.Types.ObjectId.isValid(selection.questionID)
+        ) {
+          throw new APIError(400, "Invalid option ID or question ID format");
+        }
+      });
 
-      const question = await QUESTIONS.findById(questionID);
-      if (!question) {
-        throw new APIError(404, "Question not found");
-      }
-
-      // Find the question and update its options array to include the user answer
-      const updatedQuestion = await QUESTIONS.findOneAndUpdate(
-        { _id: questionID, "options._id": optionID },
-        {
-          $push: {
-            "options.$.userAnswers": {
-              userID,
-              questionID,
-              quizID,
-              selectedAt: Date.now(),
-            },
-          },
-        },
-        { new: true }
+      const results = await Promise.all(
+        selections.map(async (selection) => {
+          try {
+            return await this.processOptionSelection(
+              selection.optionID,
+              selection.questionID,
+              userID
+            );
+          } catch (error) {
+            return {
+              optionID: selection.optionID,
+              questionID: selection.questionID,
+              error: error.message,
+            };
+          }
+        })
       );
 
-      if (!updatedQuestion) {
-        throw new APIError(404, "Question or option not found");
-      }
-
-      const userAnswer = updatedQuestion.options
-        .find((opt) => opt._id.toString() === optionID)
-        .userAnswers.slice(-1)[0];
+      // Tính tổng score từ tất cả các lựa chọn
+      const totalScore = results.reduce((sum, result) => {
+        return sum + (result.score || 0);
+      }, 0);
 
       return {
         success: true,
-        data: {
-          userAnswer,
-        },
+        data: results,
+        totalScore: totalScore,
       };
     } catch (error) {
-      if (error.name === "CastError") {
-        throw new APIError(400, "Invalid ID format");
+      throw new APIError(400, error.message);
+    }
+  }
+
+  async processOptionSelection(optionID, questionID, userID) {
+    try {
+      const question = await QUESTIONS.findById(questionID);
+      if (!question) {
+        throw new APIError(404, `Question not found: ${questionID}`);
       }
-      throw error;
+
+      // Get the options document
+      const optionsDoc = await OPTIONS.findOne({ questionID: questionID });
+      if (!optionsDoc) {
+        throw new APIError(404, "Options not found");
+      }
+
+      // Lấy mảng options từ document
+      const optionsArray = optionsDoc.options || [];
+
+      // Tìm option được chọn
+      const selectedOption = optionsArray.find(
+        (opt) => opt._id.toString() === optionID
+      );
+
+      if (!selectedOption) {
+        throw new APIError(404, `Option not found: ${optionID}`);
+      }
+
+      // Calculate total score
+      const totalScore = selectedOption.score || 0;
+
+      // Create new user answer
+      const userAnswer = await USER_ANSWERS.create({
+        userID,
+        questionID,
+        optionID,
+        totalScore,
+        quizID: question.quizzes[0],
+      });
+
+      // Update references
+      await Promise.all([
+        // Update question reference
+        QUESTIONS.findByIdAndUpdate(questionID, {
+          $addToSet: { userAnswers: userAnswer._id },
+        }),
+
+        // Update option reference
+        OPTIONS.findOneAndUpdate(
+          {
+            questionID: questionID,
+            "options._id": optionID,
+          },
+          {
+            $addToSet: { "options.$.userAnswers": userAnswer._id },
+          }
+        ),
+      ]);
+
+      return {
+        optionID,
+        questionID,
+        score: selectedOption.score,
+        optionContent: selectedOption.optionContent,
+        selectedAt: userAnswer.createdAt,
+        userAnswerId: userAnswer._id,
+        success: true,
+      };
+    } catch (error) {
+      console.error("Selection error:", error);
+      throw new APIError(400, `Error processing selection: ${error.message}`);
     }
   }
 }

@@ -3,21 +3,25 @@ const USER = require("../models/user.model");
 const nodemailer = require("nodemailer");
 const appConfig = require("../configs/app.config");
 const APIError = require("../utils/ApiError");
-const transporter = nodemailer.createTransport(appConfig.email);
 
 const bcrypt = require("bcryptjs");
 const tokenServices = require("./token.services");
 
-class EmailService {
-  constructor() {
-    this.mailerSend = new MailerSend({
-      apiKey: process.env.MAILERSEND_API_KEY,
-    });
-  }
+const transporter = nodemailer.createTransport(appConfig.GOOGLEAPIMAIL);
 
-  sendEmail = async ({ to, subject, html }) => {
-    const msg = { from: "anh Long", to, subject, html };
-    return await transporter.sendMail(msg);
+const mailOptions = (email, subject, text) => {
+  return {
+    from: appConfig.GOOGLEAPIMAIL.auth.user,
+    to: email,
+    subject: subject,
+    text: text,
+  };
+};
+
+class EmailService {
+  sendEmail = async (email, subject, text) => {
+    const options = mailOptions(email, subject, text);
+    return await transporter.sendMail(options);
   };
 
   async sendVerificationEmail({ email, emailVerificationToken }) {
@@ -30,12 +34,12 @@ class EmailService {
     }
 
     try {
-      const result = await this.sendEmail({
-        to: email,
-        subject: "Email Verification",
-        text: `Verify your email: ${email}`,
-        html: `Verify your email: <a href="http://localhost:5173/verify-email?token=${emailVerificationToken}">Verify Email</a>`,
-      });
+      const verificationText = `Verify your email: http://localhost:5173/verify-email?token=${emailVerificationToken}`;
+      const result = await this.sendEmail(
+        email,
+        "Email Verification",
+        verificationText
+      );
 
       return result;
     } catch (error) {
@@ -45,20 +49,17 @@ class EmailService {
 
   async sendResetPassword({ email, resetToken }) {
     const resetLink = `http://localhost:5173/reset-password?token=${resetToken}`;
-    const html = `
-      <h1 style="color: red">Password Reset Request</h1>
-      <p>Click the link below to reset your password:</p>
-      <a href="${resetLink}">Reset Password</a>
-      <p>This link will expire in 10 minutes.</p>
-      <p>If you didn't request this, please ignore this email.</p>
+    const text = `
+Password Reset Request
+
+Click the link below to reset your password:
+${resetLink}
+
+This link will expire in 10 minutes.
+If you didn't request this, please ignore this email.
     `;
 
-    return this.sendEmail({
-      to: email,
-      subject: "Password Reset Request",
-      text: `Reset your password: ${resetLink}`,
-      html: html,
-    });
+    return this.sendEmail(email, "Password Reset Request", text);
   }
 }
 

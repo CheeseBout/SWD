@@ -19,4 +19,15 @@ module.exports = {
   MAILERSENDAPI: {
     apiKey: process.env.MAILERSEND_API_KEY,
   },
+  GOOGLEAPIMAIL: {
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USERNAME,
+      pass: process.env.EMAIL_PASSWORD,
+    },
+    secure: true,
+    tls: {
+      rejectUnauthorized: false,
+    },
+  },
 };

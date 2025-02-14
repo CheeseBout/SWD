@@ -25,6 +25,9 @@ class UserService {
     // Xóa email và password khỏi req body để không cho phép cập nhật password trong hàm này vì password được phép cập nhật ở hàm khác
     delete requestBody.email;
     delete requestBody.password;
+    delete requestBody.role;
+    delete requestBody.isVerified;
+    delete requestBody.isActive;
 
     const updatedUser = await USER.findByIdAndUpdate(userID, requestBody, {
       new: true,

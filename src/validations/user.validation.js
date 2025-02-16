@@ -3,7 +3,7 @@ const getUserByIdValidation = {
   params: Joi.object().keys({
     id: Joi.string()
       .required()
-      .pattern(/^[0-9a-fA-F]{24}$/)
+      .pattern(/^[0-9a-zA-Z]{24}$/)
       .message("Invalid id"),
   }),
 };
@@ -15,7 +15,7 @@ const createUserValidation = {
       .min(8)
       .pattern(
         new RegExp(
-          "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
+          "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#])[A-Za-z\\d@$!%*?&#]{8,}$"
         )
       )
       .message(
@@ -46,7 +46,7 @@ const loginValidation = {
       .min(8)
       .pattern(
         new RegExp(
-          "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
+          "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#])[A-Za-z\\d@$!%*?&]{8,}$"
         )
       )
       .message(

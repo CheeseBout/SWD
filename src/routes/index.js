@@ -5,11 +5,14 @@ const topicRouter = require("./topic.route");
 const questionRouter = require("./questions.route");
 const optionsRouter = require("./options.route");
 const quizRouter = require("./quiz.route");
+const coupleTherapistRouter = require("./coupleTherapist.route");
+
 router.use("/auth", authRouter);
 router.use("/users", userRouter);
 router.use("/topics", topicRouter);
 router.use("/questions", questionRouter);
 router.use("/options", optionsRouter);
 router.use("/quiz", quizRouter);
+router.use("/coupletherapist", coupleTherapistRouter);
 
 module.exports = router;

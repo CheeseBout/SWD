@@ -22,6 +22,10 @@ const packageSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  comissionFee: {
+    type: Number,
+    required: true,
+  },
   status: {
     type: String,
     required: true,

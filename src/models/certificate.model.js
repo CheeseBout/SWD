@@ -24,6 +24,10 @@ const certificateSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  category: {
+    type: String,
+    required: true,
+  },
   isCertificateVerified: {
     type: Boolean,
     default: false,

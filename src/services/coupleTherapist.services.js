@@ -34,6 +34,8 @@ class CoupleTherapistServices {
       notTimeAvailable,
     });
 
+    await availability.save();
+
     return availability;
   }
 

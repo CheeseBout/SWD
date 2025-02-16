@@ -4,16 +4,16 @@ const coupleTherapistController = require("../controllers/coupleTherapist.contro
 
 router.get("/", coupleTherapistController.getAllCoupleTherapist);
 router.get("/:id", coupleTherapistController.getCoupleTherapistById);
-router.get(
+router.post(
   "/create-availability",
   coupleTherapistController.createAvailability
 );
 router.get("/get-availability", coupleTherapistController.getAvailability);
-router.get(
+router.post(
   "/update-availability",
   coupleTherapistController.updateAvailability
 );
-router.get(
+router.post(
   "/delete-availability",
   coupleTherapistController.deleteAvailability
 );

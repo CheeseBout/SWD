@@ -17,8 +17,7 @@ class CoupleTherapistServices {
   }
 
   async getAvailability(id) {
-    const data = await COUPLETHERAPIST_AVAILABILITY.findById(id);
-    return data;
+    return await COUPLETHERAPIST_AVAILABILITY.findById(id);
   }
 
   async createAvailability(id, timeAvailable, notTimeAvailable) {

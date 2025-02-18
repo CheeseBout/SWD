@@ -7,6 +7,7 @@ const optionsRouter = require("./options.route");
 const quizRouter = require("./quiz.route");
 const coupleTherapistRouter = require("./coupleTherapist.route");
 const reservationRouter = require("./reservation.route");
+const reservationResultRouter = require("./reservation-result.route");
 
 router.use("/auth", authRouter);
 router.use("/users", userRouter);
@@ -16,5 +17,6 @@ router.use("/options", optionsRouter);
 router.use("/quiz", quizRouter);
 router.use("/coupletherapist", coupleTherapistRouter);
 router.use("/reservation", reservationRouter);
+router.use("/reservation-result", reservationResultRouter);
 
 module.exports = router;

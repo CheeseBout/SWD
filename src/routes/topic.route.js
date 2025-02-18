@@ -8,13 +8,13 @@ const topicController = require("../controllers/topic.controller");
 //Public Routes
 router.get("/", topicController.getAllTopics);
 
-router.get("/:id", topicController.getTopicById);
+router.get("/:topicId", topicController.getTopicById);
 //Protected Routes
 
 router.post("/create-topic", auth, topicController.createTopic);
 
-router.put("/update-topic/:id", auth, topicController.updateTopic);
+router.put("/update-topic/:topicId", auth, topicController.updateTopic);
 
-router.delete("/delete-topic/:id", auth, topicController.deleteTopic);
+router.put("/delete-topic/:topicId", auth, topicController.deleteTopic);
 
 module.exports = router;

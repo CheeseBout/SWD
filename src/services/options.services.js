@@ -8,7 +8,7 @@ const USER_ANSWERS = require("../models/userAnswer.model");
 class OptionsServices {
   async getAllOptions() {
     const data = await OPTIONS.find().populate("questionID");
-    return { data };
+    return { options: data };
   }
 
   async getOptionById(optionId) {
@@ -16,7 +16,7 @@ class OptionsServices {
     if (!data) {
       throw new APIError(400, "Option not found");
     }
-    return { data };
+    return { option: data };
   }
 
   async createOptions(req) {

@@ -21,6 +21,10 @@ const quizzesSchema = new mongoose.Schema({
       ref: "UserAnswers",
     },
   ],
+  imageUrl: {
+    type: String,
+    required: true,
+  },
   status: {
     type: String,
     enum: ["active", "inactive"],

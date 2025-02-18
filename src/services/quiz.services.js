@@ -38,13 +38,14 @@ class QuizService {
       throw new APIError(403, "Only admin can create quiz");
     }
 
-    const { quizName, quizDescription, questions } = req.body;
+    const { quizName, quizDescription, questions, imageUrl } = req.body;
 
     try {
       const createdQuiz = await QUIZZES.create({
         quizName,
         quizDescription,
         questions,
+        imageUrl,
         lastEdited: Date.now(),
       });
 

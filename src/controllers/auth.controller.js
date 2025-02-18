@@ -30,6 +30,7 @@ const authController = {
       expiryDate, // certificate expiry date
       documentURL, // certificate document URL
       description, // expert description
+      category, // expert category
     } = req.body;
 
     const userId = req.user._id;
@@ -43,6 +44,7 @@ const authController = {
         expiryDate,
         documentURL,
         description,
+        category,
       })
     );
   }),

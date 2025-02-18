@@ -43,7 +43,15 @@ class AuthService {
 
   async updateExpertProfile(
     userId,
-    { title, issuedBy, issuedDate, expiryDate, documentURL, description }
+    {
+      title,
+      issuedBy,
+      issuedDate,
+      expiryDate,
+      documentURL,
+      description,
+      category,
+    }
   ) {
     const user = await USER.findById(userId);
 
@@ -68,14 +76,16 @@ class AuthService {
       issuedDate,
       expiryDate,
       documentURL,
+      category,
     });
 
     // Create expert profile with the new certificate
     expert = await COUPLETHERAPIST.create({
-      expertID: `EXP${Date.now()}`,
+      coupleTherapistID: `EXP${Date.now()}`,
       userID: userId,
       certificate: certificate._id,
       description,
+      category,
     });
 
     // Populate and return expert details

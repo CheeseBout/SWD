@@ -7,7 +7,7 @@ class QuizService {
     const data = await QUIZZES.find()
       .populate("questions")
       .populate("userAnswer");
-    return { data };
+    return { quizzes: data };
   }
 
   async getQuizById(quizId) {
@@ -24,7 +24,7 @@ class QuizService {
         throw new APIError(400, "Quiz is inactive");
       }
 
-      return { data };
+      return { quiz: data };
     } catch (error) {
       if (error.name === "CastError") {
         throw new APIError(400, "Invalid quiz ID format");
@@ -60,7 +60,7 @@ class QuizService {
 
       return {
         success: true,
-        data: populatedQuiz,
+        quiz: populatedQuiz,
       };
     } catch (error) {
       if (error.name === "CastError") {
@@ -90,7 +90,7 @@ class QuizService {
 
       return {
         success: true,
-        data: updatedQuiz,
+        quiz: updatedQuiz,
       };
     } catch (error) {
       if (error.name === "CastError") {
@@ -126,7 +126,7 @@ class QuizService {
       return {
         success: true,
         message: "Quiz deleted successfully",
-        data: deletedQuiz,
+        quiz: deletedQuiz,
       };
     } catch (error) {
       if (error.name === "CastError") {

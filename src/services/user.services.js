@@ -3,7 +3,7 @@ const APIError = require("../utils/ApiError");
 class UserService {
   async getAllUsers() {
     const data = await USER.find();
-    return data;
+    return { users: data };
   }
 
   async getUserById(userId) {
@@ -11,7 +11,7 @@ class UserService {
     if (!userId) {
       throw new APIError(400, "User not found");
     }
-    return data;
+    return { user: data };
   }
 
   async updateProfile(req) {

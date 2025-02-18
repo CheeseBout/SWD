@@ -51,8 +51,8 @@ class AuthService {
       throw new APIError(404, "User not found");
     }
 
-    if (user.role !== "expert") {
-      throw new APIError(400, "User is not an expert");
+    if (user.role !== "couple_therapist") {
+      throw new APIError(400, "User is not an couple therapist");
     }
 
     // Check if expert profile already exists

@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const coupleTherapistSchema = new mongoose.Schema({
   userID: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: "Users",
     required: true,
   },
   certificate: [
@@ -28,7 +28,7 @@ const coupleTherapistSchema = new mongoose.Schema({
 });
 
 const COUPLETHERAPIST = mongoose.model(
-  "CoupleTherapist",
+  "CoupleTherapists",
   coupleTherapistSchema
 );
 module.exports = COUPLETHERAPIST;

@@ -18,7 +18,7 @@ router.get(
 router.get(
   "/:id",
   validate(getUserByIdValidation),
-  auth,
+  // auth,
   userController.getUserById
 );
 router.post("/update-profile", auth, userController.updateProfile);

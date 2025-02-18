@@ -2,16 +2,16 @@ const TOPIC = require("../models/topic.model");
 const APIError = require("../utils/ApiError");
 class TopicServices {
   async getAllTopics() {
-    const data = await TOPIC.find();
-    return { data };
+    const topics = await TOPIC.find();
+    return { topics };
   }
 
   async getTopicById(topicId) {
-    const data = await TOPIC.findById(topicId);
-    if (!data) {
+    const topic = await TOPIC.findById(topicId);
+    if (!topic) {
       throw new APIError(400, "Topic not found");
     }
-    return { data };
+    return { topic };
   }
 
   async createTopic(req) {

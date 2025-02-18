@@ -2,16 +2,16 @@ const USER = require("../models/user.model");
 const APIError = require("../utils/ApiError");
 class UserService {
   async getAllUsers() {
-    const data = await USER.find();
-    return { users: data };
+    const users = await USER.find();
+    return { users };
   }
 
   async getUserById(userId) {
-    const data = await USER.findById(userId);
+    const user = await USER.findById(userId);
     if (!userId) {
       throw new APIError(400, "User not found");
     }
-    return { user: data };
+    return { user };
   }
 
   async updateProfile(req) {

@@ -15,7 +15,6 @@ class AuthService {
     password,
     dob,
     gender,
-    photoURL,
     role = "user",
   }) {
     const existingUser = await USER.findOne({ email });
@@ -31,7 +30,6 @@ class AuthService {
       password,
       dob,
       gender,
-      photoURL,
       role,
     });
 

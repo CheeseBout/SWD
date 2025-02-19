@@ -8,7 +8,7 @@ const quizRouter = require("./quiz.route");
 const coupleTherapistRouter = require("./coupleTherapist.route");
 const reservationRouter = require("./reservation.route");
 const reservationResultRouter = require("./reservation-result.route");
-
+const paymentRouter = require("./payment.route");
 router.use("/auth", authRouter);
 router.use("/users", userRouter);
 router.use("/topics", topicRouter);
@@ -18,5 +18,6 @@ router.use("/quiz", quizRouter);
 router.use("/coupletherapist", coupleTherapistRouter);
 router.use("/reservation", reservationRouter);
 router.use("/reservation-result", reservationResultRouter);
+router.use("/payment", paymentRouter);
 
 module.exports = router;

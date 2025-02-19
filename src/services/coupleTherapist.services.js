@@ -104,20 +104,20 @@ class CoupleTherapistServices {
 
   async updateAvailability(
     availabilityID,
-    userID,
+    coupleTherapistId,
     timeAvailable,
     notTimeAvailable
   ) {
     const availability = await COUPLETHERAPIST_AVAILABILITY.findById(
       availabilityID
     );
-
+    console.log(availability);
     if (!availability) {
       throw new APIError(404, "Availability record not found");
     }
 
     // Validate if the provided userID matches the therapist's availability record
-    const therapist = await COUPLETHERAPIST.findOne({ userID });
+    const therapist = await COUPLETHERAPIST.findOne({ coupleTherapistId });
 
     if (!therapist) {
       throw new APIError(404, "Couple therapist not found");

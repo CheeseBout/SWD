@@ -40,7 +40,7 @@ class PaymentService {
     }
   }
 
-  async createPaymentUrl(reservationID, phase, ipAddr) {
+  async createPaymentUrl(reservationID, phase) {
     try {
       // Kiểm tra reservationID có hợp lệ không
       if (!mongoose.Types.ObjectId.isValid(reservationID)) {
@@ -84,7 +84,7 @@ class PaymentService {
         vnp_Amount: Math.round(amount * 100),
         vnp_CreateDate: createDate,
         vnp_CurrCode: "VND",
-        vnp_IpAddr: ipAddr,
+        vnp_IpAddr: "192.168.1.1",
         vnp_Locale: "vn",
         vnp_OrderInfo: `Thanh toán ${phase} cho đơn ${reservationID}`,
         vnp_OrderType: "250000",

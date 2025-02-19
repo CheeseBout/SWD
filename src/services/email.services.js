@@ -9,22 +9,23 @@ const tokenServices = require("./token.services");
 
 const transporter = nodemailer.createTransport(appConfig.GOOGLEAPIMAIL);
 
-const mailOptions = (email, subject, text) => {
+const mailOptions = (email, subject, text, html) => {
   return {
     from: appConfig.GOOGLEAPIMAIL.auth.user,
     to: email,
     subject: subject,
     text: text,
+    html: html,
   };
 };
 
 class EmailService {
-  sendEmail = async (email, subject, text) => {
-    const options = mailOptions(email, subject, text);
+  sendEmail = async (email, subject, text, html) => {
+    const options = mailOptions(email, subject, text, html);
     return await transporter.sendMail(options);
   };
 
-  async sendVerificationEmail({ email, emailVerificationToken }) {
+  sendVerificationEmail = async ({ email, emailVerificationToken }) => {
     const user = await USER.findOne({
       email,
     });
@@ -34,33 +35,50 @@ class EmailService {
     }
 
     try {
-      const verificationText = `Verify your email: http://localhost:5173/verify-email?token=${emailVerificationToken}`;
-      const result = await this.sendEmail(
+      const verificationLink = `http://localhost:5173/verify-email?token=${emailVerificationToken}`;
+      const verificationHTML = `
+        <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px;">
+          <h2 style="color: #007bff;">Email Verification</h2>
+          <p>Please click the button below to verify your email:</p>
+          <a href="${verificationLink}" style="display: inline-block; padding: 10px 20px; color: #fff; background-color: #28a745; text-decoration: none; border-radius: 5px;">
+            Verify Email
+          </a>
+          <p>If you didn't request this, you can ignore this email.</p>
+        </div>
+      `;
+
+      return await this.sendEmail(
         email,
         "Email Verification",
-        verificationText
+        verificationLink,
+        verificationHTML
       );
-
-      return result;
     } catch (error) {
       throw new APIError(500, "Failed to send verification email");
     }
-  }
+  };
 
-  async sendResetPassword({ email, resetToken }) {
+  sendResetPassword = async ({ email, resetToken }) => {
     const resetLink = `http://localhost:5173/reset-password?token=${resetToken}`;
-    const text = `
-Password Reset Request
-
-Click the link below to reset your password:
-${resetLink}
-
-This link will expire in 10 minutes.
-If you didn't request this, please ignore this email.
+    const resetHTML = `
+      <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px;">
+        <h2 style="color: #dc3545;">Password Reset Request</h2>
+        <p>Click the button below to reset your password:</p>
+        <a href="${resetLink}" style="display: inline-block; padding: 10px 20px; color: #fff; background-color: #dc3545; text-decoration: none; border-radius: 5px;">
+          Reset Password
+        </a>
+        <p>This link will expire in 10 minutes.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+      </div>
     `;
 
-    return this.sendEmail(email, "Password Reset Request", text);
-  }
+    return this.sendEmail(
+      email,
+      "Password Reset Request",
+      resetLink,
+      resetHTML
+    );
+  };
 }
 
 module.exports = new EmailService();

@@ -33,7 +33,6 @@ const userSchema = new mongoose.Schema({
   },
   photoURL: {
     type: String,
-    require: true,
   },
   address: {
     type: String,

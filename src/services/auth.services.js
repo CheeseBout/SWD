@@ -15,12 +15,11 @@ class AuthService {
     password,
     dob,
     gender,
-    photoURL,
     role = "user",
   }) {
-    const existingUser = await USER.findOne({ email });
+    const existingUser = await USER.findOne({ email, username });
     if (existingUser) {
-      throw new APIError(400, "User has already existed");
+      throw new APIError(400, "Email/User already in use");
     }
 
     // Create base user
@@ -31,19 +30,26 @@ class AuthService {
       password,
       dob,
       gender,
-      photoURL,
       role,
     });
 
     return {
       user,
-      role,
+      // role,
     };
   }
 
   async updateExpertProfile(
     userId,
-    { title, issuedBy, issuedDate, expiryDate, documentURL, description }
+    {
+      title,
+      issuedBy,
+      issuedDate,
+      expiryDate,
+      documentURL,
+      description,
+      category,
+    }
   ) {
     const user = await USER.findById(userId);
 
@@ -68,14 +74,16 @@ class AuthService {
       issuedDate,
       expiryDate,
       documentURL,
+      category,
     });
 
     // Create expert profile with the new certificate
     expert = await COUPLETHERAPIST.create({
-      expertID: `EXP${Date.now()}`,
+      coupleTherapistID: `EXP${Date.now()}`,
       userID: userId,
       certificate: certificate._id,
       description,
+      category,
     });
 
     // Populate and return expert details

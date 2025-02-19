@@ -4,18 +4,36 @@ const { OK } = require("../utils/response");
 
 class ResevationController {
   createReservation = catchAsync(async (req, res) => {
-    return OK(
-      res,
-      "Success",
-      await reservationService.createReservation(req.body)
-    );
+    const {
+      userID,
+      coupleTherapistID,
+      title,
+      content,
+      packageID,
+      startTime,
+      endTime,
+      totalPrice,
+      meetingURL,
+    } = req.body;
+    const result = await reservationService.createReservation({
+      userID,
+      coupleTherapistID,
+      title,
+      content,
+      packageID,
+      startTime,
+      endTime,
+      totalPrice,
+      meetingURL,
+    });
+    return OK(res, "Success", result);
   });
 
-  getReservation = catchAsync(async (req, res) => {
+  getReservationById = catchAsync(async (req, res) => {
     return OK(
       res,
       "Success",
-      await reservationService.getReservation(req.params.id)
+      await reservationService.getReservationById(req.params.id)
     );
   });
 

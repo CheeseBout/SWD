@@ -13,7 +13,7 @@ router.post(
   "update-reservation-result",
   reservationResultController.updateReservationResult
 );
-router.post(
+router.put(
   "delete-reservation-result",
   reservationResultController.deleteReservationResult
 );

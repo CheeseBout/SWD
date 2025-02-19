@@ -12,18 +12,41 @@ class CoupleTherapistController {
   });
 
   getCoupleTherapistById = catchAsync(async (req, res) => {
+    const { coupleTherapistId } = req.params;
     return OK(
       res,
       "Success",
-      await coupleTherapistServices.getCoupleTherapistById(req.params.id)
+      await coupleTherapistServices.getCoupleTherapistById(coupleTherapistId)
     );
   });
 
   createAvailability = catchAsync(async (req, res) => {
-    const { id, timeAvailable, notTimeAvailable } = req.body;
+    const { coupleTherapistId, timeAvailable, notTimeAvailable } = req.body;
 
     const result = await coupleTherapistServices.createAvailability(
-      id,
+      coupleTherapistId,
+      timeAvailable,
+      notTimeAvailable
+    );
+
+    return OK(res, "Availability created successfully", result);
+  });
+
+  getAvailabilityById = catchAsync(async (req, res) => {
+    return OK(
+      res,
+      "Success",
+      coupleTherapistServices.getAvailabilityById(req.params.id)
+    );
+  });
+
+  updateAvailability = catchAsync(async (req, res) => {
+    const { userID, timeAvailable, notTimeAvailable } = req.body;
+    const { availabilityID } = req.params;
+
+    const result = await coupleTherapistServices.updateAvailability(
+      availabilityID,
+      userID,
       timeAvailable,
       notTimeAvailable
     );
@@ -31,27 +54,12 @@ class CoupleTherapistController {
     return OK(res, "Success", result);
   });
 
-  getAvailability = catchAsync(async (req, res) => {
-    return OK(
-      res,
-      "Success",
-      coupleTherapistServices.getAvailability(req.params.id)
-    );
-  });
-
-  updateAvailability = catchAsync(async (req, res) => {
-    return OK(
-      res,
-      "Success",
-      coupleTherapistServices.getAvailability(req.params.id)
-    );
-  });
-
   deleteAvailability = catchAsync(async (req, res) => {
+    const { availabilityID } = req.params;
     return OK(
       res,
       "Success",
-      coupleTherapistServices.getAvailability(req.params.id)
+      coupleTherapistServices.deleteAvailability(availabilityID)
     );
   });
 }

@@ -2,19 +2,25 @@ const express = require("express");
 const router = express.Router();
 const coupleTherapistController = require("../controllers/coupleTherapist.controller");
 
-router.get("/", coupleTherapistController.getAllCoupleTherapist);
-router.get("/:id", coupleTherapistController.getCoupleTherapistById);
+router.get(
+  "/get-all-therapist",
+  coupleTherapistController.getAllCoupleTherapist
+);
+router.get(
+  "/:coupleTherapistId",
+  coupleTherapistController.getCoupleTherapistById
+);
 router.post(
   "/create-availability",
   coupleTherapistController.createAvailability
 );
-router.get("/get-availability", coupleTherapistController.getAvailability);
+router.get("/get-availability", coupleTherapistController.getAvailabilityById);
 router.post(
-  "/update-availability",
+  "/update-availability/:availabilityID",
   coupleTherapistController.updateAvailability
 );
-router.post(
-  "/delete-availability",
+router.put(
+  "/delete-availability/:availabilityID",
   coupleTherapistController.deleteAvailability
 );
 

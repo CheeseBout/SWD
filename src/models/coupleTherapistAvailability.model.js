@@ -7,12 +7,26 @@ const coupleTherapistAvailabilitySchema = new mongoose.Schema({
   },
   timeAvailable: [
     {
-      type: Date,
+      startHour: {
+        type: Date,
+      },
+      endHour: {
+        type: Date,
+      },
+      isOccupied: {
+        type: Boolean,
+        default: false,
+      },
     },
   ],
   notTimeAvailable: [
     {
-      type: Date,
+      startHour: {
+        type: Date,
+      },
+      endHour: {
+        type: Date,
+      },
     },
   ],
 });

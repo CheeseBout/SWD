@@ -17,9 +17,9 @@ class AuthService {
     gender,
     role = "user",
   }) {
-    const existingUser = await USER.findOne({ email });
+    const existingUser = await USER.findOne({ email, username });
     if (existingUser) {
-      throw new APIError(400, "User has already existed");
+      throw new APIError(400, "Email/User already in use");
     }
 
     // Create base user
@@ -35,7 +35,7 @@ class AuthService {
 
     return {
       user,
-      role,
+      // role,
     };
   }
 

@@ -3,7 +3,7 @@ const router = express.Router();
 const auth = require("../middlewares/auth.middleware");
 const validate = require("../middlewares/validate.middleware");
 const { createUserValidation } = require("../validations/user.validation");
-const { default: authController } = require("../controllers/auth.controller");
+const authController = require("../controllers/auth.controller");
 
 // Public routes
 router.post(

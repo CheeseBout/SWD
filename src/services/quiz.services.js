@@ -65,7 +65,7 @@ class QuizService {
       await TOPIC.findByIdAndUpdate(
         topicID,
         {
-          $push: { quiz: populatedQuiz },
+          $push: { quizzes: populatedQuiz },
           lastEdited: Date.now(),
         },
         { new: true }

@@ -4,12 +4,22 @@ const APIError = require("../utils/ApiError");
 class ReservationService {
   async createReservation(data) {
     try {
+      const isDuplicate = await this.checkDuplicate(
+        data.coupleTherapistID,
+        data.startTime,
+        data.endTime
+      );
+      console.log(isDuplicate);
+      if (isDuplicate) {
+        throw new APIError(400, "Reservation duplicate");
+      }
       const isOccupied = await this.checkOccupied(
         data.coupleTherapistID,
         data.startTime,
         data.endTime
       );
       console.log(isOccupied);
+
       if (!isOccupied) {
         const reservation = await RESERVATION.create({
           userID: data.userID,
@@ -80,6 +90,18 @@ class ReservationService {
       );
     });
   }
-  async checkDuplicate() {}
+  async checkDuplicate(coupleTherapistID, startTime, endTime) {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+
+    const duplicate = await RESERVATION.findOne({
+      coupleTherapistID,
+      // Check if the new reservation overlaps with an existing one:
+      startTime: { $lt: end }, // existing reservation starts before new reservation ends
+      endTime: { $gt: start }, // existing reservation ends after new reservation starts
+    });
+
+    return duplicate ? true : false;
+  }
 }
 module.exports = new ReservationService();

@@ -56,7 +56,7 @@ class ResevationController {
     return OK(
       res,
       "Success",
-      await reservationService.deleteReservation(req.params.id)
+      await reservationService.deleteReservation(req.params.reservationID)
     );
   });
 }

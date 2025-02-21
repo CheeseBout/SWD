@@ -111,11 +111,16 @@ class ReservationService {
     }
   }
 
-  async deleteReservation(id) {
-    const deletedReservation = await RESERVATION.findByIdAndUpdate(id);
-    if (!deletedReservation) {
+  async deleteReservation(reservationID) {
+    const canceledReservation = await RESERVATION.findByIdAndUpdate(
+      reservationID,
+      { status: "canceled" },
+      { new: true, runValidators: true }
+    );
+    if (!canceledReservation) {
       throw new APIError(404, "Reservation not found");
     }
+    return canceledReservation;
   }
 
   async checkOccupied(coupleTherapistID, startTime, endTime) {

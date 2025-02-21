@@ -12,6 +12,9 @@ router.put(
   "/update-reservation/:reservationID",
   reservationController.updateReservation
 );
-router.put("/delete-reservation/:id", reservationController.deleteReservation);
+router.put(
+  "/delete-reservation/:reservationID",
+  reservationController.deleteReservation
+);
 
 module.exports = router;

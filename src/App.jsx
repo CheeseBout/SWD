@@ -5,8 +5,12 @@ import { Outlet } from 'react-router-dom';
 function App() {
   return (
     <>
-      <Header />
-      <Outlet />
+      <div className="min-h-screen">
+        <Header />
+        <main className="pt-16">
+          <Outlet />
+        </main>
+      </div>
       <Footer />
     </>
   );

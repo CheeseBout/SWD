@@ -8,8 +8,8 @@ export function Footer() {
         <div className="flex flex-col md:flex-row justify-between gap-8">
           {/* Company Info */}
           <div className="md:max-w-xs">
-            <Link to="/" className="inline-block">
-              <img src="/KetHon.png" alt="KetHon Logo" className="h-30 w-40" />
+            <Link to="/" className="inline-block pl-8">
+              <img src="/logo.png" alt="KetHon Logo" className="h-30 w-40" />
             </Link>
           </div>
 

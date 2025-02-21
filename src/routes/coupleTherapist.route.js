@@ -15,7 +15,7 @@ router.post(
   coupleTherapistController.createAvailability
 );
 router.get("/get-availability", coupleTherapistController.getAvailabilityById);
-router.post(
+router.put(
   "/update-availability/:availabilityID",
   coupleTherapistController.updateAvailability
 );

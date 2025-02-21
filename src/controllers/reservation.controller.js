@@ -29,11 +29,15 @@ class ResevationController {
     return OK(res, "Success", result);
   });
 
+  getAllReservation = catchAsync(async (req, res) => {
+    return OK(res, "Success", await reservationService.getAllReservation());
+  });
+
   getReservationById = catchAsync(async (req, res) => {
     return OK(
       res,
       "Success",
-      await reservationService.getReservationById(req.params.id)
+      await reservationService.getReservationById(req.params.reservationID)
     );
   });
 
@@ -41,7 +45,10 @@ class ResevationController {
     return OK(
       res,
       "Success",
-      await reservationService.updateReservation(req.params.id, req.body)
+      await reservationService.updateReservation(
+        req.params.reservationID,
+        req.body
+      )
     );
   });
 

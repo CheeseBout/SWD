@@ -19,6 +19,11 @@ module.exports = {
   MAILERSENDAPI: {
     apiKey: process.env.MAILERSEND_API_KEY,
   },
+  GOOGLEMEETAPI: {
+    CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    REDIRECT_URI: process.env.REDIRECT_URL,
+  },
   GOOGLEAPIMAIL: {
     service: "gmail",
     auth: {
@@ -30,9 +35,9 @@ module.exports = {
       rejectUnauthorized: false,
     },
   },
-  VNPay:{
+  VNPay: {
     vnp_TmnCode: process.env.VNP_TMN_CODE,
     vnp_HashSecret: process.env.VNP_HASH_SECRET,
-    vnp_Url: process.env.VNP_URL
-  }
+    vnp_Url: process.env.VNP_URL,
+  },
 };

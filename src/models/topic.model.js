@@ -14,7 +14,7 @@ const topicSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "QuestionBanks",
   },
-  quizzes: [
+  quiz: [
     {
       quizName: {
         type: String,

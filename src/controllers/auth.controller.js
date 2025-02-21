@@ -1,3 +1,4 @@
+const { getAuthURL, saveToken } = require("../configs/googleAuth.config");
 const authServices = require("../services/auth.services");
 const catchAsync = require("../utils/catchAsync");
 const { OK } = require("../utils/response");
@@ -73,6 +74,24 @@ class AuthController {
       password,
     });
     return OK(res, "Success", result);
+  });
+
+  /**
+   * Google OAuth2.0
+   */
+  authGoogle = async (req, res) => {
+    const url = getAuthURL();
+    res.redirect(url);
+  };
+
+  authCallBack = catchAsync(async (req, res) => {
+    const { code } = req.query;
+    try {
+      await saveToken(code);
+      res.send("✅ Xác thực thành công! Bạn có thể tạo Google Meet.");
+    } catch (error) {
+      res.status(500).send("❌ Xác thực thất bại: " + error.message);
+    }
   });
 }
 

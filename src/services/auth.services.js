@@ -1,4 +1,5 @@
 const USER = require("../models/user.model");
+const TOKEN = require("../models/token.model");
 const APIError = require("../utils/ApiError");
 const bcrypt = require("bcryptjs");
 const tokenServices = require("./token.services");
@@ -120,15 +121,19 @@ class AuthService {
     }
 
     const resetToken = crypto.randomBytes(32).toString("hex");
-
     const hashedToken = crypto
       .createHash("sha256")
       .update(resetToken)
       .digest("hex");
 
-    user.passwordResetToken = hashedToken;
-    user.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
-    await user.save({ validateBeforeSave: false });
+    // Save reset token in Token model
+    const expiryDate = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    await TOKEN.create({
+      userID: user._id,
+      passwordResetToken: hashedToken,
+      passwordResetExpires: expiryDate,
+      expiryDate,
+    });
 
     // Send reset password email with the unencrypted token
     await emailServices.sendResetPassword({ email, resetToken });
@@ -143,21 +148,21 @@ class AuthService {
       .update(resetToken)
       .digest("hex");
 
-    const user = await USER.findOne({
-      email,
+    const tokenDoc = await TOKEN.findOne({
       passwordResetToken: hashedToken,
       passwordResetExpires: { $gt: Date.now() },
-    });
-    console.log("User", user);
+    }).populate("userID");
 
-    if (!user) {
+    if (!tokenDoc || tokenDoc.userID.email !== email) {
       throw new APIError(400, "Invalid or expired reset token");
     }
 
+    const user = tokenDoc.userID;
     user.password = password;
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
     await user.save();
+
+    // Remove the used token
+    await TOKEN.deleteOne({ _id: tokenDoc._id });
 
     return user;
   }

@@ -20,5 +20,7 @@ router.post("/expert-profile", auth, authController.updateExpertProfile);
 router.post("/send-verify-email", auth, authController.sendVerifyEmail);
 router.post("/verify-email", auth, authController.verifyEmail);
 router.post("/update-expert-profile", auth, authController.updateExpertProfile);
+router.get("/google-auth", authController.authGoogle);
+router.get("/google-callback", authController.authCallBack);
 
 module.exports = router;

@@ -20,8 +20,11 @@ class OptionsServices {
   }
 
   async createOptions(req) {
-    if (req.user.role !== "admin") {
-      throw new APIError(403, "Only admin can add options");
+    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
+      throw new APIError(
+        403,
+        "Only admin and couple therapist can add options"
+      );
     }
 
     const { options, questionID } = req.body;
@@ -72,7 +75,7 @@ class OptionsServices {
   }
 
   async updateOptions(req) {
-    if (req.user.role !== "admin") {
+    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
       throw new APIError(403, "Only admin can update options");
     }
 
@@ -130,7 +133,7 @@ class OptionsServices {
   }
 
   async deleteOptions(req) {
-    if (req.user.role !== "admin") {
+    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
       throw new APIError(403, "Only admin can delete options");
     }
 

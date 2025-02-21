@@ -9,7 +9,7 @@ class QuestionsBankService {
   async createQuestionBank(req) {
     const requestBody = { ...req.body };
 
-    if (req.user.role !== "admin") {
+    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
       throw new APIError(403, "Only admin can create question bank");
     }
 
@@ -64,7 +64,7 @@ class QuestionsBankService {
       throw new APIError(400, "Question Bank not found");
     }
 
-    if (req.user.role !== "admin") {
+    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
       throw new APIError(403, "Only admin can update question bank");
     }
 
@@ -123,7 +123,7 @@ class QuestionsBankService {
   }
 
   async createQuestion(req) {
-    if (req.user.role !== "admin") {
+    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
       throw new APIError(403, "Only admin can create questions");
     }
 
@@ -181,7 +181,7 @@ class QuestionsBankService {
       throw new APIError(400, "Question not found");
     }
 
-    if (req.user.role !== "admin") {
+    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
       throw new APIError(403, "Only admin can update questions");
     }
 
@@ -204,7 +204,7 @@ class QuestionsBankService {
       throw new APIError(400, "Question not found");
     }
 
-    if (req.user.role !== "admin") {
+    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
       throw new APIError(403, "Only admin can delete questions");
     }
 

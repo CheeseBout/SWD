@@ -1,28 +1,45 @@
-const appConfig = require("../configs/app.config");
 const jwt = require("jsonwebtoken");
+const TOKEN = require("../models/token.model");
+const appConfig = require("../configs/app.config");
 class TokenService {
-  async createJWTToken({ data, lifetime }) {
-    console.log(lifetime);
-    return await jwt.sign(data, appConfig.JWT.secretKey, {
-      expiresIn: lifetime,
-    });
-  }
-
   async generateAuthToken(userId) {
-    const accessToken = await this.createJWTToken({
-      data: { userId },
-      lifetime: appConfig.JWT.accessTokenLife,
+    const accessToken = jwt.sign({ userId }, appConfig.JWT.secretKey, {
+      expiresIn: appConfig.jwt.accessTokenLife,
     });
-    const refreshToken = await this.createJWTToken({
-      data: { userId },
-      lifetime: appConfig.JWT.refreshTokenLife,
+
+    const refreshToken = jwt.sign({ userId }, appConfig.jwt.secretKey, {
+      expiresIn: appConfig.jwt.refreshTokenLife,
     });
-    return { accessToken, refreshToken };
+
+    const expiryDate = new Date();
+    expiryDate.setMinutes(
+      expiryDate.getMinutes() + appConfig.jwt.accessTokenLife
+    );
+
+    await TOKEN.create({
+      userID: userId,
+      accessToken,
+      refreshToken,
+      expiryDate,
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+    };
   }
 
-  verifyJwt = (token, keySecret) => {
-    return JWT.verify(token, keySecret);
-  };
+  async verifyToken(token) {
+    return jwt.verify(token, appConfig.jwt.secretKey);
+  }
+
+  async removeToken(accessToken) {
+    return TOKEN.deleteOne({ accessToken });
+  }
+
+  async findToken(accessToken) {
+    return TOKEN.findOne({ accessToken });
+  }
 }
 
 module.exports = new TokenService();

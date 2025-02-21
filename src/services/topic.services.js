@@ -21,7 +21,7 @@ class TopicServices {
       throw new APIError(400, "User not found");
     }
 
-    if (req.user.role !== "admin") {
+    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
       throw new APIError(403, "Only admin can create topics");
     }
 
@@ -41,7 +41,7 @@ class TopicServices {
       throw new APIError(400, "User not found");
     }
 
-    if (req.user.role !== "admin") {
+    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
       throw new APIError(403, "Only admin can update topics");
     }
 
@@ -62,7 +62,7 @@ class TopicServices {
       throw new APIError(400, "User not found");
     }
 
-    if (req.user.role !== "admin") {
+    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
       throw new APIError(403, "Only admin can create topics");
     }
 

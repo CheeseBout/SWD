@@ -1,6 +1,7 @@
 const QUESTIONS = require("../models/question.model");
 const QUIZZES = require("../models/quizzes.model");
 const APIError = require("../utils/ApiError");
+const TOPIC = require("../models/topic.model");
 
 class QuizService {
   async getAllQuiz() {
@@ -34,11 +35,12 @@ class QuizService {
   }
 
   async createQuiz(req) {
-    if (req.user.role !== "admin") {
+    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
       throw new APIError(403, "Only admin can create quiz");
     }
 
-    const { quizName, quizDescription, questions, imageUrl } = req.body;
+    const { quizName, quizDescription, questions, imageUrl, topicID } =
+      req.body;
 
     try {
       const createdQuiz = await QUIZZES.create({
@@ -59,6 +61,16 @@ class QuizService {
         { new: true }
       );
 
+      // Update the Topic collection with the entire quiz object
+      await TOPIC.findByIdAndUpdate(
+        topicID,
+        {
+          $push: { quiz: populatedQuiz },
+          lastEdited: Date.now(),
+        },
+        { new: true }
+      );
+
       return {
         success: true,
         quiz: populatedQuiz,
@@ -72,7 +84,7 @@ class QuizService {
   }
 
   async updateQuiz(req) {
-    if (req.user.role !== "admin") {
+    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
       throw new APIError(403, "Only admin can update quiz");
     }
 
@@ -102,7 +114,7 @@ class QuizService {
   }
 
   async deleteQuiz(req) {
-    if (req.user.role !== "admin") {
+    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
       throw new APIError(403, "Only admin can delete quiz");
     }
 

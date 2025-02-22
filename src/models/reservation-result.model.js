@@ -1,31 +1,34 @@
 const mongoose = require("mongoose");
-const reservationResultSchema = new mongoose.Schema({
-  reservationID: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Reservation",
-    required: true,
+const reservationResultSchema = new mongoose.Schema(
+  {
+    reservationID: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Reservation",
+      required: true,
+    },
+    questions: [
+      {
+        type: String,
+        required: true,
+        trim: true,
+      },
+    ],
+    answers: [
+      {
+        type: String,
+        required: true,
+      },
+    ],
+    status: {
+      type: String,
+      required: true,
+    },
+    deleteReason: {
+      type: String,
+    },
   },
-  questions: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  answers: {
-    type: String,
-    required: true,
-  },
-  createdAt: {
-    type: Date,
-    required: true,
-  },
-  status: {
-    type: String,
-    required: true,
-  },
-  deleteReason: {
-    type: String,
-  },
-});
+  { timestamps: true }
+);
 const RESERVATIONRESULT = mongoose.model(
   "ReservationResult",
   reservationResultSchema

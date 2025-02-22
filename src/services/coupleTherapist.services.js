@@ -2,62 +2,17 @@ const { response } = require("express");
 const COUPLETHERAPIST = require("../models/coupleTherapist.model");
 const COUPLETHERAPIST_AVAILABILITY = require("../models/coupleTherapistAvailability.model");
 const APIError = require("../utils/ApiError");
+const therapistRepo = require("../repositories/coupleTherapist.repo");
 
 class CoupleTherapistServices {
   async getAllCoupleTherapist(req) {
     const filterQuery = req.query;
-    const { category, searchName } = filterQuery;
-
-    // Start with empty aggregation pipeline
-    let pipeline = [];
-
-    // Lookup to join with Users collection
-    pipeline.push({
-      $lookup: {
-        from: "users",
-        localField: "userID",
-        foreignField: "_id",
-        as: "userInfo",
-      },
-    });
-
-    // Unwind the userInfo array
-    pipeline.push({
-      $unwind: "$userInfo",
-    });
-
-    // Match conditions
-    let matchConditions = {};
-    let conditions = [];
-
-    if (category) {
-      conditions.push({
-        "certificates.category": { $regex: category, $options: "i" },
-      });
-    }
-
-    if (searchName) {
-      conditions.push({
-        "userInfo.fullname": { $regex: searchName, $options: "i" },
-      });
-    }
-
-    if (conditions.length > 0) {
-      matchConditions.$and = conditions;
-      pipeline.push({
-        $match: matchConditions,
-      });
-    }
-
-    // Execute aggregation
-    const therapists = await COUPLETHERAPIST.aggregate(pipeline);
+    const therapists = await therapistRepo.searchTherapists(filterQuery);
     return therapists;
   }
 
   async getCoupleTherapistById(coupleTherapistId) {
-    const data = await COUPLETHERAPIST.findOne({ _id: coupleTherapistId })
-      .populate("userID", "fullname")
-      .select("userID");
+    const data = await COUPLETHERAPIST.findOne({ _id: coupleTherapistId });
 
     if (!data) {
       throw new APIError(400, "Couple therapist not found");

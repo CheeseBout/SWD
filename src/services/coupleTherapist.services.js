@@ -21,10 +21,7 @@ class CoupleTherapistServices {
   }
 
   async getAvailabilityById(id) {
-    const data = await COUPLETHERAPIST_AVAILABILITY.findById(id)
-      .populate("userID", "fullname")
-      .select("userID");
-
+    const data = await therapistRepo.getAvailabilityById(id);
     if (!data) {
       throw new APIError(400, "Couple therapist not found");
     }
@@ -32,52 +29,11 @@ class CoupleTherapistServices {
   }
 
   async createAvailability(coupleTherapistId, timeAvailable, notTimeAvailable) {
-    // Check if any time slot in timeAvailable has endHour before startHour
-    for (let i = 0; i < timeAvailable.length; i++) {
-      if (
-        new Date(timeAvailable[i].endHour) <=
-        new Date(timeAvailable[i].startHour)
-      ) {
-        throw new APIError(
-          400,
-          `End hour of timeAvailable at index ${i} cannot be before start hour.`
-        );
-      }
-    }
+    // Validate time slots
+    this.validateTimeSlots(timeAvailable, notTimeAvailable);
 
-    // Check if any time slot in notTimeAvailable has endHour before startHour
-    for (let i = 0; i < notTimeAvailable.length; i++) {
-      if (
-        new Date(notTimeAvailable[i].endHour) <=
-        new Date(notTimeAvailable[i].startHour)
-      ) {
-        throw new APIError(
-          400,
-          `End hour of notTimeAvailable at index ${i} cannot be before start hour.`
-        );
-      }
-    }
-
-    // Check for overlapping times between timeAvailable and notTimeAvailable
-    for (let i = 0; i < timeAvailable.length; i++) {
-      for (let j = 0; j < notTimeAvailable.length; j++) {
-        // Check if the timeAvailable slot overlaps with the notTimeAvailable slot
-        if (
-          new Date(timeAvailable[i].startHour) <
-            new Date(notTimeAvailable[j].endHour) &&
-          new Date(timeAvailable[i].endHour) >
-            new Date(notTimeAvailable[j].startHour)
-        ) {
-          throw new APIError(
-            400,
-            `Overlapping time detected between timeAvailable[${i}] and notTimeAvailable[${j}].`
-          );
-        }
-      }
-    }
-
-    // Check if availability already exists
-    const isDuplicate = await this.checkExistedAvailability(
+    // Check for existing availability
+    const isDuplicate = await therapistRepo.findExistingAvailability(
       coupleTherapistId,
       timeAvailable,
       notTimeAvailable
@@ -90,15 +46,11 @@ class CoupleTherapistServices {
       );
     }
 
-    // Create new availability
-    const availability = await COUPLETHERAPIST_AVAILABILITY.create({
-      coupleTherapistID: coupleTherapistId,
+    return await therapistRepo.createAvailability(
+      coupleTherapistId,
       timeAvailable,
-      notTimeAvailable,
-    });
-
-    await availability.save();
-    return availability;
+      notTimeAvailable
+    );
   }
 
   async updateAvailability(
@@ -107,81 +59,72 @@ class CoupleTherapistServices {
     timeAvailable,
     notTimeAvailable
   ) {
-    const availability = await COUPLETHERAPIST_AVAILABILITY.findById(
+    const availability = await therapistRepo.getAvailabilityById(
       availabilityID
     );
-    console.log(availability);
     if (!availability) {
       throw new APIError(404, "Availability record not found");
     }
 
-    // Validate if the provided userID matches the therapist's availability record
-    const therapist = await COUPLETHERAPIST.findOne({ coupleTherapistId });
+    // Validate time slots
+    this.validateTimeSlots(timeAvailable, notTimeAvailable);
 
-    if (!therapist) {
-      throw new APIError(404, "Couple therapist not found");
-    }
+    const updateData = {
+      timeAvailable,
+      notTimeAvailable,
+    };
 
-    // Ensure that the therapist is the owner of the availability record
-    if (!availability.coupleTherapistID.equals(therapist._id)) {
-      throw new APIError(
-        403,
-        "You are not authorized to update this availability"
-      );
-    }
-
-    // Validate no duplicate time slots
-    const isDuplicate = await this.checkExistedAvailability(
-      therapist._id,
-      timeAvailable || [],
-      notTimeAvailable || []
-    );
-
-    if (isDuplicate) {
-      throw new APIError(
-        400,
-        "Updated availability conflicts with an existing record."
-      );
-    }
-
-    // Update availability
-    availability.timeAvailable = timeAvailable;
-    availability.notTimeAvailable = notTimeAvailable;
-    await availability.save();
-
-    return availability;
+    return await therapistRepo.updateAvailability(availabilityID, updateData);
   }
 
   async deleteAvailability(availabilityId) {
-    const availability = await COUPLETHERAPIST_AVAILABILITY.findByIdAndDelete(
-      availabilityId
-    );
-
-    if (!availability) {
+    const result = await therapistRepo.deleteAvailability(availabilityId);
+    if (!result) {
       throw new APIError(404, "Availability not found");
     }
   }
 
-  async checkExistedAvailability(
-    coupleTherapistId,
-    timeAvailable,
-    notTimeAvailable
-  ) {
-    // Find availability based on coupleTherapistId and exact matching time arrays
-    const availability = await COUPLETHERAPIST_AVAILABILITY.findOne({
-      coupleTherapistID: coupleTherapistId,
-      "timeAvailable.startHour": timeAvailable[0].startHour,
-      "timeAvailable.endHour": timeAvailable[0].endHour,
-      "notTimeAvailable.startHour": notTimeAvailable[0].startHour,
-      "notTimeAvailable.endHour": notTimeAvailable[0].endHour,
-    });
+  validateTimeSlots(timeAvailable, notTimeAvailable) {
+    // Validate time slots logic
+    for (let i = 0; i < timeAvailable.length; i++) {
+      if (
+        new Date(timeAvailable[i].endHour) <=
+        new Date(timeAvailable[i].startHour)
+      ) {
+        throw new APIError(
+          400,
+          `End hour of timeAvailable at index ${i} cannot be before start hour.`
+        );
+      }
+    }
 
-    if (availability) {
-      console.log("Availability exists:", availability);
-      return availability;
-    } else {
-      console.log("No availability found.");
-      return null;
+    for (let i = 0; i < notTimeAvailable.length; i++) {
+      if (
+        new Date(notTimeAvailable[i].endHour) <=
+        new Date(notTimeAvailable[i].startHour)
+      ) {
+        throw new APIError(
+          400,
+          `End hour of notTimeAvailable at index ${i} cannot be before start hour.`
+        );
+      }
+    }
+
+    // Check for overlapping times
+    for (let i = 0; i < timeAvailable.length; i++) {
+      for (let j = 0; j < notTimeAvailable.length; j++) {
+        if (
+          new Date(timeAvailable[i].startHour) <
+            new Date(notTimeAvailable[j].endHour) &&
+          new Date(timeAvailable[i].endHour) >
+            new Date(notTimeAvailable[j].startHour)
+        ) {
+          throw new APIError(
+            400,
+            `Overlapping time detected between timeAvailable[${i}] and notTimeAvailable[${j}].`
+          );
+        }
+      }
     }
   }
 }

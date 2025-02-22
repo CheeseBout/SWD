@@ -20,6 +20,9 @@ const reservationSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    reason: {
+      type: String,
+    },
     packageID: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Package",

@@ -1,12 +1,9 @@
-const USER = require("../models/user.model");
-const TOKEN = require("../models/token.model");
-const APIError = require("../utils/ApiError");
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
+const APIError = require("../utils/ApiError");
+const authRepo = require("../repositories/auth.repo");
 const tokenServices = require("./token.services");
 const emailServices = require("./email.services");
-const crypto = require("crypto");
-const CERTIFICATE = require("../models/certificate.model");
-const COUPLETHERAPIST = require("../models/coupleTherapist.model");
 
 class AuthService {
   async register({
@@ -18,13 +15,15 @@ class AuthService {
     gender,
     role = "user",
   }) {
-    const existingUser = await USER.findOne({ email, username });
+    const existingUser = await authRepo.findUserByEmailAndUsername(
+      email,
+      username
+    );
     if (existingUser) {
       throw new APIError(400, "Email/User already in use");
     }
 
-    // Create base user
-    const user = await USER.create({
+    const user = await authRepo.createUser({
       fullname,
       username,
       email,
@@ -34,34 +33,24 @@ class AuthService {
       role,
     });
 
-    return {
-      user,
-      // role,
-    };
+    return { user };
   }
 
   async updateExpertProfile(
     userId,
     { title, issuedDate, expiryDate, documentURL, description, category }
   ) {
-    const user = await USER.findById(userId);
-
-    if (!user) {
-      throw new APIError(404, "User not found");
+    const user = await authRepo.findUserById(userId);
+    if (!user || user.role !== "couple_therapist") {
+      throw new APIError(400, "Invalid user or not a couple therapist");
     }
 
-    if (user.role !== "couple_therapist") {
-      throw new APIError(400, "User is not a couple therapist");
-    }
-
-    // Check if expert profile exists
-    let expert = await COUPLETHERAPIST.findOne({ userID: userId });
+    const expert = await authRepo.findTherapistProfile(userId);
     if (!expert) {
       throw new APIError(400, "Expert profile not found");
     }
 
-    // First create the certificate in Certificates collection
-    const certificate = await CERTIFICATE.create({
+    const certificate = await authRepo.createCertificate({
       title,
       issuedDate,
       expiryDate,
@@ -70,7 +59,6 @@ class AuthService {
       isCertificateVerified: false,
     });
 
-    // Create certificate object for CoupleTherapist with reference
     const therapistCertificate = {
       certificateID: certificate._id,
       title,
@@ -82,25 +70,15 @@ class AuthService {
       isCertificateVerified: false,
     };
 
-    // Update expert profile
-    expert = await COUPLETHERAPIST.findOneAndUpdate(
-      { userID: userId },
-      {
-        $push: { certificates: therapistCertificate },
-        description: description,
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
-
-    return expert;
+    return await authRepo.updateTherapistProfile(userId, {
+      $push: { certificates: therapistCertificate },
+      description,
+    });
   }
 
   async createTherapistProfile(userID) {
-    const newTherapistProfile = await COUPLETHERAPIST.create({
-      userID: userID,
+    return await authRepo.createTherapistProfile({
+      userID,
       description: "New Couple Therapist",
       isVerified: false,
       certifications: [],
@@ -108,14 +86,10 @@ class AuthService {
       reviewCount: 0,
       category: "General",
     });
-    return newTherapistProfile;
   }
 
   async login({ email, password }) {
-    const user = await USER.findOne({
-      email,
-    });
-
+    const user = await authRepo.findUserByEmail(email);
     if (!user) {
       throw new APIError(400, "User not found");
     }
@@ -124,14 +98,12 @@ class AuthService {
     if (!isPasswordMatch) {
       throw new APIError(400, "Email or password is incorrect");
     }
+
     return await tokenServices.generateAuthToken(user._id.toString());
   }
 
   async forgotPassword({ email }) {
-    console.log("Searching for email:", email);
-    const user = await USER.findOne({ email });
-    console.log("Found user:", user);
-
+    const user = await authRepo.findUserByEmail(email);
     if (!user) {
       throw new APIError(404, "User not found");
     }
@@ -142,23 +114,18 @@ class AuthService {
       .update(resetToken)
       .digest("hex");
 
-    // Save reset token in Token model
-    const expiryDate = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-    await TOKEN.create({
+    await authRepo.createPasswordResetToken({
       userID: user._id,
       passwordResetToken: hashedToken,
-      passwordResetExpires: expiryDate,
-      expiryDate,
+      passwordResetExpires: new Date(Date.now() + 10 * 60 * 1000),
+      expiryDate: new Date(Date.now() + 10 * 60 * 1000),
     });
 
-    // Send reset password email with the unencrypted token
     await emailServices.sendResetPassword({ email, resetToken });
-
     return { resetToken };
   }
 
   async resetPassword({ resetToken, email, password }) {
-    // Hash the token to compare with hashed token in database
     const hashedToken = crypto
       .createHash("sha256")
       .update(resetToken)
@@ -177,7 +144,6 @@ class AuthService {
     user.password = password;
     await user.save();
 
-    // Remove the used token
     await TOKEN.deleteOne({ _id: tokenDoc._id });
 
     return user;
@@ -196,14 +162,11 @@ class AuthService {
       throw new APIError(400, "User has already verified");
     }
 
-    //email verification token
     const emailVerificationToken = crypto.createHash("sha256").digest("hex");
 
-    // Save the token to user record
     user.emailVerificationToken = emailVerificationToken;
     await user.save();
 
-    //send email verification
     await emailServices.sendVerificationEmail({
       email,
       emailVerificationToken,
@@ -219,12 +182,10 @@ class AuthService {
       throw new APIError(400, "User not found");
     }
 
-    // Check if already verified first
     if (user.isVerified) {
       throw new APIError(400, "Email is already verified");
     }
 
-    // Check token only if not verified yet
     if (user.emailVerificationToken !== token || !user.emailVerificationToken) {
       throw new APIError(400, "Invalid verification token");
     }

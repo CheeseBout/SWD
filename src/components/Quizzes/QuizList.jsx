@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import QuizCard from "./QuizCard";
-import axios from "axios";
+import { quizService } from "../../services/api";
 
 export default function QuizList() {
   const [quizzes, setQuizzes] = useState([]);
@@ -9,14 +9,12 @@ export default function QuizList() {
   const [currentPage, setCurrentPage] = useState(1);
   const quizzesPerPage = 10;
 
-  const API = import.meta.env.VITE_API_GET_ALL_QUIZZES_ENDPOINT;
-
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
-        const response = await axios.get(API);
-        if (response.data.status === 200) {
-          setQuizzes(response.data.data.quizzes);
+        const response = await quizService.getAllQuizzes();
+        if (response.status === 200) {
+          setQuizzes(response.data.quizzes);
         }
       } catch (err) {
         setError(err.message);

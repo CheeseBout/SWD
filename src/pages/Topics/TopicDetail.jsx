@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import QuizCard from "../../components/Quizzes/QuizCard";
-import axios from "axios";
+import { topicService } from "../../services/api";
 
 export default function TopicDetail() {
   const [topic, setTopic] = useState(null);
@@ -9,14 +9,12 @@ export default function TopicDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const API = import.meta.env.VITE_API_GET_ALL_TOPICS_ENDPOINT;
-
   useEffect(() => {
     const fetchTopic = async () => {
       try {
-        const response = await axios.get(`${API}/${id}`);
-        if (response.data.status === 200) {
-          setTopic(response.data.data.topic);
+        const response = await topicService.getTopicById(id);
+        if (response.status === 200) {
+          setTopic(response.data.topic);
         }
       } catch (error) {
         console.error('Error fetching topic:', error);

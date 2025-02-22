@@ -1,34 +1,23 @@
 import React, { useEffect } from "react";
-import axios from "axios";
 import TopicCard from "./TopicCard";
+import { topicService } from "../../services/api";
 
 export default function TopicList() {
   const [topics, setTopics] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
 
-  const API = import.meta.env.VITE_API_GET_ALL_TOPICS_ENDPOINT;
-
   const fetchData = async () => {
     try {
-      console.log("Fetching topics...");
       setLoading(true);
-      const response = await axios.get(API);
-      console.log("Raw response:", response.data);
+      const response = await topicService.getAllTopics();
       
-      if (response.data?.data?.topics) {
-        setTopics(response.data.data.topics);
-        console.log("Topics set:", response.data.data.topics);
+      if (response?.data?.topics) {
+        setTopics(response.data.topics);
       } else {
         setTopics([]);
-        console.log("No topics found in response");
       }
     } catch (error) {
-      console.error("Error details:", {
-        message: error.message,
-        response: error.response,
-        status: error.response?.status
-      });
       setError(error.message);
     } finally {
       setLoading(false);

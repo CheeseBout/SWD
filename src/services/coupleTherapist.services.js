@@ -4,9 +4,54 @@ const COUPLETHERAPIST_AVAILABILITY = require("../models/coupleTherapistAvailabil
 const APIError = require("../utils/ApiError");
 
 class CoupleTherapistServices {
-  async getAllCoupleTherapist() {
-    return await COUPLETHERAPIST.find()
-    ;
+  async getAllCoupleTherapist(req) {
+    const filterQuery = req.query;
+    const { category, searchName } = filterQuery;
+
+    // Start with empty aggregation pipeline
+    let pipeline = [];
+
+    // Lookup to join with Users collection
+    pipeline.push({
+      $lookup: {
+        from: "users",
+        localField: "userID",
+        foreignField: "_id",
+        as: "userInfo",
+      },
+    });
+
+    // Unwind the userInfo array
+    pipeline.push({
+      $unwind: "$userInfo",
+    });
+
+    // Match conditions
+    let matchConditions = {};
+    let conditions = [];
+
+    if (category) {
+      conditions.push({
+        "certificates.category": { $regex: category, $options: "i" },
+      });
+    }
+
+    if (searchName) {
+      conditions.push({
+        "userInfo.fullname": { $regex: searchName, $options: "i" },
+      });
+    }
+
+    if (conditions.length > 0) {
+      matchConditions.$and = conditions;
+      pipeline.push({
+        $match: matchConditions,
+      });
+    }
+
+    // Execute aggregation
+    const therapists = await COUPLETHERAPIST.aggregate(pipeline);
+    return therapists;
   }
 
   async getCoupleTherapistById(coupleTherapistId) {

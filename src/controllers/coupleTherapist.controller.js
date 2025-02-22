@@ -7,7 +7,7 @@ class CoupleTherapistController {
     return OK(
       res,
       "Success",
-      await coupleTherapistServices.getAllCoupleTherapist()
+      await coupleTherapistServices.getAllCoupleTherapist(req)
     );
   });
 

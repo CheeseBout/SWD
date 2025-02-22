@@ -6,11 +6,40 @@ const coupleTherapistSchema = new mongoose.Schema({
     ref: "Users",
     required: true,
   },
-  certificate: [
+  certificates: [
     {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Certificate",
-      required: true,
+      _id: false, // Tắt auto-generate _id
+      certificateID: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Certificates",
+      },
+      title: {
+        type: String,
+        required: true,
+      },
+      issuedDate: {
+        type: Date,
+        required: true,
+      },
+      updatedAt: {
+        type: Date,
+        default: Date.now(),
+      },
+      expiryDate: {
+        type: Date,
+      },
+      documentURL: {
+        type: String,
+        required: true,
+      },
+      category: {
+        type: String,
+        required: true,
+      },
+      isCertificateVerified: {
+        type: Boolean,
+        default: false,
+      },
     },
   ],
   description: {

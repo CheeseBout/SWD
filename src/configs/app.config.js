@@ -4,7 +4,7 @@ module.exports = {
   NODE_ENV: process.env.NODE_ENV || "development",
   JWT: {
     secretKey: process.env.JWT_KEY,
-    accessTokenLife: "1d", // 1 day
+    accessTokenLife: "1h", // 1 hour
     refreshTokenLife: "7d", // 7 days
   },
   email: {

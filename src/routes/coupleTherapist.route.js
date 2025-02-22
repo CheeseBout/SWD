@@ -3,7 +3,7 @@ const router = express.Router();
 const coupleTherapistController = require("../controllers/coupleTherapist.controller");
 
 router.get(
-  "/get-all-therapist",
+  "/",
   coupleTherapistController.getAllCoupleTherapist
 );
 router.get(

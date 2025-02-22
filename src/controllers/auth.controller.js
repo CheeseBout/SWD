@@ -17,6 +17,11 @@ class AuthController {
       photoURL,
       role,
     });
+
+    if (role === "couple_therapist") {
+      await authServices.createTherapistProfile(result.user._id); // Thay đổi ở đây: result._id -> result.user._id
+    }
+
     return OK(res, "Registration successful", result);
   });
 

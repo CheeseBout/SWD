@@ -1,26 +1,31 @@
 const jwt = require("jsonwebtoken");
 const TOKEN = require("../models/token.model");
 const appConfig = require("../configs/app.config");
+const ms = require("ms");
+
 class TokenService {
   async generateAuthToken(userId) {
     const accessToken = jwt.sign({ userId }, appConfig.JWT.secretKey, {
-      expiresIn: appConfig.jwt.accessTokenLife,
+      expiresIn: appConfig.JWT.accessTokenLife,
     });
 
-    const refreshToken = jwt.sign({ userId }, appConfig.jwt.secretKey, {
-      expiresIn: appConfig.jwt.refreshTokenLife,
+    const refreshToken = jwt.sign({ userId }, appConfig.JWT.secretKey, {
+      expiresIn: appConfig.JWT.refreshTokenLife,
     });
 
-    const expiryDate = new Date();
-    expiryDate.setMinutes(
-      expiryDate.getMinutes() + appConfig.jwt.accessTokenLife
+    const accessTokenExpiry = new Date(
+      Date.now() + ms(appConfig.JWT.accessTokenLife)
+    );
+    const refreshTokenExpiry = new Date(
+      Date.now() + ms(appConfig.JWT.refreshTokenLife)
     );
 
     await TOKEN.create({
       userID: userId,
       accessToken,
       refreshToken,
-      expiryDate,
+      expiryDate: accessTokenExpiry,
+      refreshTokenExpiryDate: refreshTokenExpiry,
     });
 
     return {
@@ -30,7 +35,7 @@ class TokenService {
   }
 
   async verifyToken(token) {
-    return jwt.verify(token, appConfig.jwt.secretKey);
+    return jwt.verify(token, appConfig.JWT.secretKey);
   }
 
   async removeToken(accessToken) {

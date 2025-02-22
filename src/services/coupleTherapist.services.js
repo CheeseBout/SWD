@@ -6,8 +6,7 @@ const APIError = require("../utils/ApiError");
 class CoupleTherapistServices {
   async getAllCoupleTherapist() {
     return await COUPLETHERAPIST.find()
-      .populate("userID", "fullname")
-      .select("userID");
+    ;
   }
 
   async getCoupleTherapistById(coupleTherapistId) {

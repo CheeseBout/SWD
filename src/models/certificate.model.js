@@ -34,5 +34,5 @@ const certificateSchema = new mongoose.Schema({
   },
 });
 
-const CERTIFICATE = mongoose.model("Certificate", certificateSchema);
+const CERTIFICATE = mongoose.model("Certificates", certificateSchema);
 module.exports = CERTIFICATE;

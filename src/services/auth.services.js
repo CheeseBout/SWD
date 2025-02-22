@@ -42,15 +42,7 @@ class AuthService {
 
   async updateExpertProfile(
     userId,
-    {
-      title,
-      issuedBy,
-      issuedDate,
-      expiryDate,
-      documentURL,
-      description,
-      category,
-    }
+    { title, issuedDate, expiryDate, documentURL, description, category }
   ) {
     const user = await USER.findById(userId);
 
@@ -59,40 +51,64 @@ class AuthService {
     }
 
     if (user.role !== "couple_therapist") {
-      throw new APIError(400, "User is not an couple therapist");
+      throw new APIError(400, "User is not a couple therapist");
     }
 
-    // Check if expert profile already exists
+    // Check if expert profile exists
     let expert = await COUPLETHERAPIST.findOne({ userID: userId });
-    if (expert) {
-      throw new APIError(400, "Expert profile already exists");
+    if (!expert) {
+      throw new APIError(400, "Expert profile not found");
     }
 
-    // Create certificate first
+    // First create the certificate in Certificates collection
     const certificate = await CERTIFICATE.create({
       title,
-      issuedBy,
       issuedDate,
       expiryDate,
       documentURL,
       category,
+      isCertificateVerified: false,
     });
 
-    // Create expert profile with the new certificate
-    expert = await COUPLETHERAPIST.create({
-      coupleTherapistID: `EXP${Date.now()}`,
-      userID: userId,
-      certificate: certificate._id,
-      description,
+    // Create certificate object for CoupleTherapist with reference
+    const therapistCertificate = {
+      certificateID: certificate._id,
+      title,
+      issuedDate,
+      expiryDate,
+      documentURL,
       category,
+      updatedAt: new Date(),
+      isCertificateVerified: false,
+    };
+
+    // Update expert profile
+    expert = await COUPLETHERAPIST.findOneAndUpdate(
+      { userID: userId },
+      {
+        $push: { certificates: therapistCertificate },
+        description: description,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    return expert;
+  }
+
+  async createTherapistProfile(userID) {
+    const newTherapistProfile = await COUPLETHERAPIST.create({
+      userID: userID,
+      description: "New Couple Therapist",
+      isVerified: false,
+      certifications: [],
+      rating: 0,
+      reviewCount: 0,
+      category: "General",
     });
-
-    // Populate and return expert details
-    const populatedExpert = await COUPLETHERAPIST.findById(expert._id)
-      .populate("userID")
-      .populate("certificate");
-
-    return populatedExpert;
+    return newTherapistProfile;
   }
 
   async login({ email, password }) {

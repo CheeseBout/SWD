@@ -45,6 +45,38 @@ class TokenService {
   async findToken(accessToken) {
     return TOKEN.findOne({ accessToken });
   }
+
+  async createTokenPair(payload, secretKey = config.JWT.secretKey) {
+    try {
+      // auth token
+      const accessToken = await JWT.sign(
+        { ...payload, type: jwtTokens.ACCESS_TOKEN },
+        secretKey,
+        {
+          expiresIn: config.JWT.accessTokenLife,
+        }
+      );
+
+      // refresh token
+      const refreshToken = await JWT.sign(
+        {
+          ...payload,
+          type: jwtTokens.REFRESH_TOKEN,
+        },
+        secretKey,
+        {
+          expiresIn: config.JWT.refreshTokenLife,
+        }
+      );
+
+      return {
+        accessToken,
+        refreshToken,
+      };
+    } catch (error) {
+      console.error(`createTokenPair error:: `, error);
+    }
+  }
 }
 
 module.exports = new TokenService();

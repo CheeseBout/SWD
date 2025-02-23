@@ -196,6 +196,38 @@ class AuthService {
 
     return user;
   }
+
+  async loginWithGoogle(profile) {
+    const email = profile.emails[0].value;
+    let user = await authRepo.findUserByEmail(email);
+
+    if (!user) {
+      // Create new user if doesn't exist
+      user = await authRepo.createUser({
+        fullname: profile.displayName,
+        username: email.split("@")[0], // Create username from email
+        email: email,
+        password: crypto.randomBytes(16).toString("hex"), // Random secure password
+        dob: new Date(), // Default date, user can update later
+        gender: "other", // Default gender, user can update later
+        photoURL: profile.photos?.[0]?.value,
+        role: "user",
+        isVerified: true, // Auto verify since it's Google OAuth
+      });
+    }
+
+    const tokens = await tokenServices.generateAuthToken(user._id.toString());
+    return {
+      user: {
+        _id: user._id,
+        fullname: user.fullname,
+        email: user.email,
+        role: user.role,
+        photoURL: user.photoURL,
+      },
+      ...tokens,
+    };
+  }
 }
 
 module.exports = new AuthService();

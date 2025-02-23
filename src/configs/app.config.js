@@ -2,6 +2,7 @@ module.exports = {
   PORT: process.env.PORT || 3000,
   DB_URL: process.env.DB_URL,
   NODE_ENV: process.env.NODE_ENV || "development",
+  CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",
   JWT: {
     secretKey: process.env.JWT_KEY,
     accessTokenLife: "1h", // 1 hour
@@ -22,7 +23,7 @@ module.exports = {
   GOOGLEMEETAPI: {
     CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
-    REDIRECT_URI: process.env.REDIRECT_URL,
+    REDIRECT_URI: "http://localhost:3000/api/v1/auth/login/google/callback", // Fixed callback URL
   },
   GOOGLEAPIMAIL: {
     service: "gmail",

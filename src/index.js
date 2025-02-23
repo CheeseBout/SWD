@@ -5,6 +5,7 @@ const cors = require("cors");
 const app = express();
 const port = appConfig.PORT;
 const db = require("./configs/db.config");
+const passport = require('./configs/passport.config');
 const {
   errorConverter,
   errorHandler,
@@ -16,6 +17,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
+app.use(passport.initialize());
+
 
 const googleMeetRoutes = require("./routes/meet.route");
 app.use("/api/v1/google-meet", googleMeetRoutes);

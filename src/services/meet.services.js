@@ -4,6 +4,7 @@ const path = require("path");
 const APIError = require("../utils/ApiError");
 const { google } = require("googleapis");
 const { oauth2Client } = require("../configs/googleAuth.config");
+const TOKEN = require("../models/token.model");
 
 const TOKEN_PATH = path.join(__dirname, "../token.json");
 
@@ -13,7 +14,7 @@ class GoogleMeetServices {
       throw new APIError(400, "Start time and end time are required");
     }
 
-    await this.ensureValidToken(); // 🔥 Đảm bảo token hợp lệ trước khi gọi API
+    await this.ensureValidToken();
 
     const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 
@@ -57,25 +58,43 @@ class GoogleMeetServices {
   }
 
   /**
-   * Đảm bảo token hợp lệ, nếu hết hạn thì refresh và lưu lại.
+   * Đảm bảo token hợp lệ, nếu hết hạn thì refresh và lưu lại vào database
    */
   async ensureValidToken() {
-    if (!fs.existsSync(TOKEN_PATH)) {
-      throw new APIError(401, "Bạn cần xác thực trước bằng /auth.");
+    const tokenDoc = await TOKEN.findOne({ googleToken: { $exists: true } });
+    if (!tokenDoc || !tokenDoc.googleToken) {
+      throw new APIError(
+        401,
+        "Không tìm thấy token xác thực Google. Vui lòng xác thực lại."
+      );
     }
 
-    const token = JSON.parse(fs.readFileSync(TOKEN_PATH, "utf8"));
+    const token = JSON.parse(tokenDoc.googleToken);
     oauth2Client.setCredentials(token);
 
-    if (token.expiry_date && token.expiry_date < Date.now()) {
+    if (tokenDoc.expiryDate && tokenDoc.expiryDate < Date.now()) {
       try {
         const newToken = await oauth2Client.refreshAccessToken();
         oauth2Client.setCredentials(newToken.credentials);
-        fs.writeFileSync(TOKEN_PATH, JSON.stringify(newToken.credentials));
+
+        // Cập nhật token mới vào database
+        await TOKEN.findOneAndUpdate(
+          { _id: tokenDoc._id },
+          {
+            googleToken: JSON.stringify(newToken.credentials),
+            expiryDate: new Date(newToken.credentials.expiry_date),
+            updatedAt: new Date(),
+          },
+          { new: true }
+        );
+
         console.log("✅ Access token đã được làm mới!");
       } catch (error) {
         console.error("❌ Lỗi refresh token:", error);
-        throw new APIError(401, "Lỗi xác thực, vui lòng xác thực lại bằng /auth.");
+        throw new APIError(
+          401,
+          "Lỗi xác thực token Google, vui lòng xác thực lại."
+        );
       }
     }
   }

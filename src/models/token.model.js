@@ -29,7 +29,6 @@ const tokenSchema = new mongoose.Schema({
   },
   refreshTokenExpiryDate: {
     type: Date,
-    required: true,
   },
   createdAt: {
     type: Date,

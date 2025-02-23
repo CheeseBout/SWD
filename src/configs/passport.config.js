@@ -8,7 +8,7 @@ passport.use(
     {
       clientID: config.GOOGLEMEETAPI.CLIENT_ID,
       clientSecret: config.GOOGLEMEETAPI.CLIENT_SECRET,
-      callbackURL: `${config.GOOGLEMEETAPI.REDIRECT_URI}`,
+      callbackURL: config.GOOGLEMEETAPI.CALLBACK_URL,
       passReqToCallback: true,
     },
     async (req, accessToken, refreshToken, profile, done) => {

@@ -23,7 +23,7 @@ module.exports = {
   GOOGLEMEETAPI: {
     CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
-    REDIRECT_URI: "http://localhost:3000/api/v1/auth/login/google/callback", // Fixed callback URL
+    CALLBACK_URL: process.env.REDIRECT_URL,
   },
   GOOGLEAPIMAIL: {
     service: "gmail",

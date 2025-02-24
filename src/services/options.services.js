@@ -1,18 +1,15 @@
-const { options } = require("joi");
-const OPTIONS = require("../models/options.model");
-const QUESTIONS = require("../models/question.model");
 const APIError = require("../utils/ApiError");
 const mongoose = require("mongoose");
-const USER_ANSWERS = require("../models/userAnswer.model");
+const optionsRepo = require("../repositories/options.repo");
 
 class OptionsServices {
   async getAllOptions() {
-    const data = await OPTIONS.find().populate("questionID");
+    const data = await optionsRepo.findAllWithQuestions();
     return { options: data };
   }
 
   async getOptionById(optionId) {
-    const data = await OPTIONS.findById(optionId).populate("questionID");
+    const data = await optionsRepo.findByIdWithQuestion(optionId);
     if (!data) {
       throw new APIError(400, "Option not found");
     }
@@ -30,7 +27,7 @@ class OptionsServices {
     const { options, questionID } = req.body;
 
     try {
-      const question = await QUESTIONS.findById(questionID);
+      const question = await optionsRepo.findQuestionById(questionID);
       if (!question) {
         throw new APIError(404, "Question not found");
       }
@@ -39,24 +36,18 @@ class OptionsServices {
         throw new APIError(400, "Question already has 4 options");
       }
 
-      // Tạo một document options mới
-      const createdOption = await OPTIONS.create({
+      const createdOption = await optionsRepo.createOption({
         questionID: questionID,
         options: options,
       });
 
-      // Cập nhật question với cùng các options đã tạo
-      const updatedQuestion = await QUESTIONS.findByIdAndUpdate(
+      const updatedQuestion = await optionsRepo.updateQuestionOptions(
         questionID,
         {
           $set: {
             options: createdOption.options,
             lastEdited: Date.now(),
           },
-        },
-        {
-          new: true,
-          runValidators: true,
         }
       );
 
@@ -82,41 +73,25 @@ class OptionsServices {
     const { optionID, questionID, optionContent, score } = req.body;
 
     try {
-      // Tìm và cập nhật option trong OPTIONS collection
-      const updatedOptions = await OPTIONS.findOneAndUpdate(
+      const updatedOptions = await optionsRepo.updateOption(
+        questionID,
+        optionID,
         {
-          questionID: questionID,
-          "options._id": optionID,
-        },
-        {
-          $set: {
-            "options.$.optionContent": optionContent,
-            "options.$.score": score,
-            lastEdited: Date.now(),
-          },
-        },
-        { new: true }
+          optionContent,
+          score,
+          lastEdited: Date.now(),
+        }
       );
 
       if (!updatedOptions) {
         throw new APIError(404, "Option not found");
       }
 
-      // Đồng bộ cập nhật trong QUESTIONS collection
-      await QUESTIONS.findOneAndUpdate(
-        {
-          _id: questionID,
-          "options._id": optionID,
-        },
-        {
-          $set: {
-            "options.$.optionContent": optionContent,
-            "options.$.score": score,
-            lastEdited: Date.now(),
-          },
-        },
-        { new: true }
-      );
+      await optionsRepo.updateQuestionOption(questionID, optionID, {
+        optionContent,
+        score,
+        lastEdited: Date.now(),
+      });
 
       return {
         data: {
@@ -140,26 +115,16 @@ class OptionsServices {
     const { optionID, questionID } = req.body;
 
     try {
-      const updatedOptions = await OPTIONS.findOneAndUpdate(
-        { questionID: questionID },
-        {
-          $pull: {
-            options: { _id: optionID },
-          },
-        },
-        { new: true }
+      const updatedOptions = await optionsRepo.deleteOption(
+        questionID,
+        optionID
       );
 
       if (!updatedOptions) {
         throw new APIError(404, "Option not found");
       }
 
-      // Đồng bộ xóa option trong QUESTIONS collection
-      await QUESTIONS.findByIdAndUpdate(questionID, {
-        $pull: {
-          options: { _id: optionID },
-        },
-      });
+      await optionsRepo.deleteQuestionOption(questionID, optionID);
 
       return {
         message: "Option deleted successfully",
@@ -178,7 +143,6 @@ class OptionsServices {
     const userID = req.user._id;
 
     try {
-      // Validate tất cả ID trước khi xử lý
       selections.forEach((selection) => {
         if (
           !mongoose.Types.ObjectId.isValid(selection.optionID) ||
@@ -206,7 +170,6 @@ class OptionsServices {
         })
       );
 
-      // Tính tổng score từ tất cả các lựa chọn
       const totalScore = results.reduce((sum, result) => {
         return sum + (result.score || 0);
       }, 0);
@@ -223,21 +186,18 @@ class OptionsServices {
 
   async processOptionSelection(optionID, questionID, userID) {
     try {
-      const question = await QUESTIONS.findById(questionID);
+      const question = await optionsRepo.findQuestionById(questionID);
       if (!question) {
         throw new APIError(404, `Question not found: ${questionID}`);
       }
 
-      // Get the options document
-      const optionsDoc = await OPTIONS.findOne({ questionID: questionID });
+      const optionsDoc = await optionsRepo.findOptionsByQuestionId(questionID);
       if (!optionsDoc) {
         throw new APIError(404, "Options not found");
       }
 
-      // Lấy mảng options từ document
       const optionsArray = optionsDoc.options || [];
 
-      // Tìm option được chọn
       const selectedOption = optionsArray.find(
         (opt) => opt._id.toString() === optionID
       );
@@ -246,11 +206,9 @@ class OptionsServices {
         throw new APIError(404, `Option not found: ${optionID}`);
       }
 
-      // Calculate total score
       const totalScore = selectedOption.score || 0;
 
-      // Create new user answer
-      const userAnswer = await USER_ANSWERS.create({
+      const userAnswer = await optionsRepo.createUserAnswer({
         userID,
         questionID,
         optionID,
@@ -258,22 +216,12 @@ class OptionsServices {
         quizID: question.quizzes[0],
       });
 
-      // Update references
       await Promise.all([
-        // Update question reference
-        QUESTIONS.findByIdAndUpdate(questionID, {
-          $addToSet: { userAnswers: userAnswer._id },
-        }),
-
-        // Update option reference
-        OPTIONS.findOneAndUpdate(
-          {
-            questionID: questionID,
-            "options._id": optionID,
-          },
-          {
-            $addToSet: { "options.$.userAnswers": userAnswer._id },
-          }
+        optionsRepo.updateQuestionUserAnswers(questionID, userAnswer._id),
+        optionsRepo.updateOptionUserAnswers(
+          questionID,
+          optionID,
+          userAnswer._id
         ),
       ]);
 

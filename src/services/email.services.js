@@ -6,6 +6,7 @@ const APIError = require("../utils/ApiError");
 
 const bcrypt = require("bcryptjs");
 const tokenServices = require("./token.services");
+const userRepo = require("../repositories/user.repo");
 
 const transporter = nodemailer.createTransport(appConfig.GOOGLEAPIMAIL);
 
@@ -26,7 +27,7 @@ class EmailService {
   };
 
   sendVerificationEmail = async ({ email, emailVerificationToken }) => {
-    const user = await USER.findOne({
+    const user = await userRepo.getByEmail({
       email,
     });
 

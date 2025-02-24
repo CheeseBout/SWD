@@ -1,21 +1,15 @@
-const QUESTIONS = require("../models/question.model");
-const QUIZZES = require("../models/quizzes.model");
 const APIError = require("../utils/ApiError");
-const TOPIC = require("../models/topic.model");
+const quizRepo = require("../repositories/quiz.repo");
 
 class QuizService {
   async getAllQuiz() {
-    const data = await QUIZZES.find()
-      .populate("questions")
-      .populate("userAnswer");
+    const data = await quizRepo.findAllQuizzes();
     return { quizzes: data };
   }
 
   async getQuizById(quizId) {
     try {
-      const data = await QUIZZES.findById(quizId)
-        .populate("questions")
-        .populate("userAnswer");
+      const data = await quizRepo.findQuizById(quizId);
 
       if (!data) {
         throw new APIError(404, "Quiz not found");
@@ -43,7 +37,7 @@ class QuizService {
       req.body;
 
     try {
-      const createdQuiz = await QUIZZES.create({
+      const createdQuiz = await quizRepo.createQuiz({
         quizName,
         quizDescription,
         questions,
@@ -51,25 +45,9 @@ class QuizService {
         lastEdited: Date.now(),
       });
 
-      const populatedQuiz = await createdQuiz.populate("questions");
-
-      await QUESTIONS.findOneAndUpdate(
-        {},
-        {
-          $push: { quizzes: createdQuiz._id },
-        },
-        { new: true }
-      );
-
-      // Update the Topic collection with the entire quiz object
-      await TOPIC.findByIdAndUpdate(
-        topicID,
-        {
-          $push: { quiz: populatedQuiz },
-          lastEdited: Date.now(),
-        },
-        { new: true }
-      );
+      const populatedQuiz = await quizRepo.populateQuizQuestions(createdQuiz);
+      await quizRepo.updateQuestionsWithQuizId(createdQuiz._id);
+      await quizRepo.updateTopicWithQuiz(topicID, populatedQuiz);
 
       return {
         success: true,
@@ -89,13 +67,10 @@ class QuizService {
     }
 
     const { quizId } = req.params;
-    const updateData = { ...req.body, lastEdited: Date.now() };
+    const updateData = { ...req.body };
 
     try {
-      console.log(quizId);
-      const updatedQuiz = await QUIZZES.findByIdAndUpdate(quizId, updateData, {
-        new: true,
-      }).populate("questions");
+      const updatedQuiz = await quizRepo.updateQuiz(quizId, updateData);
 
       if (!updatedQuiz) {
         throw new APIError(404, "Quiz not found");
@@ -122,14 +97,10 @@ class QuizService {
     const { deletedReason } = req.body;
 
     try {
-      const deletedQuiz = await QUIZZES.findByIdAndUpdate(
+      const deletedQuiz = await quizRepo.updateQuizStatus(
         quizId,
-        {
-          status: "inactive",
-          deletedReason,
-          lastEdited: Date.now(),
-        },
-        { new: true }
+        "inactive",
+        deletedReason
       );
 
       if (!deletedQuiz) {

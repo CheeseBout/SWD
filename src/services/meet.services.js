@@ -1,7 +1,7 @@
 const APIError = require("../utils/ApiError");
 const { google } = require("googleapis");
 const { oauth2Client } = require("../configs/googleMeet.config");
-const TOKEN = require("../models/token.model");
+const tokenRepo = require("../repositories/token.repo");
 
 class GoogleMeetServices {
   async createMeeting({ startTime, endTime, userId }) {
@@ -14,19 +14,15 @@ class GoogleMeetServices {
     }
 
     try {
-      // Lấy Google token từ collection TOKEN
-      const tokenDoc = await TOKEN.findOne({ userID: userId });
-      if (!tokenDoc?.googleToken) {
+      const googleCreds = await tokenRepo.findTokenWithGoogleCreds(userId);
+      if (!googleCreds) {
         throw new APIError(
           401,
           "Google authorization required. Please login with Google first."
         );
       }
 
-      // Set credentials với token từ database
-      oauth2Client.setCredentials({
-        access_token: tokenDoc.googleToken,
-      });
+      oauth2Client.setCredentials(googleCreds);
 
       const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 

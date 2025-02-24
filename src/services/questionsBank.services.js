@@ -1,22 +1,17 @@
-const QUESTIONS = require("../models/question.model");
-const QUESTION_BANK = require("../models/questionBank.model");
-const TOPIC = require("../models/topic.model");
 const APIError = require("../utils/ApiError");
+const questionsRepo = require("../repositories/questions.repo");
 
 class QuestionsBankService {
-  //QuestionBank
-
   async createQuestionBank(req) {
-    const requestBody = { ...req.body };
-
     if (req.user.role === "admin" || req.user.role === "couple_therapist") {
       throw new APIError(403, "Only admin can create question bank");
     }
 
-    //create if topic not exist
-    const topic = await TOPIC.findOne({ name: requestBody.topic });
+    const requestBody = { ...req.body };
+
+    const topic = await questionsRepo.findTopicByName(requestBody.topic);
     if (!topic) {
-      const newTopic = await TOPIC.create({
+      const newTopic = await questionsRepo.createTopic({
         name: requestBody.topicName,
         description: requestBody.topicDescription,
       });
@@ -25,13 +20,14 @@ class QuestionsBankService {
       requestBody.topic = topic._id;
     }
 
-    const data = await QUESTION_BANK.findOne({
-      name: requestBody.questionBankName,
-    });
-    if (data) {
+    const existingBank = await questionsRepo.findQuestionBankByName(
+      requestBody.questionBankName
+    );
+    if (existingBank) {
       throw new APIError(400, "Question bank already exist");
     }
-    const questionBank = await QUESTION_BANK.create(requestBody);
+
+    const questionBank = await questionsRepo.createQuestionBank(requestBody);
 
     return {
       data: {
@@ -42,14 +38,12 @@ class QuestionsBankService {
   }
 
   async getAllQuestionBanks() {
-    const data = await QUESTION_BANK.find();
+    const data = await questionsRepo.findAllQuestionBanks();
     return { data };
   }
 
   async getQuestionBankById(questionBankId) {
-    const data = await QUESTION_BANK.findById(questionBankId).populate(
-      "questions"
-    );
+    const data = await questionsRepo.findQuestionBankById(questionBankId);
     if (!data) {
       throw new APIError(400, "Question Bank not found");
     }
@@ -59,7 +53,9 @@ class QuestionsBankService {
   async updateQuestionBank(req) {
     const questionBankId = req.params.questionBankId;
     console.log("questionBankId", questionBankId);
-    const questionBank = await QUESTION_BANK.findById(questionBankId);
+    const questionBank = await questionsRepo.findQuestionBankById(
+      questionBankId
+    );
     if (!questionBank) {
       throw new APIError(400, "Question Bank not found");
     }
@@ -70,30 +66,26 @@ class QuestionsBankService {
 
     const { questionBankName, description } = req.body;
 
-    const updatedQuestionBank = await QUESTION_BANK.findByIdAndUpdate(
+    const updatedQuestionBank = await questionsRepo.updateQuestionBank(
       questionBankId,
-      { questionBankName, description },
-      {
-        new: true,
-      }
+      { questionBankName, description }
     );
     return { updatedQuestionBank };
   }
 
   async deleteQuestionBank(req) {
     const questionBankId = req.params.questionBankId;
-    const questionBank = await QUESTION_BANK.findById(questionBankId);
+    const questionBank = await questionsRepo.findQuestionBankById(
+      questionBankId
+    );
     if (!questionBank) {
       throw new APIError(400, "Question Bank not found");
     }
 
     try {
-      // Update question status to inactive instead of deleting
-      await QUESTION_BANK.findByIdAndUpdate(
-        questionBankId,
-        { status: "inactive" },
-        { new: true }
-      );
+      await questionsRepo.updateQuestionBankStatus(questionBankId, {
+        status: "inactive",
+      });
 
       return {
         message: "Question deleted successfully",
@@ -106,15 +98,14 @@ class QuestionsBankService {
     }
   }
 
-  //Questions
   async getAllQuestions() {
-    const data = await QUESTIONS.find();
+    const data = await questionsRepo.findAllQuestions();
     return { data };
   }
 
   async getQuestionById(questionId) {
     console.log("questionId", questionId);
-    const data = await QUESTIONS.findById(questionId);
+    const data = await questionsRepo.findQuestionById(questionId);
     console.log(data);
     if (!data) {
       throw new APIError(400, "Question not found");
@@ -130,31 +121,22 @@ class QuestionsBankService {
     const requestBody = { ...req.body };
 
     try {
-      // Check if question bank exists
-      const existingBank = await QUESTION_BANK.findById(
+      const existingBank = await questionsRepo.findQuestionBankById(
         requestBody.questionBank
       );
       if (!existingBank) {
         throw new APIError(404, "Question Bank not found");
       }
 
-      const newQuestion = await QUESTIONS.create({
+      const newQuestion = await questionsRepo.createQuestion({
         questionContent: requestBody.questionContent,
         questionBank: requestBody.questionBank,
       });
 
-      // Update QuestionBank with the new question
-      const updatedQuestionBank = await QUESTION_BANK.findByIdAndUpdate(
+      const updatedQuestionBank = await questionsRepo.addQuestionToBank(
         requestBody.questionBank,
-        {
-          $push: { questions: newQuestion._id },
-          lastEdited: Date.now(),
-        },
-        {
-          new: true,
-          runValidators: true,
-        }
-      ).populate("questions");
+        newQuestion._id
+      );
 
       return {
         data: newQuestion,
@@ -170,13 +152,13 @@ class QuestionsBankService {
 
   async updateQuestion(req) {
     const questionId = req.params.questionId;
-    const { questionContent } = req.body; // Only extract questionContent
+    const { questionContent } = req.body;
 
     if (!questionContent) {
       throw new APIError(400, "Question content is required");
     }
 
-    const question = await QUESTIONS.findById(questionId);
+    const question = await questionsRepo.findQuestionById(questionId);
     if (!question) {
       throw new APIError(400, "Question not found");
     }
@@ -185,20 +167,16 @@ class QuestionsBankService {
       throw new APIError(403, "Only admin can update questions");
     }
 
-    const updatedQuestion = await QUESTIONS.findByIdAndUpdate(
-      questionId,
-      { questionContent }, // Only update questionContent
-      {
-        new: true,
-      }
-    );
+    const updatedQuestion = await questionsRepo.updateQuestion(questionId, {
+      questionContent,
+    });
     return { updatedQuestion };
   }
 
   async deleteQuestion(req) {
     const questionId = req.params.questionId;
     console.log("questionId", questionId);
-    const question = await QUESTIONS.findById(questionId);
+    const question = await questionsRepo.findQuestionById(questionId);
 
     if (!question) {
       throw new APIError(400, "Question not found");
@@ -209,20 +187,11 @@ class QuestionsBankService {
     }
 
     try {
-      // Update question status to inactive instead of deleting
-      const updatedQuestion = await QUESTIONS.findByIdAndUpdate(
-        questionId,
-        { status: "inactive" },
-        { new: true }
-      );
+      await questionsRepo.updateQuestionStatus(questionId, {
+        status: "inactive",
+      });
 
-      // Update question bank to remove reference to this question
-      await QUESTION_BANK.findOneAndUpdate(
-        { questions: questionId },
-        {
-          $pull: { questions: questionId },
-        }
-      );
+      await questionsRepo.removeQuestionFromBank(questionId);
 
       return {
         message: "Question deleted successfully",
@@ -236,7 +205,7 @@ class QuestionsBankService {
   }
 
   async getQuestionByTopic(topicId) {
-    const data = await QUESTIONS.find({ topic: topicId });
+    const data = await questionsRepo.findQuestionsByTopic(topicId);
     return { data };
   }
 }

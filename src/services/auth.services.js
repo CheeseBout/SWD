@@ -2,12 +2,14 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const APIError = require("../utils/ApiError");
 const authRepo = require("../repositories/auth.repo");
+const tokenRepo = require("../repositories/token.repo");
 const tokenServices = require("./token.services");
 const emailServices = require("./email.services");
 const USER = require("../models/user.model");
 const TOKEN = require("../models/token.model");
 const ms = require("ms");
 const appConfig = require("../configs/app.config");
+const userRepo = require("../repositories/user.repo");
 
 class AuthService {
   async register({
@@ -37,14 +39,8 @@ class AuthService {
       role,
     });
 
-    // Create token document for new user
-    await TOKEN.create({
-      userID: user._id,
-      googleToken: null,
-      googleRefreshToken: null,
-      googleTokenExpiry: null,
-      expiryDate: new Date(Date.now() + ms(appConfig.JWT.accessTokenLife)),
-    });
+    // Use token repository instead
+    await tokenRepo.createInitialToken(user._id);
 
     return { user };
   }
@@ -112,15 +108,8 @@ class AuthService {
       throw new APIError(400, "Email or password is incorrect");
     }
 
-    // Create/Update token document
-    await TOKEN.findOneAndUpdate(
-      { userID: user._id },
-      {
-        updatedAt: new Date(),
-        expiryDate: new Date(Date.now() + ms(appConfig.JWT.accessTokenLife)),
-      },
-      { upsert: true }
-    );
+    // Use token repository instead
+    await tokenRepo.updateLoginToken(user._id);
 
     return await tokenServices.generateAuthToken(user._id.toString());
   }
@@ -154,10 +143,10 @@ class AuthService {
       .update(resetToken)
       .digest("hex");
 
-    const tokenDoc = await TOKEN.findOne({
+    const tokenDoc = await tokenRepo.findAndUpdatePasswordResetToken({
       passwordResetToken: hashedToken,
       passwordResetExpires: { $gt: Date.now() },
-    }).populate("userID");
+    });
 
     if (!tokenDoc || tokenDoc.userID.email !== email) {
       throw new APIError(400, "Invalid or expired reset token");
@@ -167,13 +156,13 @@ class AuthService {
     user.password = password;
     await user.save();
 
-    await TOKEN.deleteOne({ _id: tokenDoc._id });
+    await tokenRepo.deleteToken(tokenDoc._id);
 
     return user;
   }
 
   async sendVerifyEmail({ email }) {
-    const user = await USER.findOne({
+    const user = await userRepo.getByEmail({
       email,
     });
 
@@ -197,7 +186,7 @@ class AuthService {
   }
 
   async verifyEmail({ email, token }) {
-    const user = await USER.findOne({
+    const user = await userRepo.getByEmail({
       email,
     });
 
@@ -244,16 +233,8 @@ class AuthService {
         });
       }
 
-      // Chỉ lưu access_token từ Google
-      await TOKEN.findOneAndUpdate(
-        { userID: user._id },
-        {
-          googleToken: tokens.access_token,
-          expiryDate: new Date(Date.now() + ms(appConfig.JWT.accessTokenLife)),
-          updatedAt: new Date(),
-        },
-        { upsert: true }
-      );
+      // Use token repository instead
+      await tokenRepo.updateGoogleToken(user._id, tokens.access_token);
 
       const authTokens = await tokenServices.generateAuthToken(
         user._id.toString()

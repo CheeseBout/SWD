@@ -1,8 +1,9 @@
 const TOKEN = require("../models/token.model");
+const tokenRepo = require("../repositories/token.repo");
 
 class GoogleTokenService {
   async saveGoogleToken(userId, tokens) {
-    let tokenDoc = await TOKEN.findOne({ userID: userId });
+    let tokenDoc = await tokenRepo.findTokenByUserId(userId);
 
     if (tokenDoc) {
       tokenDoc.googleToken = JSON.stringify(tokens);
@@ -17,7 +18,7 @@ class GoogleTokenService {
   }
 
   async getGoogleToken(userId) {
-    const tokenDoc = await TOKEN.findOne({ userID: userId });
+    const tokenDoc = await tokenRepo.findTokenByUserId(userId);
     if (!tokenDoc?.googleToken) return null;
     return JSON.parse(tokenDoc.googleToken);
   }

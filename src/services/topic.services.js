@@ -1,13 +1,14 @@
-const TOPIC = require("../models/topic.model");
 const APIError = require("../utils/ApiError");
+const topicRepo = require("../repositories/topic.repo");
+
 class TopicServices {
   async getAllTopics() {
-    const topics = await TOPIC.find();
+    const topics = await topicRepo.findAll();
     return { topics };
   }
 
   async getTopicById(topicId) {
-    const topic = await TOPIC.findById(topicId);
+    const topic = await topicRepo.findById(topicId);
     if (!topic) {
       throw new APIError(400, "Topic not found");
     }
@@ -16,7 +17,6 @@ class TopicServices {
 
   async createTopic(req) {
     const userID = req.user._id;
-    const requestBody = { ...req.body };
     if (!userID) {
       throw new APIError(400, "User not found");
     }
@@ -25,60 +25,57 @@ class TopicServices {
       throw new APIError(403, "Only admin can create topics");
     }
 
-    const data = await TOPIC.create(requestBody);
+    const data = await topicRepo.create(req.body);
     return { data };
   }
 
   async updateTopic(req) {
+    const { topicId } = req.params;
     const userID = req.user._id;
-    const topicId = req.params.topicId;
-    const topic = await TOPIC.findById(topicId);
-    if (!topic) {
-      throw new APIError(400, "Topic not found");
-    }
 
     if (!userID) {
       throw new APIError(400, "User not found");
+    }
+
+    const topic = await topicRepo.findById(topicId);
+    if (!topic) {
+      throw new APIError(400, "Topic not found");
     }
 
     if (req.user.role === "admin" || req.user.role === "couple_therapist") {
       throw new APIError(403, "Only admin can update topics");
     }
 
-    const requestBody = { ...req.body };
-    const updatedTopic = await TOPIC.findByIdAndUpdate(topicId, requestBody, {
-      new: true,
-    });
+    const updatedTopic = await topicRepo.update(topicId, req.body);
     return { updatedTopic };
   }
 
-  async deleteTopic(topicId) {
+  async deleteTopic(req) {
+    const { topicId } = req.params;
+    const { deletedReason } = req.body;
     const userID = req.user._id;
-    const topic = await TOPIC.findById(topicId);
-    if (!topic) {
-      throw new APIError(400, "Topic not found");
-    }
+
     if (!userID) {
       throw new APIError(400, "User not found");
     }
 
+    const topic = await topicRepo.findById(topicId);
+    if (!topic) {
+      throw new APIError(400, "Topic not found");
+    }
+
     if (req.user.role === "admin" || req.user.role === "couple_therapist") {
-      throw new APIError(403, "Only admin can create topics");
+      throw new APIError(403, "Only admin can delete topics");
     }
 
     try {
-      const deletedTopic = await TOPIC.findByIdAndUpdate(
+      const deletedTopic = await topicRepo.updateStatus(
         topicId,
-        {
-          status: "inactive",
-          deletedReason,
-          lastEdited: Date.now(),
-        },
-        { new: true }
+        "inactive",
+        deletedReason
       );
-
       if (!deletedTopic) {
-        throw new APIError(404, "Quiz not found");
+        throw new APIError(404, "Topic not found");
       }
 
       return {
@@ -88,7 +85,7 @@ class TopicServices {
       };
     } catch (error) {
       if (error.name === "CastError") {
-        throw new APIError(400, "Invalid quiz ID format");
+        throw new APIError(400, "Invalid topic ID format");
       }
       throw error;
     }

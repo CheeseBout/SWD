@@ -45,23 +45,23 @@ class TokenService {
   async createTokenPair(payload, secretKey = config.JWT.secretKey) {
     try {
       // auth token
-      const accessToken = await JWT.sign(
+      const accessToken = await appConfig.JWT.sign(
         { ...payload, type: jwtTokens.ACCESS_TOKEN },
         secretKey,
         {
-          expiresIn: config.JWT.accessTokenLife,
+          expiresIn: appConfig.JWT.accessTokenLife,
         }
       );
 
       // refresh token
-      const refreshToken = await JWT.sign(
+      const refreshToken = await appConfig.JWT.sign(
         {
           ...payload,
           type: jwtTokens.REFRESH_TOKEN,
         },
         secretKey,
         {
-          expiresIn: config.JWT.refreshTokenLife,
+          expiresIn: appConfig.JWT.refreshTokenLife,
         }
       );
 

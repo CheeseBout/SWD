@@ -12,6 +12,7 @@ const Contact = lazy(() => import("../pages/Contact"));
 const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy"));
 const QuizDetail = lazy(() => import("../pages/Quiz/QuizDetail"));
 const SearchTherapist = lazy(() => import('../pages/Therapist/SearchTherapist'));
+const FAQs = lazy(() => import('../pages/FAQs'));
 
 const LazyLoad = ({ children }) => (
   <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
@@ -110,6 +111,12 @@ export function AppRoutes() {
             } 
           />
         </Route>
+
+        <Route path="faq" element={
+          <LazyLoad>
+            <FAQs />
+          </LazyLoad>
+        } />
       </Route>
     </Routes>
   );

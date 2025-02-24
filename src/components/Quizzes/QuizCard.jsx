@@ -7,7 +7,7 @@ export default function QuizCard({ quiz }) {
       <div className="flex bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow h-full mb-4">
         <div className="w-1/3 min-w-[180px]">
           <img
-            src={quiz.imageUrl || "https://placehold.co/400x300"}
+            src={quiz.imageUrl}
             alt={quiz.quizName}
             className="w-full h-full object-cover"
             onError={(e) => {

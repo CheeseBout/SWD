@@ -1,11 +1,11 @@
 import { FeaturedQuizzes } from "@components/FeaturedQuizzes";
 import { FeaturedTherapists } from "@components/FeaturedTherapists";
-import { Hero } from "@components/Hero";
+import { HomeHero } from "@components/Hero/HomeHero";
 
 export function HomePage() {
   return (
     <>
-      <Hero />
+      <HomeHero />
       <FeaturedQuizzes />
       <FeaturedTherapists />
     </>

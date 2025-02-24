@@ -82,4 +82,5 @@ module.exports = {
   createUserValidation,
   loginValidation,
   emailValidation,
+  updateProfileValidation
 };

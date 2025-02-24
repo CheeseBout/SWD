@@ -10,6 +10,16 @@ class CertificateRepository {
       { new: true }
     );
   }
+
+  async createCertificateDenial({ certificateID, reason }) {
+    return await CERTIFICATE.findByIdAndUpdate(
+      certificateID,
+      {
+        $set: { reason },
+      },
+      { new: true }
+    );
+  }
 }
 
 module.exports = new CertificateRepository();

@@ -6,12 +6,12 @@ require("dotenv").config();
 const oauth2Client = new google.auth.OAuth2(
   GOOGLEMEETAPI.CLIENT_ID,
   GOOGLEMEETAPI.CLIENT_SECRET,
-  GOOGLEMEETAPI.REDIRECT_URI
+  GOOGLEMEETAPI.CALLBACK_URL
 );
 
 console.log("🔍 Debug: CLIENT_ID:", GOOGLEMEETAPI.CLIENT_ID);
 console.log("🔍 Debug: CLIENT_SECRET:", GOOGLEMEETAPI.CLIENT_SECRET);
-console.log("🔍 Debug: REDIRECT_URI:", GOOGLEMEETAPI.REDIRECT_URI);
+console.log("🔍 Debug: REDIRECT_URI:", GOOGLEMEETAPI.CALLBACK_URL);
 
 // Load token from database
 async function loadGoogleToken(userId) {

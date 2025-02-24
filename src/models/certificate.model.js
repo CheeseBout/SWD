@@ -9,6 +9,9 @@ const certificateSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  reason:{
+    type: String
+  },
   issuedDate: {
     type: Date,
     required: true,

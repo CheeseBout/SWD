@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/user.controller");
 const validate = require("../middlewares/validate.middleware");
-const { getUserByIdValidation } = require("../validations/user.validation");
+const { getUserByIdValidation, updateProfileValidation } = require("../validations/user.validation");
 const auth = require("../middlewares/auth.middleware");
 const {
   updateExpertProfileValidation,
@@ -27,7 +27,7 @@ router.get(
 router.post(
   "/update-profile",
   auth,
-  validate(updateExpertProfileValidation),
+  validate(updateProfileValidation),
   userController.updateProfile
 );
 

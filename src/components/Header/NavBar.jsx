@@ -47,7 +47,7 @@ const NavBar = () => {
                 placeholder="Search blogs..."
                 className="w-48 px-4 py-1 text-sm text-gray-900 bg-gray-50 rounded-full border border-gray-300 focus:outline-none focus:border-blue-500"
               />
-              <button className="absolute right-2 top-2">
+              <button className="absolute right-2 top-1">
                 <svg
                   className="h-5 w-5 text-gray-500"
                   fill="none"

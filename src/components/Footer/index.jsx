@@ -3,19 +3,14 @@ import { Link } from 'react-router-dom';
 export function Footer() {
   return (
     <div className="bg-gray-100">
-      {/* Main Footer */}
       <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <div className="flex flex-col md:flex-row justify-between gap-8">
-          {/* Company Info */}
           <div className="md:max-w-xs">
             <Link to="/" className="inline-block pl-8">
               <img src="/logo.png" alt="KetHon Logo" className="h-30 w-40" />
             </Link>
           </div>
-
-          {/* Links sections */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 md:gap-16">
-            {/* Quick Links */}
             <div>
               <h6 className="font-semibold text-gray-900 mb-4">Support & Resources</h6>
               <ul className="space-y-3">
@@ -24,8 +19,6 @@ export function Footer() {
                 <li><Link to="/faq" className="text-gray-600 hover:text-gray-900">FAQs</Link></li>
               </ul>
             </div>
-
-            {/* Services */}
             <div>
               <h6 className="font-semibold text-gray-900 mb-4">Services</h6>
               <ul className="space-y-3">
@@ -34,12 +27,10 @@ export function Footer() {
                 <li><Link to="/assessments" className="text-gray-600 hover:text-gray-900">Mental Health Tests</Link></li>
               </ul>
             </div>
-
-            {/* Company */}
             <div>
               <h6 className="font-semibold text-gray-900 mb-4">Company</h6>
               <ul className="space-y-3">
-                <li><Link to="/about" className="text-gray-600 hover:text-gray-900">About Us</Link></li>
+                <li><Link to="/about-us" className="text-gray-600 hover:text-gray-900">About Us</Link></li>
                 <li><Link to="/contact" className="text-gray-600 hover:text-gray-900">Contact</Link></li>
                 <li><Link to="/privacy" className="text-gray-600 hover:text-gray-900">Privacy Policy</Link></li>
               </ul>
@@ -48,7 +39,6 @@ export function Footer() {
         </div>
       </footer>
 
-      {/* Bottom Footer */}
       <div className="border-t border-gray-200 mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="md:flex md:items-center md:justify-between">

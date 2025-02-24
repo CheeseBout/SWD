@@ -8,6 +8,7 @@ const Topics = lazy(() => import('../pages/Topics'));
 const Quizzes = lazy(() => import('../pages/Quizzes'));
 const TopicDetail = lazy(() => import('../pages/Topics/TopicDetail'));
 const AboutUs = lazy(() => import('../pages/AboutUs'));
+const Contact = lazy(() => import('../pages/Contact'));
 // const QuizDetail = lazy(() => import('../pages/QuizDetail'));
 
 const LazyLoad = ({ children }) => (
@@ -55,6 +56,12 @@ export function AppRoutes() {
         <Route path="about-us" element={
           <LazyLoad>
             <AboutUs />
+          </LazyLoad>
+        } />
+
+        <Route path="contact" element={
+          <LazyLoad>
+            <Contact />
           </LazyLoad>
         } />
       </Route>

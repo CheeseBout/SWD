@@ -24,6 +24,7 @@ module.exports = {
     CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     CALLBACK_URL: process.env.REDIRECT_URL,
+    CALENDAR_ID: process.env.CALENDAR_ID,
   },
   GOOGLEAPIMAIL: {
     service: "gmail",

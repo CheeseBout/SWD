@@ -20,15 +20,17 @@ const tokenSchema = new mongoose.Schema({
   emailVerificationToken: {
     type: String,
   },
-  googleToken: {
-    type: String,
-  },
   expiryDate: {
     type: Date,
     required: true,
   },
   refreshTokenExpiryDate: {
     type: Date,
+  },
+  // Chỉ lưu googleToken
+  googleToken: {
+    type: String,
+    default: null,
   },
   createdAt: {
     type: Date,

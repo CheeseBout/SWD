@@ -13,25 +13,21 @@ class TokenService {
       expiresIn: appConfig.JWT.refreshTokenLife,
     });
 
-    const accessTokenExpiry = new Date(
-      Date.now() + ms(appConfig.JWT.accessTokenLife)
-    );
-    const refreshTokenExpiry = new Date(
-      Date.now() + ms(appConfig.JWT.refreshTokenLife)
+    await TOKEN.findOneAndUpdate(
+      { userID: userId },
+      {
+        accessToken,
+        refreshToken,
+        expiryDate: new Date(Date.now() + ms(appConfig.JWT.accessTokenLife)),
+        refreshTokenExpiryDate: new Date(
+          Date.now() + ms(appConfig.JWT.refreshTokenLife)
+        ),
+        updatedAt: new Date(),
+      },
+      { upsert: true, new: true }
     );
 
-    await TOKEN.create({
-      userID: userId,
-      accessToken,
-      refreshToken,
-      expiryDate: accessTokenExpiry,
-      refreshTokenExpiryDate: refreshTokenExpiry,
-    });
-
-    return {
-      accessToken,
-      refreshToken,
-    };
+    return { accessToken, refreshToken };
   }
 
   async verifyToken(token) {

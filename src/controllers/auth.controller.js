@@ -4,9 +4,6 @@ const { createTokenPair } = require("../services/token.services");
 const catchAsync = require("../utils/catchAsync");
 const { OK } = require("../utils/response");
 const config = require("../configs/app.config");
-const roleConfig = require("../configs/role.config");
-const APIError = require("../utils/ApiError");
-const passport = require("passport");
 
 class AuthController {
   register = catchAsync(async (req, res) => {
@@ -86,29 +83,48 @@ class AuthController {
     return OK(res, "Success", result);
   });
 
-  redirectToGoogleLoginPage = (req, res, next) => {
-    const role = req.query.role;
-    const failRedirectURL = req.query.failRedirectURL;
-    const successRedirectURL = req.query.successRedirectURL;
-
-    if (![roleConfig.MEMBER, roleConfig.COUPLE_THERAPIST].includes(role)) {
-      return next(new APIError(400, "Role is invalid"));
-    }
-
-    passport.authenticate("google", {
-      scope: ["email", "profile"],
-      state: `${role},${failRedirectURL},${successRedirectURL}`,
-    })(req, res, next);
+  /**
+   * Google OAuth2.0
+   */
+  authGoogle = async (req, res) => {
+    const url = getAuthURL();
+    res.redirect(url);
   };
+
+  authCallBack = catchAsync(async (req, res) => {
+    const { code } = req.query;
+    try {
+      await saveToken(code);
+      res.send("✅ Xác thực thành công! Bạn có thể tạo Google Meet.");
+    } catch (error) {
+      res.status(500).send("❌ Xác thực thất bại: " + error.message);
+    }
+  });
 
   loginWithGoogle = catchAsync(async (req, res) => {
     try {
-      const result = await authServices.loginWithGoogle(req.user);
-      res.redirect(
-        `${config.CLIENT_URL}?accessToken=${result.accessToken}&refreshToken=${result.refreshToken}`
-      );
+      // Kiểm tra nếu không có profile từ passport
+      if (!req.user) {
+        return res.redirect(`${config.CLIENT_URL}?error=login_failed`);
+      }
+
+      // Lấy tokens từ profile đã được passport đính kèm
+      const tokens = req.user.tokens || {};
+
+      // Xử lý login và lưu token
+      const result = await authServices.loginWithGoogle(req.user, tokens);
+
+      // Redirect về client URL với tokens
+      const redirectUrl = config.CLIENT_URL;
+      const queryParams = new URLSearchParams({
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+      });
+
+      res.redirect(`${redirectUrl}?${queryParams.toString()}`);
     } catch (error) {
-      res.redirect(`${config.CLIENT_URL}?error=Authentication failed`);
+      console.error("Google login error:", error);
+      res.redirect(`${config.CLIENT_URL}?error=login_failed`);
     }
   });
 }

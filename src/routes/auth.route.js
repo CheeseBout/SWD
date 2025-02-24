@@ -20,7 +20,16 @@ router.post("/reset-password", authController.resetPassword);
 router.get(
   "/login/google",
   passport.authenticate("google", {
-    scope: ["email", "profile"],
+    scope: [
+      "email",
+      "profile",
+      "https://www.googleapis.com/auth/calendar",
+      "https://www.googleapis.com/auth/calendar.events",
+      "https://www.googleapis.com/auth/calendar.settings.readonly",
+      "https://www.googleapis.com/auth/meetings.space.created",
+    ],
+    accessType: "offline",
+    prompt: "consent",
   })
 );
 
@@ -28,7 +37,7 @@ router.get(
   "/login/google/callback",
   passport.authenticate("google", {
     session: false,
-    failureRedirect: appConfig.CLIENT_URL,
+    failureRedirect: `${appConfig.CLIENT_URL}?error=google_login_failed`,
   }),
   authController.loginWithGoogle
 );

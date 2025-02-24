@@ -4,6 +4,10 @@ const APIError = require("../utils/ApiError");
 const authRepo = require("../repositories/auth.repo");
 const tokenServices = require("./token.services");
 const emailServices = require("./email.services");
+const USER = require("../models/user.model");
+const TOKEN = require("../models/token.model");
+const ms = require("ms");
+const appConfig = require("../configs/app.config");
 
 class AuthService {
   async register({
@@ -31,6 +35,15 @@ class AuthService {
       dob,
       gender,
       role,
+    });
+
+    // Create token document for new user
+    await TOKEN.create({
+      userID: user._id,
+      googleToken: null,
+      googleRefreshToken: null,
+      googleTokenExpiry: null,
+      expiryDate: new Date(Date.now() + ms(appConfig.JWT.accessTokenLife)),
     });
 
     return { user };
@@ -98,6 +111,16 @@ class AuthService {
     if (!isPasswordMatch) {
       throw new APIError(400, "Email or password is incorrect");
     }
+
+    // Create/Update token document
+    await TOKEN.findOneAndUpdate(
+      { userID: user._id },
+      {
+        updatedAt: new Date(),
+        expiryDate: new Date(Date.now() + ms(appConfig.JWT.accessTokenLife)),
+      },
+      { upsert: true }
+    );
 
     return await tokenServices.generateAuthToken(user._id.toString());
   }
@@ -197,36 +220,59 @@ class AuthService {
     return user;
   }
 
-  async loginWithGoogle(profile) {
-    const email = profile.emails[0].value;
-    let user = await authRepo.findUserByEmail(email);
+  async loginWithGoogle(profile, tokens) {
+    try {
+      if (!profile?.emails?.[0]?.value) {
+        throw new APIError(400, "Invalid profile data from Google");
+      }
 
-    if (!user) {
-      // Create new user if doesn't exist
-      user = await authRepo.createUser({
-        fullname: profile.displayName,
-        username: email.split("@")[0], // Create username from email
-        email: email,
-        password: crypto.randomBytes(16).toString("hex"), // Random secure password
-        dob: new Date(), // Default date, user can update later
-        gender: "other", // Default gender, user can update later
-        photoURL: profile.photos?.[0]?.value,
-        role: "user",
-        isVerified: true, // Auto verify since it's Google OAuth
-      });
+      const email = profile.emails[0].value;
+      let user = await authRepo.findUserByEmail(email);
+
+      if (!user) {
+        user = await authRepo.createUser({
+          fullname: profile.displayName || email,
+          username: email.split("@")[0],
+          email: email,
+          password: crypto.randomBytes(16).toString("hex"),
+          dob: new Date(),
+          gender: "other",
+          photoURL: profile.photos?.[0]?.value,
+          role: "user",
+          isVerified: true,
+          address: "None",
+        });
+      }
+
+      // Chỉ lưu access_token từ Google
+      await TOKEN.findOneAndUpdate(
+        { userID: user._id },
+        {
+          googleToken: tokens.access_token,
+          expiryDate: new Date(Date.now() + ms(appConfig.JWT.accessTokenLife)),
+          updatedAt: new Date(),
+        },
+        { upsert: true }
+      );
+
+      const authTokens = await tokenServices.generateAuthToken(
+        user._id.toString()
+      );
+
+      return {
+        user: {
+          _id: user._id,
+          fullname: user.fullname,
+          email: user.email,
+          role: user.role,
+          photoURL: user.photoURL,
+        },
+        ...authTokens,
+      };
+    } catch (error) {
+      console.error("Google login service error:", error);
+      throw error;
     }
-
-    const tokens = await tokenServices.generateAuthToken(user._id.toString());
-    return {
-      user: {
-        _id: user._id,
-        fullname: user.fullname,
-        email: user.email,
-        role: user.role,
-        photoURL: user.photoURL,
-      },
-      ...tokens,
-    };
   }
 }
 

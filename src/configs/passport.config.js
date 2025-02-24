@@ -13,6 +13,12 @@ passport.use(
     },
     async (req, accessToken, refreshToken, profile, done) => {
       try {
+        // Pass both profile and tokens
+        profile.tokens = {
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          expiry_date: 3600000, // 1 hour
+        };
         return done(null, profile);
       } catch (error) {
         return done(error);

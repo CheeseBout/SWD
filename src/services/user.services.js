@@ -24,7 +24,9 @@ class UserService {
 
     const requestBody = { ...req.body };
     delete requestBody.email;
+    delete requestBody.username;
     delete requestBody.password;
+    delete requestBody.isGoogleUser;
     delete requestBody.role;
     delete requestBody.isVerified;
     delete requestBody.isActive;

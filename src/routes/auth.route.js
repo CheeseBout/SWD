@@ -2,10 +2,18 @@ const express = require("express");
 const router = express.Router();
 const auth = require("../middlewares/auth.middleware");
 const validate = require("../middlewares/validate.middleware");
-const { createUserValidation } = require("../validations/user.validation");
+const {
+  createUserValidation,
+  emailValidation,
+} = require("../validations/user.validation");
 const authController = require("../controllers/auth.controller");
 const appConfig = require("../configs/app.config");
 const passport = require("passport");
+const {
+  forgotPasswordValidation,
+  resetPasswordValidation,
+  updateExpertProfileValidation,
+} = require("../validations/auth.validation");
 
 // Public routes
 router.post(
@@ -14,8 +22,16 @@ router.post(
   authController.register
 );
 router.post("/login", authController.login);
-router.post("/forgot-password", authController.forgotPassword);
-router.post("/reset-password", authController.resetPassword);
+router.post(
+  "/forgot-password",
+  validate(forgotPasswordValidation),
+  authController.forgotPassword
+);
+router.post(
+  "/reset-password",
+  validate(resetPasswordValidation),
+  authController.resetPassword
+);
 
 router.get(
   "/login/google",
@@ -43,9 +59,23 @@ router.get(
 );
 
 // Protected routes
-router.post("/expert-profile", auth, authController.updateExpertProfile);
-router.post("/send-verify-email", auth, authController.sendVerifyEmail);
-router.post("/verify-email", auth, authController.verifyEmail);
-router.post("/update-expert-profile", auth, authController.updateExpertProfile);
+router.post(
+  "/send-verify-email",
+  auth,
+  validate(emailValidation),
+  authController.sendVerifyEmail
+);
+router.post(
+  "/verify-email",
+  auth,
+  validate(emailValidation),
+  authController.verifyEmail
+);
+router.post(
+  "/update-expert-profile",
+  auth,
+  validate(updateExpertProfileValidation),
+  authController.updateExpertProfile
+);
 
 module.exports = router;

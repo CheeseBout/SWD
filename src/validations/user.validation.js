@@ -55,8 +55,31 @@ const loginValidation = {
   }),
 };
 
+const emailValidation = {
+  body: Joi.object().keys({
+    email: Joi.string()
+      .required()
+      .pattern(/^[a-zA-Z0-9._%+-]+@gmail\.com$/)
+      .message("Email must be a valid Gmail address"),
+  }),
+};
+
+const updateProfileValidation = {
+  body: Joi.object().keys({
+    fullname: Joi.string().min(5).max(50).required(),
+    dob: Joi.string()
+      .pattern(/^([0-2][0-9]|3[0-1])\/(0[1-9]|1[0-2])\/\d{4}$/)
+      .required()
+      .messages({
+        "string.pattern.base": "Date must be in the format DD/MM/YYYY",
+      }),
+    photoURL: Joi.string().uri().optional(),
+  }),
+};
+
 module.exports = {
   getUserByIdValidation,
   createUserValidation,
   loginValidation,
+  emailValidation,
 };

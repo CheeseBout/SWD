@@ -4,6 +4,9 @@ const userController = require("../controllers/user.controller");
 const validate = require("../middlewares/validate.middleware");
 const { getUserByIdValidation } = require("../validations/user.validation");
 const auth = require("../middlewares/auth.middleware");
+const {
+  updateExpertProfileValidation,
+} = require("../validations/auth.validation");
 
 //Public Routes
 router.get("/", userController.getAllUser);
@@ -21,6 +24,11 @@ router.get(
   // auth,
   userController.getUserById
 );
-router.post("/update-profile", auth, userController.updateProfile);
+router.post(
+  "/update-profile",
+  auth,
+  validate(updateExpertProfileValidation),
+  userController.updateProfile
+);
 
 module.exports = router;

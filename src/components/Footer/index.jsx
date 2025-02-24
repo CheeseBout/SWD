@@ -22,9 +22,9 @@ export function Footer() {
             <div>
               <h6 className="font-semibold text-gray-900 mb-4">Services</h6>
               <ul className="space-y-3">
-                <li><Link to="/find-therapist" className="text-gray-600 hover:text-gray-900">Find a Therapist</Link></li>
+                <li><Link to="/find-a-therapist" className="text-gray-600 hover:text-gray-900">Find a Therapist</Link></li>
                 <li><Link to="/counseling" className="text-gray-600 hover:text-gray-900">Online Counseling</Link></li>
-                <li><Link to="/assessments" className="text-gray-600 hover:text-gray-900">Mental Health Tests</Link></li>
+                <li><Link to="/quizzes" className="text-gray-600 hover:text-gray-900">Mental Health Tests</Link></li>
               </ul>
             </div>
             <div>

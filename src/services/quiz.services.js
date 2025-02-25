@@ -9,6 +9,7 @@ class QuizService {
 
   async getQuizById(quizId) {
     try {
+      console.log(quizId);
       const data = await quizRepo.findQuizById(quizId);
 
       if (!data) {
@@ -29,8 +30,11 @@ class QuizService {
   }
 
   async createQuiz(req) {
-    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
-      throw new APIError(403, "Only admin can create quiz");
+    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
+      throw new APIError(
+        403,
+        "Only admin and couple therapist can create quiz"
+      );
     }
 
     const { quizName, quizDescription, questions, imageUrl, topicID } =
@@ -62,8 +66,11 @@ class QuizService {
   }
 
   async updateQuiz(req) {
-    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
-      throw new APIError(403, "Only admin can update quiz");
+    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
+      throw new APIError(
+        403,
+        "Only admin and couple therapist can update quiz"
+      );
     }
 
     const { quizId } = req.params;
@@ -89,8 +96,11 @@ class QuizService {
   }
 
   async deleteQuiz(req) {
-    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
-      throw new APIError(403, "Only admin can delete quiz");
+    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
+      throw new APIError(
+        403,
+        "Only admin and couple therapist can delete quiz"
+      );
     }
 
     const { quizId } = req.params;

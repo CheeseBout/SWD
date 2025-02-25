@@ -21,8 +21,11 @@ class TopicServices {
       throw new APIError(400, "User not found");
     }
 
-    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
-      throw new APIError(403, "Only admin can create topics");
+    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
+      throw new APIError(
+        403,
+        "Only admin and couple therapist can create topics"
+      );
     }
 
     const data = await topicRepo.create(req.body);
@@ -42,8 +45,11 @@ class TopicServices {
       throw new APIError(400, "Topic not found");
     }
 
-    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
-      throw new APIError(403, "Only admin can update topics");
+    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
+      throw new APIError(
+        403,
+        "Only admin and couple therapist can update topics"
+      );
     }
 
     const updatedTopic = await topicRepo.update(topicId, req.body);
@@ -64,8 +70,11 @@ class TopicServices {
       throw new APIError(400, "Topic not found");
     }
 
-    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
-      throw new APIError(403, "Only admin can delete topics");
+    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
+      throw new APIError(
+        403,
+        "Only admin and couple therapist can delete topics"
+      );
     }
 
     try {

@@ -3,8 +3,12 @@ const questionsRepo = require("../repositories/questions.repo");
 
 class QuestionsBankService {
   async createQuestionBank(req) {
-    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
-      throw new APIError(403, "Only admin can create question bank");
+    console.log("req.user", req.user);
+    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
+      throw new APIError(
+        403,
+        "Only admin and couple therapist can create question bank"
+      );
     }
 
     const requestBody = { ...req.body };
@@ -60,8 +64,11 @@ class QuestionsBankService {
       throw new APIError(400, "Question Bank not found");
     }
 
-    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
-      throw new APIError(403, "Only admin can update question bank");
+    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
+      throw new APIError(
+        403,
+        "Only admin and couple therapist can update question bank"
+      );
     }
 
     const { questionBankName, description } = req.body;
@@ -114,8 +121,11 @@ class QuestionsBankService {
   }
 
   async createQuestion(req) {
-    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
-      throw new APIError(403, "Only admin can create questions");
+    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
+      throw new APIError(
+        403,
+        "Only admin and couple therapist can create questions"
+      );
     }
 
     const requestBody = { ...req.body };
@@ -163,8 +173,11 @@ class QuestionsBankService {
       throw new APIError(400, "Question not found");
     }
 
-    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
-      throw new APIError(403, "Only admin can update questions");
+    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
+      throw new APIError(
+        403,
+        "Only admin and couple therapist can update questions"
+      );
     }
 
     const updatedQuestion = await questionsRepo.updateQuestion(questionId, {
@@ -182,8 +195,11 @@ class QuestionsBankService {
       throw new APIError(400, "Question not found");
     }
 
-    if (req.user.role === "admin" || req.user.role === "couple_therapist") {
-      throw new APIError(403, "Only admin can delete questions");
+    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
+      throw new APIError(
+        403,
+        "Only admin and couple therapist can delete questions"
+      );
     }
 
     try {

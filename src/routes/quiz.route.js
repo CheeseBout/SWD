@@ -6,7 +6,7 @@ const quizController = require("../controllers/quiz.controller");
 //Public Routes
 router.get("/", quizController.getAllQuizzes);
 
-router.get("/:id", quizController.getQuizById);
+router.get("/:quizId", quizController.getQuizById);
 //Protected Routes
 
 router.post("/create-quiz", auth, quizController.createQuiz);

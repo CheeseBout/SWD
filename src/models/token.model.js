@@ -32,6 +32,10 @@ const tokenSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  userEmail: {
+    type: String,
+    required: false,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

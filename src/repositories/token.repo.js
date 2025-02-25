@@ -1,6 +1,7 @@
 const TOKEN = require("../models/token.model");
 const ms = require("ms");
 const appConfig = require("../configs/app.config");
+const crypto = require("crypto");
 
 class TokenRepository {
   async createInitialToken(userId) {
@@ -32,11 +33,12 @@ class TokenRepository {
     return await TOKEN.deleteOne({ _id: tokenId });
   }
 
-  async updateGoogleToken(userId, accessToken) {
+  async updateGoogleToken(userId, accessToken, email) {
     return await TOKEN.findOneAndUpdate(
       { userID: userId },
       {
         googleToken: accessToken,
+        userEmail: email, // Thêm trường email để track
         expiryDate: new Date(Date.now() + ms(appConfig.JWT.accessTokenLife)),
         updatedAt: new Date(),
       },
@@ -67,16 +69,8 @@ class TokenRepository {
     return await TOKEN.findOne({ userID: userId });
   }
 
-  async createPasswordResetToken(userId, hashedToken) {
-    return await TOKEN.findOneAndUpdate(
-      { userID: userId },
-      {
-        passwordResetToken: hashedToken,
-        passwordResetExpires: new Date(Date.now() + 10 * 60 * 1000),
-        expiryDate: new Date(Date.now() + 10 * 60 * 1000),
-      },
-      { upsert: true }
-    );
+  async createPasswordResetToken(tokenData) {
+    return await TOKEN.create(tokenData);
   }
 
   async findTokenByResetToken(hashedToken) {
@@ -88,11 +82,27 @@ class TokenRepository {
 
   async findTokenWithGoogleCreds(userId) {
     const tokenDoc = await TOKEN.findOne({ userID: userId });
-    return tokenDoc?.googleToken
+    return tokenDoc
       ? {
           access_token: tokenDoc.googleToken,
+          userEmail: tokenDoc.userEmail,
         }
       : null;
+  }
+
+  async generateInitialGoogleToken(userId) {
+    const initialToken = crypto.randomBytes(32).toString("hex");
+    return await TOKEN.findOneAndUpdate(
+      { userID: userId },
+      {
+        googleToken: initialToken,
+        googleTokenExpiry: new Date(
+          Date.now() + ms(appConfig.JWT.accessTokenLife)
+        ),
+        updatedAt: new Date(),
+      },
+      { upsert: true }
+    );
   }
 }
 

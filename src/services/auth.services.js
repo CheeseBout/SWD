@@ -108,10 +108,25 @@ class AuthService {
       throw new APIError(400, "Email or password is incorrect");
     }
 
-    // Use token repository instead
+    // Cập nhật login token
     await tokenRepo.updateLoginToken(user._id);
 
-    return await tokenServices.generateAuthToken(user._id.toString());
+    // Tạo auth tokens
+    const tokens = await tokenServices.generateAuthToken(user._id.toString());
+
+    // Kiểm tra Google authorization
+    const googleCreds = await tokenRepo.findTokenWithGoogleCreds(user._id);
+    const needsGoogleAuth =
+      !googleCreds?.access_token ||
+      googleCreds.access_token === "NEED_GOOGLE_AUTH";
+
+    return {
+      tokens,
+      googleAuth: {
+        required: needsGoogleAuth,
+        authUrl: "/api/v1/auth/login/google",
+      },
+    };
   }
 
   async forgotPassword({ email }) {
@@ -126,15 +141,15 @@ class AuthService {
       .update(resetToken)
       .digest("hex");
 
-    await authRepo.createPasswordResetToken({
+    await tokenRepo.createPasswordResetToken({
       userID: user._id,
       passwordResetToken: hashedToken,
       passwordResetExpires: new Date(Date.now() + 10 * 60 * 1000),
       expiryDate: new Date(Date.now() + 10 * 60 * 1000),
     });
 
-    await emailServices.sendResetPassword({ email, resetToken });
-    return { resetToken };
+    await emailServices.sendResetPassword({ email, hashedToken });
+    return { resetToken: hashedToken };
   }
 
   async resetPassword({ resetToken, email, password }) {
@@ -215,14 +230,28 @@ class AuthService {
         throw new APIError(400, "Invalid profile data from Google");
       }
 
-      const email = profile.emails[0].value;
-      let user = await authRepo.findUserByEmail(email);
+      const googleEmail = profile.emails[0].value;
+      let user = await authRepo.findUserByEmail(googleEmail);
+
+      // Kiểm tra xem có token hiện tại không (người dùng đang đăng nhập)
+      const existingToken = await tokenRepo.findTokenByUserId(user?._id);
+      if (
+        existingToken &&
+        existingToken.userEmail &&
+        existingToken.userEmail !== googleEmail
+      ) {
+        throw new APIError(400, {
+          message: "Please use the same email address as your login account",
+          currentEmail: existingToken.userEmail,
+          attemptedEmail: googleEmail,
+        });
+      }
 
       if (!user) {
         user = await authRepo.createUser({
-          fullname: profile.displayName || email,
-          username: email.split("@")[0],
-          email: email,
+          fullname: profile.displayName || googleEmail,
+          username: googleEmail.split("@")[0],
+          email: googleEmail,
           password: crypto.randomBytes(16).toString("hex"),
           dob: new Date(),
           gender: "other",
@@ -233,8 +262,11 @@ class AuthService {
         });
       }
 
-      // Use token repository instead
-      await tokenRepo.updateGoogleToken(user._id, tokens.access_token);
+      await tokenRepo.updateGoogleToken(
+        user._id,
+        tokens.access_token,
+        googleEmail
+      );
 
       const authTokens = await tokenServices.generateAuthToken(
         user._id.toString()

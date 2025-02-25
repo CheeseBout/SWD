@@ -40,10 +40,6 @@ class AuthRepo {
     return await COUPLETHERAPIST.create(profileData);
   }
 
-  async createPasswordResetToken(tokenData) {
-    return await TOKEN.create(tokenData);
-  }
-
   async findPasswordResetToken(hashedToken) {
     return await TOKEN.findOne({
       passwordResetToken: hashedToken,

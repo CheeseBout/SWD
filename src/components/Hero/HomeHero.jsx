@@ -1,14 +1,10 @@
 import { Link } from 'react-router-dom';
 
-export function Hero() {
+export function HomeHero() {
   return (
     <section className="relative  bg-gradient-to-b from-blue-50 to-white">
-      {/* Background Pattern */}
       <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] dark:bg-grid-slate-700/25 dark:bg-gradient-to-b dark:from-slate-800 dark:to-slate-900"></div>
-
-      {/* Hero Content */}
       <div className="relative container mx-auto px-4 pt-20 pb-24 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-between gap-12">
-        {/* Text Content */}
         <div className="flex-1 text-center lg:text-left max-w-2xl">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
             Find Your Path to
@@ -31,7 +27,6 @@ export function Hero() {
               Take Assessment
             </Link>
           </div>
-          {/* Trust Indicators */}
           <div className="mt-12 flex items-center justify-center lg:justify-start gap-8">
             <div className="text-center">
               <div className="text-2xl font-bold text-white">100+</div>
@@ -48,14 +43,12 @@ export function Hero() {
           </div>
         </div>
 
-        {/* Hero Image */}
         <div className="flex-1 relative">
           <img
             src="/Couple.jpg"
             alt="Mental Health Support"
             className="rounded-lg shadow-2xl max-w-lg mx-auto"
           />
-          {/* Floating Elements */}
           <div className="absolute -top-4 -right-8 bg-blue-100 rounded-lg p-4 shadow-lg">
             <div className="text-sm font-medium">Professional Support</div>
             <div className="text-xs text-gray-600">Licensed Therapists</div>

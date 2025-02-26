@@ -287,6 +287,23 @@ class AuthService {
       throw error;
     }
   }
+
+  async changePassword({ userId, oldPassword, newPassword }) {
+    const user = await authRepo.findUserById(userId);
+    if (!user) {
+      throw new APIError(400, "User not found");
+    }
+
+    const isPasswordMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordMatch) {
+      throw new APIError(400, "Old password is incorrect");
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    return user;
+  }
 }
 
 module.exports = new AuthService();

@@ -59,5 +59,21 @@ class ResevationController {
       await reservationService.deleteReservation(req.params.reservationID)
     );
   });
+
+  approveReservation = catchAsync(async (req, res) => {
+    return OK(
+      res,
+      "Success",
+      await reservationService.approveReservation(req.params.reservationID)
+    );
+  });
+
+  denyReservation = catchAsync(async (req, res) => {
+    return OK(
+      res,
+      "Success",
+      await reservationService.denyReservation(req.params.reservationID)
+    );
+  });
 }
 module.exports = new ResevationController();

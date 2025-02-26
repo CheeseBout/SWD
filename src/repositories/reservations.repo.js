@@ -36,7 +36,7 @@ class ReservationRepo {
   async approveReservation(reservationID) {
     return await RESERVATION.findByIdAndUpdate(
       reservationID,
-      { status: "approved" },
+      { status: "confirmed" },
       { new: true }
     );
   }

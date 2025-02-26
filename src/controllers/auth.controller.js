@@ -83,6 +83,17 @@ class AuthController {
     return OK(res, "Success", result);
   });
 
+  changePassword = catchAsync(async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+    const userId = req.user._id;
+    const result = await authServices.changePassword({
+      userId,
+      oldPassword,
+      newPassword,
+    });
+    return OK(res, "Success", result);
+  });
+
   /**
    * Google OAuth2.0
    */

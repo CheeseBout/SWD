@@ -13,6 +13,7 @@ const {
   forgotPasswordValidation,
   resetPasswordValidation,
   updateExpertProfileValidation,
+  changePasswordValidation,
 } = require("../validations/auth.validation");
 
 // Public routes
@@ -31,6 +32,13 @@ router.post(
   "/reset-password",
   validate(resetPasswordValidation),
   authController.resetPassword
+);
+
+router.post(
+  "/change-password",
+  validate(changePasswordValidation),
+  auth,
+  authController.changePassword
 );
 
 router.get(

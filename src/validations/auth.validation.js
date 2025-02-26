@@ -25,6 +25,33 @@ const resetPasswordValidation = {
   }),
 };
 
+const changePasswordValidation = {
+  body: Joi.object().keys({
+    oldPassword: Joi.string()
+      .required()
+      .min(8)
+      .pattern(
+        new RegExp(
+          "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#])[A-Za-z\\d@$!%*?&#]{8,}$"
+        )
+      )
+      .message(
+        "Old Password must be at least 8 characters, including uppercase, lowercase, number and symbol"
+      ),
+    newPassword: Joi.string()
+      .required()
+      .min(8)
+      .pattern(
+        new RegExp(
+          "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#])[A-Za-z\\d@$!%*?&#]{8,}$"
+        )
+      )
+      .message(
+        "New Password must be at least 8 characters, including uppercase, lowercase, number and symbol"
+      ),
+  }),
+};
+
 const updateExpertProfileValidation = {
   body: Joi.object().keys({
     title: Joi.string().required(),
@@ -52,4 +79,5 @@ module.exports = {
   forgotPasswordValidation,
   resetPasswordValidation,
   updateExpertProfileValidation,
+  changePasswordValidation,
 };

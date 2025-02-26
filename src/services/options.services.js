@@ -73,7 +73,7 @@ class OptionsServices {
     const { optionID, questionID, optionContent, score } = req.body;
 
     try {
-      const updatedOptions = await optionsRepo.updateOption(
+      const updatedOptions = await optionsRepo.updateOptionInOptions(
         questionID,
         optionID,
         {
@@ -87,7 +87,7 @@ class OptionsServices {
         throw new APIError(404, "Option not found");
       }
 
-      await optionsRepo.updateQuestionOption(questionID, optionID, {
+      await optionsRepo.updateOptionInQuestions(questionID, optionID, {
         optionContent,
         score,
         lastEdited: Date.now(),
@@ -115,7 +115,7 @@ class OptionsServices {
     const { optionID, questionID } = req.body;
 
     try {
-      const updatedOptions = await optionsRepo.deleteOption(
+      const updatedOptions = await optionsRepo.deleteOptionFromOptions(
         questionID,
         optionID
       );
@@ -124,7 +124,7 @@ class OptionsServices {
         throw new APIError(404, "Option not found");
       }
 
-      await optionsRepo.deleteQuestionOption(questionID, optionID);
+      await optionsRepo.deleteOptionFromQuestions(questionID, optionID);
 
       return {
         message: "Option deleted successfully",

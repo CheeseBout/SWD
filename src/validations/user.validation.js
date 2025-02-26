@@ -65,15 +65,23 @@ const emailValidation = {
 };
 
 const updateProfileValidation = {
+  /**
+   *         "fullname",
+        "dob",
+        "gender",
+        "photoURL",
+        "address",
+   */
   body: Joi.object().keys({
-    fullname: Joi.string().min(5).max(50).required(),
+    fullname: Joi.string().min(5).max(50),
     dob: Joi.string()
       .pattern(/^([0-2][0-9]|3[0-1])\/(0[1-9]|1[0-2])\/\d{4}$/)
-      .required()
       .messages({
         "string.pattern.base": "Date must be in the format DD/MM/YYYY",
       }),
-    photoURL: Joi.string().uri().optional(),
+    gender: Joi.string().valid("Male", "Female", "Other"),
+    address: Joi.string().min(5).max(100),
+    photoURL: Joi.string().uri(),
   }),
 };
 
@@ -82,5 +90,5 @@ module.exports = {
   createUserValidation,
   loginValidation,
   emailValidation,
-  updateProfileValidation
+  updateProfileValidation,
 };

@@ -5,7 +5,7 @@ class UserRepo {
     return await USER.findOne({ email });
   }
   async getByID(userID) {
-    return await USER.findOne({ id: userID });
+    return await USER.findById(userID);
   }
   async getAll(filter, options) {
     return await USER.paginate(filter, options);

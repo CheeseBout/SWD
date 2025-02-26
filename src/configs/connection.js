@@ -25,7 +25,8 @@ async function getConnectionInfo() {
     }
   }
 
-  const DATABASE_NAME = process.env.DATABASE_NAME || "premarital-counseling-database";
+  const DATABASE_NAME =
+    process.env.DATABASE_NAME || "premarital-counseling-database";
 
   // Add MongoDB connection options for Azure Cosmos DB
   const options = {
@@ -35,9 +36,6 @@ async function getConnectionInfo() {
     maxIdleTimeMS: 120000,
     serverSelectionTimeoutMS: 5000,
     socketTimeoutMS: 30000,
-    ssl: true,
-    sslValidate: false,  // Thêm option này
-    directConnection: true  // Thêm option này
   };
 
   return {
@@ -56,9 +54,9 @@ async function connectToDatabase() {
       ...OPTIONS,
       dbName: DATABASE_NAME,
     });
-    console.log("Connected to Azure Cosmos DB");
+    console.log("✅ Connected to Azure Cosmos DB");
   } catch (error) {
-    console.error("Error connecting to Azure Cosmos DB:", error);
+    console.error("❌ Error connecting to Azure Cosmos DB: ", error);
     throw error;
   }
 }

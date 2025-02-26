@@ -3,7 +3,7 @@ const appConfig = require("./configs/app.config");
 const express = require("express");
 const cors = require("cors");
 const app = express();
-const port = appConfig.PORT;
+const port = appConfig.PORT || 8080;
 // Remove old db import
 // const db = require("./configs/db.config");
 const { connectToDatabase } = require("./configs/connection");

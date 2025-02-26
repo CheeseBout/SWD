@@ -1,5 +1,5 @@
 module.exports = {
-  PORT: process.env.PORT || 3000,
+  PORT: process.env.PORT || 8080,
   DB_URL: process.env.DB_URL,
   NODE_ENV: process.env.NODE_ENV || "development",
   CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",

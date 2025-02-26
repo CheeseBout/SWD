@@ -11,6 +11,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@azure/identity": "^4.7.0",
+    "@azure/keyvault-secrets": "^4.9.0",
     "@google-apps/meet": "^0.3.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",

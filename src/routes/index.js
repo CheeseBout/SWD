@@ -10,6 +10,9 @@ const reservationRouter = require("./reservation.route");
 const reservationResultRouter = require("./reservation-result.route");
 const paymentRouter = require("./payment.route");
 const adminRouter = require("./admin.route");
+const packageRouter = require("./package.route");
+const ratingRouter = require("./rating.route");
+
 router.use("/auth", authRouter);
 router.use("/users", userRouter);
 router.use("/topics", topicRouter);
@@ -21,5 +24,7 @@ router.use("/reservation", reservationRouter);
 router.use("/reservation-result", reservationResultRouter);
 router.use("/payment", paymentRouter);
 router.use("/admin", adminRouter);
+router.use("/package", packageRouter);
+router.use("/rating", ratingRouter);
 
 module.exports = router;

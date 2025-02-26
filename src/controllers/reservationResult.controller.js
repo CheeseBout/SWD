@@ -43,7 +43,7 @@ class ReservationResultController {
     return OK(
       res,
       "Success",
-      await reservationResultService.getAllReservationResult()
+      await reservationResultService.getAllReservationResults()
     );
   });
 }

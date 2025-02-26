@@ -16,5 +16,13 @@ router.put(
   "/delete-reservation/:reservationID",
   reservationController.deleteReservation
 );
+router.put(
+  "/approve-reservation/:reservationID",
+  reservationController.approveReservation
+);
+router.put(
+  "/deny-reservation/:reservationID",
+  reservationController.denyReservation
+);
 
 module.exports = router;

@@ -2,10 +2,7 @@ const express = require("express");
 const router = express.Router();
 const coupleTherapistController = require("../controllers/coupleTherapist.controller");
 
-router.get(
-  "/",
-  coupleTherapistController.getAllCoupleTherapist
-);
+router.get("/", coupleTherapistController.getAllCoupleTherapist);
 router.get(
   "/:coupleTherapistId",
   coupleTherapistController.getCoupleTherapistById

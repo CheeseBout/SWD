@@ -1,57 +1,61 @@
-const RESERVATIONRESULT = require("../models/reservation-result.model");
+const reservationResultRepo = require("../repositories/reservationResult.repo");
 const RESERVATION = require("../models/reservation.model");
 const APIError = require("../utils/ApiError");
+
 class ReservationResultService {
   async createReservationResult(data) {
+    // Validate reservation exists
     if (!(await RESERVATION.findById(data.reservationID))) {
       throw new APIError(400, "Reservation not found");
     }
+
+    // Check if the result is a duplicate
     if (await this.checkDuplicate(data)) {
       throw new APIError(400, "Reservation result duplicated");
     }
-    const reservationResult = await RESERVATIONRESULT.create({
+
+    // Create new reservation result using the repo
+    const reservationResult = await reservationResultRepo.create({
       reservationID: data.reservationID,
       questions: data.questions,
       answers: data.answers,
       status: "completed",
       deleteReason: null,
     });
-    await reservationResult.save();
+
     return reservationResult;
   }
+
   async getReservationResult(reservationResultID) {
-    const response = await RESERVATIONRESULT.findById(reservationResultID);
+    const response = await reservationResultRepo.findById(reservationResultID);
     if (!response) {
       throw new APIError(400, "Reservation result not found");
     }
     return response;
   }
+
   async updateReservationResult(reservationResultID, data) {
-    const updatedReservationResult = await RESERVATIONRESULT.findByIdAndUpdate(
+    const updatedReservationResult = await reservationResultRepo.updateById(
       reservationResultID,
-      { $set: { questions: data.questions, answers: data.answers } },
-      { new: true, runValidators: true }
+      { questions: data.questions, answers: data.answers }
     );
 
     if (!updatedReservationResult) {
       throw new APIError(404, "Reservation result not found");
     }
   }
+
   async deleteReservationResult(reservationResultID, deleteReason) {
     if (!deleteReason) {
       throw new APIError(400, "Delete reason is required");
     }
 
-    // Find the reservation result and update status to 'deleted' along with the delete reason
-    const updatedReservationResult = await RESERVATIONRESULT.findByIdAndUpdate(
+    // Update status to 'deleted' and include the delete reason
+    const updatedReservationResult = await reservationResultRepo.updateById(
       reservationResultID,
       {
         status: "deleted",
         deleteReason: deleteReason,
-      },
-      {
-        new: true, // Return the updated document
-        runValidators: true, // Ensure validation is run during the update
       }
     );
 
@@ -62,11 +66,12 @@ class ReservationResultService {
     return updatedReservationResult;
   }
 
-  async getAllReservationResult() {
-    return await RESERVATIONRESULT.find();
+  async getAllReservationResults() {
+    return await reservationResultRepo.findAll();
   }
+
   async checkDuplicate(data) {
-    const existing = await RESERVATIONRESULT.findOne({
+    const existing = await reservationResultRepo.findOne({
       questions: { $eq: data.questions },
       answers: { $eq: data.answers },
       status: "completed",
@@ -75,4 +80,5 @@ class ReservationResultService {
     return existing !== null;
   }
 }
+
 module.exports = new ReservationResultService();

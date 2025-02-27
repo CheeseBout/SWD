@@ -1,15 +1,34 @@
-import React from "react";
-import { ApplicationProvider, Layout, Text } from "@ui-kitten/components";
-import * as eva from "@eva-design/eva";
+import React, { useState, useEffect } from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { LoginScreen } from "./screens/Login/Login";
+import { HomeScreen } from "./screens/Home/Home";
+import { RegisterScreen } from "./screens/Register/Register";
+
+const Stack = createNativeStackNavigator();
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   return (
-    <ApplicationProvider {...eva} theme={eva.light}>
-      <Layout
-        style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-      >
-        <Text category="h1">Hello UI Kitten</Text>
-      </Layout>
-    </ApplicationProvider>
+    <NavigationContainer>
+      <Stack.Navigator>
+        <Stack.Screen
+          name="Login"
+          component={LoginScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Register"
+          component={RegisterScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{ headerShown: false }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }

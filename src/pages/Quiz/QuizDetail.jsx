@@ -13,15 +13,16 @@ export default function QuizDetail() {
       try {
         const response = await quizService.getQuizById(id);
         if (response.status === 200) {
-          setQuiz(response.data.quizzes[0]);
+          setQuiz(response.data.quiz.questions[0]);
         }
+        console.log('Quiz:', response.data);
       } catch (error) {
         console.error('Error fetching quiz:', error);
       } finally {
         setLoading(false);
       }
     };
-
+    
     fetchQuiz();
   }, [id]);
 

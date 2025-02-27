@@ -36,13 +36,13 @@ export function HomeHero() {
 
               <div className="flex flex-wrap gap-4 mb-12">
                 <Link
-                  to="/find-therapist"
+                  to="/find-a-therapist"
                   className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-lg shadow-lg hover:shadow-blue-500/30 transition-all duration-300"
                 >
                   Find a Therapist
                 </Link>
                 <Link
-                  to="/mental-health-test"
+                  to="/quizzes"
                   className="px-6 py-3 bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/20 font-medium rounded-lg transition-all duration-300"
                 >
                   Take Assessment

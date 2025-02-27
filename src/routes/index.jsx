@@ -10,7 +10,7 @@ const TopicDetail = lazy(() => import("../pages/Topics/TopicDetail"));
 const AboutUs = lazy(() => import("../pages/AboutUs"));
 const Contact = lazy(() => import("../pages/Contact"));
 const PrivacyPolicy = lazy(() => import("../pages/Policy/PrivacyPolicy"));
-const QuizDetail = lazy(() => import("../pages/Quiz/QuizDetail"));
+const QuizDetail = lazy(() => import('../pages/Quiz/QuizDetail'));
 const SearchTherapist = lazy(() => import('../pages/Therapist/SearchTherapist'));
 const FAQs = lazy(() => import('../pages/FAQs'));
 const CookiePolicy = lazy(() => import('../pages/Policy/CookiePolicy'));

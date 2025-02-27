@@ -1,6 +1,19 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
+import LoadingSpinner from "../../components/common/LoadingSpinner";
 
 export default function AboutUs() {
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 800);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) return <LoadingSpinner />;
+
   return (
     <div className="bg-white">
       <section className="bg-gradient-to-b from-blue-50 to-white py-20">

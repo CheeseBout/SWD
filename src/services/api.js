@@ -28,7 +28,12 @@ export const quizService = {
   },
 
   getQuizById: async (id) => {
-    const response = await api.get(`/api/v1/quiz/${id}`);
-    return response.data;
+    try {
+      const response = await api.get(`/api/v1/quiz/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching quiz with ID ${id}:`, error);
+      throw error;
+    }
   }
 };

@@ -1,8 +1,9 @@
 import React, { useEffect } from "react";
 import TopicCard from "./TopicCard";
 import { topicService } from "../../services/api";
+import PropTypes from 'prop-types';
 
-export default function TopicList() {
+export default function TopicList({ limit }) {
   const [topics, setTopics] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
@@ -28,7 +29,9 @@ export default function TopicList() {
     fetchData();
   }, []);
 
-  const activeTopics = topics.filter(topic => topic.status === 'active');
+  const activeTopics = topics
+    .filter(topic => topic.status === 'active')
+    .slice(0, limit);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -47,3 +50,11 @@ export default function TopicList() {
     </div>
   );
 }
+
+TopicList.propTypes = {
+  limit: PropTypes.number
+};
+
+TopicList.defaultProps = {
+  limit: Infinity
+};

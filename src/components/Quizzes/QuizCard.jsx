@@ -20,7 +20,7 @@ export default function QuizCard({ quiz }) {
             {quiz.quizName}
           </h2>
           <div className="flex items-center text-sm text-gray-500 mb-1">
-            <span>{quiz.questions.length} Questions</span>
+            <span>{quiz.questions?.length || 0} Questions</span>
           </div>
           <p className="text-gray-600 text-sm line-clamp-2">{quiz.quizDescription}</p>
         </div>

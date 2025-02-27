@@ -18,6 +18,7 @@ class QuestionsBankService {
       const newTopic = await questionsRepo.createTopic({
         name: requestBody.topicName,
         description: requestBody.topicDescription,
+        imageUrl: requestBody.imageUrl,
       });
       requestBody.topic = newTopic._id;
     } else {
@@ -36,7 +37,6 @@ class QuestionsBankService {
     return {
       data: {
         questionBank,
-        topic,
       },
     };
   }

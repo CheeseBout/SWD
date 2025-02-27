@@ -74,20 +74,47 @@ class QuizService {
     }
 
     const { quizId } = req.params;
-    const updateData = { ...req.body };
+    const { questionID, quizName, quizDescription } = req.body;
 
     try {
-      const updatedQuiz = await quizRepo.updateQuiz(quizId, updateData);
-
-      if (!updatedQuiz) {
+      const existingQuiz = await quizRepo.findQuizById(quizId);
+      if (!existingQuiz) {
         throw new APIError(404, "Quiz not found");
       }
+
+      const updateData = {
+        lastEdited: Date.now(),
+      };
+
+      if (quizName) updateData.quizName = quizName;
+      if (quizDescription) updateData.quizDescription = quizDescription;
+
+      if (questionID) {
+        console.log(
+          "Existing questions:",
+          existingQuiz.questions.map((q) => q._id.toString())
+        );
+        console.log("New question:", questionID);
+
+        const questionExists = existingQuiz.questions.some(
+          (question) => question._id.toString() === questionID
+        );
+
+        if (questionExists) {
+          throw new APIError(400, "Question already exists in the quiz");
+        }
+
+        updateData.questionID = questionID;
+      }
+
+      const updatedQuiz = await quizRepo.updateQuiz(quizId, updateData);
 
       return {
         success: true,
         quiz: updatedQuiz,
       };
     } catch (error) {
+      console.error("Update quiz error:", error);
       if (error.name === "CastError") {
         throw new APIError(400, "Invalid quiz ID format");
       }

@@ -3,84 +3,60 @@ const mongoose = require("mongoose");
 const { getSecret } = require("./keyVault");
 
 async function putKeyVaultSecretInEnvVar() {
-  try {
-    const secretName = process.env.KEY_VAULT_SECRET_NAME_DATABASE_URL;
-    const keyVaultName = process.env.KEY_VAULT_NAME;
+  const secretName = process.env.KEY_VAULT_SECRET_NAME_DATABASE_URL;
+  const keyVaultName = process.env.KEY_VAULT_NAME;
 
-    if (!secretName || !keyVaultName) {
-      throw new Error("🔴 Error: Missing required Key Vault parameters.");
-    }
+  console.log(secretName);
+  console.log(keyVaultName);
 
-    console.log(
-      `🔹 Fetching secret: ${secretName} from Key Vault: ${keyVaultName}`
-    );
+  if (!secretName || !keyVaultName)
+    throw Error("getSecret: Required params missing");
 
-    const connectionString = await getSecret(secretName, keyVaultName);
-
-    if (!connectionString) {
-      throw new Error(
-        "🔴 Error: Retrieved secret is empty. Check Key Vault setup."
-      );
-    }
-
-    process.env.DATABASE_URL = connectionString;
-    console.log(
-      "✅ Successfully retrieved MongoDB connection string from Key Vault."
-    );
-  } catch (error) {
-    console.error("❌ Error retrieving secret from Key Vault:", error);
-    throw error;
-  }
+  connectionString = await getSecret(secretName, keyVaultName);
+  process.env.DATABASE_URL = connectionString;
 }
 
 async function getConnectionInfo() {
-  try {
+  if (!process.env.DATABASE_URL) {
+    await putKeyVaultSecretInEnvVar();
+
     if (!process.env.DATABASE_URL) {
-      await putKeyVaultSecretInEnvVar();
-
-      if (!process.env.DATABASE_URL) {
-        throw new Error("🔴 Error: No value found in DATABASE_URL.");
-      }
+      throw new Error("No value in DATABASE_URL in env var");
     }
-
-    const DATABASE_NAME =
-      process.env.DATABASE_NAME || "premarital-counseling-database";
-
-    // Azure Cosmos DB connection options
-    const options = {
-      ssl: true, // Required for Azure Cosmos DB
-      tlsAllowInvalidCertificates: true, // Allow self-signed certs (debugging only)
-      retryWrites: false,
-      maxIdleTimeMS: 120000,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 30000,
-      replicaSet: "globaldb", // Required for Azure Cosmos DB
-    };
-
-    return {
-      DATABASE_URL: process.env.DATABASE_URL,
-      DATABASE_NAME,
-      OPTIONS: options,
-    };
-  } catch (error) {
-    console.error("❌ Error getting database connection info:", error);
-    throw error;
   }
+
+  const DATABASE_NAME =
+    process.env.DATABASE_NAME || "premarital-counseling-database";
+
+  // Add MongoDB connection options for Azure Cosmos DB
+  const options = {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    retryWrites: false,
+    maxIdleTimeMS: 120000,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 30000,
+  };
+
+  return {
+    DATABASE_URL: process.env.DATABASE_URL,
+    DATABASE_NAME: DATABASE_NAME,
+    OPTIONS: options,
+  };
 }
 
-// Establish connection to MongoDB
+// Add new function to establish connection
 async function connectToDatabase() {
-  try {
-    const { DATABASE_URL, DATABASE_NAME, OPTIONS } = await getConnectionInfo();
+  const { DATABASE_URL, DATABASE_NAME, OPTIONS } = await getConnectionInfo();
 
+  try {
     await mongoose.connect(DATABASE_URL, {
       ...OPTIONS,
       dbName: DATABASE_NAME,
     });
-
-    console.log("✅ Successfully connected to Azure Cosmos DB.");
+    console.log("✅ Connected to Azure Cosmos DB");
   } catch (error) {
-    console.error("❌ Error connecting to Azure Cosmos DB:", error);
+    console.error("❌ Error connecting to Azure Cosmos DB: ", error);
     throw error;
   }
 }

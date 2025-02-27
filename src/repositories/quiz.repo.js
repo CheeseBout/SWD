@@ -21,9 +21,9 @@ class QuizRepository {
     return await quiz.populate("questions");
   }
 
-  async updateQuestionsWithQuizId(quizId) {
+  async updateQuestionsWithQuizId(quizId, questionID) {
     return await QUESTIONS.findOneAndUpdate(
-      {},
+      { _id: questionID }, // Fix: Use proper filter object
       {
         $push: { quizzes: quizId },
       },
@@ -43,11 +43,47 @@ class QuizRepository {
   }
 
   async updateQuiz(quizId, updateData) {
-    return await QUIZZES.findByIdAndUpdate(
-      quizId,
-      { ...updateData, lastEdited: Date.now() },
-      { new: true }
-    ).populate("questions");
+    const { questionID, ...otherUpdates } = updateData;
+
+    if (questionID) {
+      // First update the question with quiz reference
+      await QUESTIONS.findByIdAndUpdate(
+        questionID,
+        {
+          $addToSet: { quizzes: quizId }, // Use addToSet to prevent duplicates
+          lastEdited: Date.now(),
+        },
+        { new: true }
+      );
+
+      // Update quiz details in TOPIC collection
+      if (otherUpdates.quizName || otherUpdates.quizDescription) {
+        await TOPIC.updateMany(
+          { "quiz._id": quizId },
+          {
+            $set: {
+              "quiz.$.quizName": otherUpdates.quizName,
+              "quiz.$.quizDescription": otherUpdates.quizDescription,
+              "quiz.$.lastEdited": Date.now(),
+            },
+          }
+        );
+      }
+
+      // Then update the quiz with question reference
+      return await QUIZZES.findByIdAndUpdate(
+        quizId,
+        {
+          $addToSet: { questions: questionID }, // Use addToSet to prevent duplicates
+          ...otherUpdates,
+        },
+        { new: true }
+      ).populate("questions");
+    }
+
+    return await QUIZZES.findByIdAndUpdate(quizId, otherUpdates, {
+      new: true,
+    }).populate("questions");
   }
 
   async updateQuizStatus(quizId, status, deletedReason) {

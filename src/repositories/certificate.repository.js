@@ -20,6 +20,10 @@ class CertificateRepository {
       { new: true }
     );
   }
+
+  async deleteCertificate(certificateID) {
+    return await CERTIFICATE.findByIdAndDelete(certificateID);
+  }
 }
 
 module.exports = new CertificateRepository();

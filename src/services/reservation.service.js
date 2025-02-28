@@ -60,8 +60,12 @@ class ReservationService {
     return reservation;
   }
 
-  async denyReservation(reservationID) {
-    const reservation = await reservationsRepo.denyReservation(reservationID);
+  async denyReservation(reservationID, reason) {
+    if (!reason) throw new APIError(400, "Reason is required");
+    const reservation = await reservationsRepo.denyReservation(
+      reservationID,
+      reason
+    );
     if (!reservation) throw new APIError(404, "Reservation not found");
     return reservation;
   }

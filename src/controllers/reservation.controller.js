@@ -72,7 +72,10 @@ class ResevationController {
     return OK(
       res,
       "Success",
-      await reservationService.denyReservation(req.params.reservationID)
+      await reservationService.denyReservation(
+        req.params.reservationID,
+        req.body.reason
+      )
     );
   });
 }

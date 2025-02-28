@@ -3,6 +3,7 @@ import { HomePage } from "@pages/HomePage";
 import App from "../App";
 import { Suspense, lazy } from "react";
 import PropTypes from "prop-types";
+import GoogleCallbackHandler from "../pages/Login/GoogleCallbackHandler";
 
 const Topics = lazy(() => import("../pages/Topics"));
 const Quizzes = lazy(() => import("../pages/Quiz/Quizzes"));
@@ -15,8 +16,9 @@ const SearchTherapist = lazy(() =>
   import("../pages/Therapist/SearchTherapist")
 );
 const FAQs = lazy(() => import("../pages/FAQs"));
-
+const ProfilePage = lazy(() => import("../pages/Profile"));
 const LoginPage = lazy(() => import("../pages/Login"));
+const RegisterPage = lazy(() => import("../pages/Register"));
 const LazyLoad = ({ children }) => (
   <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
 );
@@ -38,7 +40,31 @@ export function AppRoutes() {
             </LazyLoad>
           }
         />
-
+        <Route
+          path="google-callback"
+          element={
+            <LazyLoad>
+              <GoogleCallbackHandler />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="register"
+          element={
+            <LazyLoad>
+              <RegisterPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="profile"
+          element={
+            <LazyLoad>
+              <ProfilePage />
+            </LazyLoad>
+          }
+        />
+        ;
         <Route path="quizzes">
           <Route
             index
@@ -57,7 +83,6 @@ export function AppRoutes() {
             }
           />
         </Route>
-
         <Route path="topics">
           <Route
             index
@@ -76,7 +101,6 @@ export function AppRoutes() {
             }
           />
         </Route>
-
         <Route
           path="about-us"
           element={
@@ -85,7 +109,6 @@ export function AppRoutes() {
             </LazyLoad>
           }
         />
-
         <Route
           path="contact"
           element={
@@ -94,7 +117,6 @@ export function AppRoutes() {
             </LazyLoad>
           }
         />
-
         <Route
           path="privacy"
           element={
@@ -103,7 +125,6 @@ export function AppRoutes() {
             </LazyLoad>
           }
         />
-
         <Route path="find-a-therapist">
           <Route
             index
@@ -122,7 +143,6 @@ export function AppRoutes() {
             }
           />
         </Route>
-
         <Route
           path="faq"
           element={

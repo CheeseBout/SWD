@@ -1,14 +1,31 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { authService } from "../../services/api";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log({ email, password, remember });
+    setError(null);
+
+    try {
+      const response = await authService.login(email, password);
+      const { accessToken, refreshToken } = response.data.tokens;
+      console.log(accessToken, refreshToken);
+
+      localStorage.setItem("accessToken", accessToken);
+      if (remember) {
+        localStorage.setItem("refreshToken", refreshToken);
+      }
+      navigate("/profile");
+    } catch (err) {
+      setError(err.response.data.message);
+    }
   };
 
   return (
@@ -26,7 +43,9 @@ export default function LoginPage() {
           Enter your email and password to sign in
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-gray-700">Email</label>
             <input
@@ -55,9 +74,10 @@ export default function LoginPage() {
             <label className="flex items-center text-gray-700">
               <input
                 type="checkbox"
+                className="toggle toggle-primary mr-2 border-blue-500 "
+                defaultChecked
                 checked={remember}
                 onChange={(e) => setRemember(e.target.checked)}
-                className="mr-2"
               />
               Remember me
             </label>
@@ -81,10 +101,11 @@ export default function LoginPage() {
             <div className="flex-grow border-t border-gray-300"></div>
           </div>
           <button
-            type="submit"
+            type="button"
             className="w-full text-black p-3 rounded-lg border-1 border-gray-300 hover:border-[#4096ff] hover:text-[#4096ff]"
+            onClick={() => authService.loginWithGoogle("user")}
           >
-            SIGN IN WITH GOOGLE
+            <i className="fa-solid fa-g"></i> SIGN IN WITH GOOGLE
           </button>
         </form>
 

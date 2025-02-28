@@ -1,14 +1,15 @@
 /** @type {import('tailwindcss').Config} */
 import withMT from "@material-tailwind/react/utils/withMT";
 import daisyui from "daisyui";
-
+// import typography from "@tailwindcss/typography";
+// import forms from "@tailwindcss/forms";
 export default withMT({
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
   darkMode: "class",
   theme: {
     extend: {},
   },
-  plugins: [daisyui,],
+  plugins: [daisyui],
   daisyui: {
     darkTheme: "dark", // name of one of the included themes for dark mode
     base: true, // applies background color and foreground color for root element by default

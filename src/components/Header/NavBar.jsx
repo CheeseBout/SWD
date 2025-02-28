@@ -18,8 +18,7 @@ const NavBar = () => {
             <button
               className="menu-button p-2 rounded-md text-gray-600 hover:text-gray-900"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-            </button>
+            ></button>
           </div>
 
           <div className="hidden md:flex md:items-center md:space-x-8">
@@ -70,7 +69,7 @@ const NavBar = () => {
               Login
             </Link>
             <Link
-              to="/signup"
+              to="/register"
               className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
             >
               Sign Up

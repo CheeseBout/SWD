@@ -42,4 +42,8 @@ module.exports = {
     vnp_HashSecret: process.env.VNP_HASH_SECRET,
     vnp_Url: process.env.VNP_URL,
   },
+  HYGRAPH: {
+    HYGRAPH_ENDPOINT: process.env.HYGRAPH_ENDPOINT,
+    API_TOKEN: process.env.API_TOKEN,
+  },
 };

@@ -12,6 +12,7 @@ const paymentRouter = require("./payment.route");
 const adminRouter = require("./admin.route");
 const packageRouter = require("./package.route");
 const ratingRouter = require("./rating.route");
+const blogRouter = require("./blog.route");
 
 router.use("/auth", authRouter);
 router.use("/users", userRouter);
@@ -26,5 +27,6 @@ router.use("/payment", paymentRouter);
 router.use("/admin", adminRouter);
 router.use("/package", packageRouter);
 router.use("/rating", ratingRouter);
+router.use("/blog", blogRouter);
 
 module.exports = router;

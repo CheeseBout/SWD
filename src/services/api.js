@@ -18,7 +18,7 @@ export const authService = {
   loginWithGoogle: async (role) => {
     const failedURL = `${window.location.origin}/login`;
     const successURL = `${window.location.origin}/google-callback`;
-
+    
     window.location.href = `${BASE_URL}/api/v1/auth/login/google?role=${role}&failRedirectURL=${failedURL}&successRedirectURL=${successURL}`;
   },
 };
@@ -42,7 +42,12 @@ export const quizService = {
   },
 
   getQuizById: async (id) => {
-    const response = await api.get(`/api/v1/quiz/${id}`);
-    return response.data;
-  },
+    try {
+      const response = await api.get(`/api/v1/quiz/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching quiz with ID ${id}:`, error);
+      throw error;
+    }
+  }
 };

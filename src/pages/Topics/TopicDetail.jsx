@@ -1,24 +1,30 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import QuizCard from "../../components/Quizzes/QuizCard";
-import { topicService } from "../../services/api";
+import { topicService } from '../../services/api';
+import LoadingSpinner from "../../components/common/LoadingSpinner";
+import ErrorMessage from "../../components/common/ErrorMessage";
 
 export default function TopicDetail() {
   const [topic, setTopic] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { id } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTopic = async () => {
       try {
+        setLoading(true);
         const response = await topicService.getTopicById(id);
-        if (response.status === 200) {
+        if (response?.data?.topic) {
           setTopic(response.data.topic);
+        } else {
+          throw new Error("Topic not found");
         }
-      } catch (error) {
-        console.error('Error fetching topic:', error);
-        setTopic(null);
+      } catch (err) {
+        setError('Failed to load topic details. Please try again later.');
+        console.error('Error fetching topic:', err);
       } finally {
         setLoading(false);
       }
@@ -27,8 +33,9 @@ export default function TopicDetail() {
     fetchTopic();
   }, [id]);
 
-  if (loading) return <div className="text-center py-4">Loading...</div>;
-  if (!topic) return <div className="text-center mt-10">No topic found</div>;
+  if (loading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage error={error} onBack={() => navigate('/topics')} />;
+  if (!topic) return <ErrorMessage message="Topic not found" onBack={() => navigate('/topics')} />;
 
   return (
     <div className="container mx-auto px-4 py-8">

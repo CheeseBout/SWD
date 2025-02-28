@@ -10,15 +10,17 @@ const Quizzes = lazy(() => import("../pages/Quiz/Quizzes"));
 const TopicDetail = lazy(() => import("../pages/Topics/TopicDetail"));
 const AboutUs = lazy(() => import("../pages/AboutUs"));
 const Contact = lazy(() => import("../pages/Contact"));
-const PrivacyPolicy = lazy(() => import("../pages/PrivacyPolicy"));
-const QuizDetail = lazy(() => import("../pages/Quiz/QuizDetail"));
+const PrivacyPolicy = lazy(() => import("../pages/Policy/PrivacyPolicy"));
+const QuizDetail = lazy(() => import('../pages/Quiz/QuizDetail'));
 const SearchTherapist = lazy(() =>
   import("../pages/Therapist/SearchTherapist")
 );
 const FAQs = lazy(() => import("../pages/FAQs"));
 const ProfilePage = lazy(() => import("../pages/Profile"));
 const LoginPage = lazy(() => import("../pages/Login"));
-const RegisterPage = lazy(() => import("../pages/Register"));
+const RegisterPage = lazy(() => import("../pages/Register"));const CookiePolicy = lazy(() => import('../pages/Policy/CookiePolicy'));
+const TermsOfService = lazy(() => import('../pages/Policy/TermsOfService'));
+
 const LazyLoad = ({ children }) => (
   <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
 );
@@ -151,6 +153,18 @@ export function AppRoutes() {
             </LazyLoad>
           }
         />
+
+        <Route path="cookies" element={
+          <LazyLoad>
+            <CookiePolicy />
+          </LazyLoad>
+        } />
+
+        <Route path="terms" element={
+          <LazyLoad>
+            <TermsOfService />
+          </LazyLoad>
+        } />
       </Route>
     </Routes>
   );

@@ -40,10 +40,10 @@ class ReservationRepo {
       { new: true }
     );
   }
-  async denyReservation(reservationID) {
+  async denyReservation(reservationID, reason) {
     return await RESERVATION.findByIdAndUpdate(
       reservationID,
-      { status: "denied" },
+      { status: "denied", reason: reason },
       { new: true }
     );
   }

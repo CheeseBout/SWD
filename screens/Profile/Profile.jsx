@@ -28,7 +28,7 @@ export const ProfileScreen = ({ navigation }) => {
       action: () => console.log("Open modal with personal information form"),
     },
     {
-      icon: "setting-outline",
+      icon: "settings-outline",
       title: "Settings",
       subtitle: "Notificaton, privacy and more",
       action: () => console.log("Navigate to setting page"),

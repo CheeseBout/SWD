@@ -11,11 +11,11 @@ export const CalendarScreen = () => {
   useEffect(() => {
     // Example events data
     const sampleEvents = {
-      "2025-02-28": [
+      "2025-03-04": [
         { id: 1, title: "Meeting with client", time: "10:00 AM" },
         { id: 2, title: "Lunch with team", time: "1:00 PM" },
       ],
-      "2025-02-27": [{ id: 3, title: "Doctor appointment", time: "9:30 AM" }],
+      "2025-03-08": [{ id: 3, title: "Doctor appointment", time: "9:30 AM" }],
     };
 
     setEvents(sampleEvents);

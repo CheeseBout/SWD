@@ -1,5 +1,8 @@
 const userRepo = require("../repositories/user.repo");
 const APIError = require("../utils/ApiError");
+const imgur = require("imgur");
+const fileUpload = require("express-fileupload");
+const imgurServices = require("./imgur.services");
 
 class UserService {
   async getAllUsers() {
@@ -45,7 +48,6 @@ class UserService {
 
       const updatedUser = await userRepo.update(userID, requestBody);
       return {
-        message: "Updated information successfully",
         updatedUser,
       };
     } catch (error) {
@@ -53,6 +55,21 @@ class UserService {
       throw new APIError(500, `Update failed: ${error.message}`);
     }
   }
+
+  changeAvatar = async (req) => {
+    const imageFile = req.file;
+    const userID = req.user?._id;
+    if (!userID) {
+      throw new APIError(401, "User not fou");
+    }
+    if (!imageFile) {
+      throw new APIError(400, "Image file is required");
+    }
+
+    const avatarLink = await imgurServices.uploadImage(imageFile);
+
+    return await userRepo.update(userID, { photoURL: avatarLink });
+  };
 }
 
 module.exports = new UserService();

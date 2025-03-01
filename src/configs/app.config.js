@@ -46,4 +46,8 @@ module.exports = {
     HYGRAPH_ENDPOINT: process.env.HYGRAPH_ENDPOINT,
     API_TOKEN: process.env.API_TOKEN,
   },
+  imgur: {
+    clientID: process.env.IMGUR_CLIENT_ID,
+    clientSecret: process.env.IMGUR_CLIENT_SECRET,
+  },
 };

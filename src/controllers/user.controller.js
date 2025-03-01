@@ -11,7 +11,18 @@ class UserController {
     return OK(res, "Success", await userServices.getUserById(req.params.id));
   });
   updateProfile = catchAsync(async (req, res) => {
-    return OK(res, "Success", await userServices.updateProfile(req));
+    return OK(
+      res,
+      "Updated information successfully",
+      await userServices.updateProfile(req)
+    );
+  });
+  changeAvatar = catchAsync(async (req, res) => {
+    return OK(
+      res,
+      "Your avatar has been changed successfully",
+      await userServices.changeAvatar(req)
+    );
   });
 }
 

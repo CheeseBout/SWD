@@ -1,5 +1,4 @@
-const { createPost } = require("../services/blog.services");
-const APIError = require("../utils/ApiError");
+const blogServices = require("../services/blog.services");
 const catchAsync = require("../utils/catchAsync");
 const { OK } = require("../utils/response");
 
@@ -8,41 +7,24 @@ class BlogController {
     const {
       title,
       content,
+      description,
       category,
       authorName,
       coverPhotoUrl,
       postDate,
-      description,
     } = req.body;
 
-    if (
-      !title ||
-      !content ||
-      !category ||
-      !authorName ||
-      !coverPhotoUrl ||
-      !description
-    ) {
-      throw new APIError(400, "Missing required fields");
-    }
-
-    // Ensure postDate is valid
-    const formattedPostDate =
-      postDate && !isNaN(Date.parse(postDate))
-        ? new Date(postDate).toISOString()
-        : new Date().toISOString();
-
-    const post = await createPost(
+    const result = await blogServices.createPost(
       title,
       content,
       description,
       category,
       authorName,
       coverPhotoUrl,
-      formattedPostDate
+      postDate
     );
 
-    return OK(res, "Created post successfully!", post);
+    return OK(res, "Blog post created successfully", result);
   });
 }
 

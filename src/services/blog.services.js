@@ -1,35 +1,85 @@
-const { GraphQLClient, gql } = require("graphql-request");
+// Using dynamic import for graphql-request
 const APIError = require("../utils/ApiError");
 const appConfig = require("../configs/app.config");
-
-// Initialize GraphQL client
-const client = new GraphQLClient(appConfig.HYGRAPH.HYGRAPH_ENDPOINT, {
-  headers: {
-    authorization: `Bearer ${appConfig.HYGRAPH.API_TOKEN}`,
-  },
-});
 
 // Default cover photo URL
 const DEFAULT_COVER_PHOTO_URL = "https://example.com/default-cover.jpg";
 
+// Initialize client outside the main function scope
+let client;
+
+// Initialize the GraphQL client
+const initializeClient = async () => {
+  // Dynamic import of graphql-request
+  const { GraphQLClient } = await import("graphql-request");
+
+  if (!client) {
+    client = new GraphQLClient(appConfig.HYGRAPH.HYGRAPH_ENDPOINT, {
+      headers: {
+        authorization: `Bearer ${appConfig.HYGRAPH.API_TOKEN}`,
+      },
+    });
+  }
+
+  return client;
+};
+
 const getOrCreateAuthor = async (authorName) => {
   try {
+    // Import gql from graphql-request
+    const { gql } = await import("graphql-request");
+    const graphqlClient = await initializeClient();
+
     console.log(`🔍 Searching for author: "${authorName}"`);
 
     const findAuthorsQuery = gql`
       query FindAuthors($name: String!) {
         authors(where: { name: $name }) {
           id
+          stage
         }
       }
     `;
 
-    const { authors } = await client.request(findAuthorsQuery, {
+    const { authors } = await graphqlClient.request(findAuthorsQuery, {
       name: authorName,
     });
 
     if (authors.length > 0) {
-      console.log(`✅ Author found: (ID: ${authors[0].id})`);
+      console.log(
+        `✅ Author found: (ID: ${authors[0].id}, Stage: ${authors[0].stage})`
+      );
+
+      // If author exists but is not published, publish them
+      if (authors[0].stage !== "PUBLISHED") {
+        try {
+          const publishAuthorMutation = gql`
+            mutation PublishAuthor($id: ID!) {
+              publishAuthor(where: { id: $id }, to: PUBLISHED) {
+                id
+                stage
+              }
+            }
+          `;
+
+          const publishResult = await graphqlClient.request(
+            publishAuthorMutation,
+            {
+              id: authors[0].id,
+            }
+          );
+
+          console.log(
+            `✅ Existing author published: Stage = ${publishResult.publishAuthor.stage}`
+          );
+        } catch (publishError) {
+          console.warn(
+            `⚠️ Could not publish existing author: ${publishError.message}`
+          );
+          // Continue even if publishing fails
+        }
+      }
+
       return authors[0].id;
     }
 
@@ -48,11 +98,37 @@ const getOrCreateAuthor = async (authorName) => {
       }
     `;
 
-    const { createAuthor } = await client.request(createAuthorMutation, {
+    const { createAuthor } = await graphqlClient.request(createAuthorMutation, {
       name: authorName,
     });
 
     console.log(`✅ Author created successfully (ID: ${createAuthor.id})`);
+
+    // Publish the author immediately after creation
+    try {
+      const publishAuthorMutation = gql`
+        mutation PublishAuthor($id: ID!) {
+          publishAuthor(where: { id: $id }, to: PUBLISHED) {
+            id
+            stage
+          }
+        }
+      `;
+
+      const publishResult = await graphqlClient.request(publishAuthorMutation, {
+        id: createAuthor.id,
+      });
+
+      console.log(
+        `✅ Author published successfully: Stage = ${publishResult.publishAuthor.stage}`
+      );
+    } catch (publishError) {
+      console.warn(
+        `⚠️ Could not publish author, but it was created: ${publishError.message}`
+      );
+      // Continue even if publishing fails
+    }
+
     return createAuthor.id;
   } catch (error) {
     console.error("❌ Error handling author:", error);
@@ -76,6 +152,10 @@ const createPost = async (
   postDate
 ) => {
   try {
+    // Import gql from graphql-request
+    const { gql } = await import("graphql-request");
+    const graphqlClient = await initializeClient();
+
     const authorId = await getOrCreateAuthor(authorName);
 
     // Xử lý và chuyển đổi định dạng content
@@ -226,7 +306,7 @@ const createPost = async (
 
     // Thực hiện mutation với kiểm tra lỗi chi tiết
     try {
-      const response = await client.request(
+      const response = await graphqlClient.request(
         createAndPublishMutation,
         variables
       );
@@ -303,7 +383,7 @@ const createPost = async (
           }
         `;
 
-        const altResponse = await client.request(
+        const altResponse = await graphqlClient.request(
           alternativeMutation,
           variables
         );
@@ -373,7 +453,7 @@ const createPost = async (
           }
         `;
 
-        const createResponse = await client.request(
+        const createResponse = await graphqlClient.request(
           createPostMutation,
           variables
         );
@@ -397,9 +477,12 @@ const createPost = async (
             }
           `;
 
-          const publishResponse = await client.request(publishPostMutation, {
-            id: createResponse.createPost.id,
-          });
+          const publishResponse = await graphqlClient.request(
+            publishPostMutation,
+            {
+              id: createResponse.createPost.id,
+            }
+          );
 
           console.log(
             `✅ Post published successfully: Stage = ${publishResponse.publishPost.stage}`

@@ -6,11 +6,11 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import { styles } from "./styles";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
-// You'll need to install a package for icons or use your own icons
-// This is pseudocode for the icons
 const Icon = ({ name, size, color }) => (
   <View
     style={{
@@ -29,11 +29,14 @@ export const HomeScreen = ({ navigation }) => {
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <Text style={styles.welcomeText}>Hello, John!</Text>
-          <View style={styles.profileImage} />
+          <Image
+            style={styles.profileImage}
+            source={{ uri: "https://randomuser.me/api/portraits/men/32.jpg" }}
+          />
         </View>
 
         <View style={styles.searchContainer}>
-          <Icon name="search" size={20} color="#fff" />
+          <Ionicons name="search" size={20} color="#fff" />
           <TextInput
             style={styles.searchInput}
             placeholder="Search for services..."
@@ -55,9 +58,9 @@ export const HomeScreen = ({ navigation }) => {
             <View>
               <Text style={styles.eventTitle}>Pre-Marriage Counseling</Text>
               <View style={styles.eventDetails}>
-                <Icon name="location" size={14} color="#666" />
+                <Ionicons name="location" size={14} color="#666" />
                 <Text style={styles.eventLocation}>Marriage Center</Text>
-                <Icon name="time" size={14} color="#666" />
+                <Ionicons name="time" size={14} color="#666" />
                 <Text style={styles.eventTime}>10:00 AM</Text>
               </View>
             </View>
@@ -67,7 +70,10 @@ export const HomeScreen = ({ navigation }) => {
         <Text style={styles.sectionTitle}>Services</Text>
 
         <View style={styles.cardContainer}>
-          <TouchableOpacity style={styles.card}>
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => navigation.navigate("SearchTherapist")}
+          >
             <View style={styles.cardImage} />
             <Text style={styles.cardTitle}>Counseling</Text>
             <Text style={styles.cardDescription}>Expert marriage advice</Text>

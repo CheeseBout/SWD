@@ -10,6 +10,8 @@ import SettingScreen from "./screens/Setting/Setting";
 import { CalendarScreen } from "./screens/Calendar/Calendar";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import SearchTherapistScreen from "./screens/SearchTherapist/SearchTherapist";
+import SearchTherapistResultScreen from "./screens/SearchTherapistResult/SearchTherapistResult";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -87,6 +89,16 @@ export default function App() {
           name="Setting"
           component={SettingScreen}
           options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="SearchTherapist"
+          component={SearchTherapistScreen}
+          options={{ headerShown: true, title: "Find a Therapist" }}
+        />
+        <Stack.Screen
+          name="SearchTherapistResult"
+          component={SearchTherapistResultScreen}
+          options={{ headerShown: true, title: "Find a Therapist" }}
         />
       </Stack.Navigator>
     </NavigationContainer>

@@ -4,6 +4,17 @@ const { OK } = require("../utils/response");
 const { updatePost, deletePost } = require("../services/blog.services");
 
 class BlogController {
+  getAllPosts = catchAsync(async (req, res) => {
+    const result = await blogServices.getAllBlogPosts(req);
+    return OK(res, "Blog posts retrieved successfully", result);
+  });
+
+  getPostBySlug = catchAsync(async (req, res) => {
+    const slug = req.params.slug;
+    const result = await blogServices.getPostBySlug(slug);
+    return OK(res, "Blog post retrieved successfully", result);
+  });
+
   createPost = catchAsync(async (req, res) => {
     const {
       title,

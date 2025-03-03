@@ -16,6 +16,70 @@ const initializeClient = async () => {
   return client;
 };
 
+const getAllBlogPosts = async () => {
+  try {
+    const { gql } = await import("graphql-request");
+    const graphqlClient = await initializeClient();
+    const getAllQuery = gql`
+      {
+        posts {
+          id
+          title
+          postDate
+          slug
+          category
+          content {
+            html
+          }
+          author {
+            name
+            avatar {
+              id
+            }
+          }
+          coverPhoto
+        }
+      }
+    `;
+    const response = await graphqlClient.request(getAllQuery);
+    return response.posts;
+  } catch (error) {
+    throw new APIError(500, "Failed to fetch blog posts");
+  }
+};
+
+const getPostBySlug = async (slug) => {
+  try {
+    const { gql } = await import("graphql-request");
+    const graphqlClient = await initializeClient();
+    const getPostQuery = gql`
+      query GetPostBySlug($slug: String!) {
+        posts(where: { slug: $slug }) {
+          id
+          title
+          postDate
+          slug
+          category
+          content {
+            html
+          }
+          author {
+            name
+            avatar {
+              id
+            }
+          }
+          coverPhoto
+        }
+      }
+    `;
+    const response = await graphqlClient.request(getPostQuery, { slug });
+    return response.posts[0];
+  } catch (error) {
+    throw new APIError(500, "Failed to fetch blog post");
+  }
+};
+
 const getOrCreateAuthor = async (authorName) => {
   try {
     const { gql } = await import("graphql-request");
@@ -408,6 +472,8 @@ const formatContent = (content) => {
 };
 
 module.exports = {
+  getAllBlogPosts,
+  getPostBySlug,
   createPost,
   getOrCreateAuthor,
   updatePost,

@@ -1,18 +1,11 @@
-// Using dynamic import for graphql-request
 const APIError = require("../utils/ApiError");
 const appConfig = require("../configs/app.config");
 
-// Default cover photo URL
 const DEFAULT_COVER_PHOTO_URL = "https://example.com/default-cover.jpg";
-
-// Initialize client outside the main function scope
 let client;
 
-// Initialize the GraphQL client
 const initializeClient = async () => {
-  // Dynamic import of graphql-request
   const { GraphQLClient } = await import("graphql-request");
-
   if (!client) {
     client = new GraphQLClient(appConfig.HYGRAPH.HYGRAPH_ENDPOINT, {
       headers: {
@@ -20,17 +13,13 @@ const initializeClient = async () => {
       },
     });
   }
-
   return client;
 };
 
 const getOrCreateAuthor = async (authorName) => {
   try {
-    // Import gql from graphql-request
     const { gql } = await import("graphql-request");
     const graphqlClient = await initializeClient();
-
-    console.log(`🔍 Searching for author: "${authorName}"`);
 
     const findAuthorsQuery = gql`
       query FindAuthors($name: String!) {
@@ -46,51 +35,29 @@ const getOrCreateAuthor = async (authorName) => {
     });
 
     if (authors.length > 0) {
-      console.log(
-        `✅ Author found: (ID: ${authors[0].id}, Stage: ${authors[0].stage})`
-      );
-
-      // If author exists but is not published, publish them
       if (authors[0].stage !== "PUBLISHED") {
-        try {
-          const publishAuthorMutation = gql`
-            mutation PublishAuthor($id: ID!) {
-              publishAuthor(where: { id: $id }, to: PUBLISHED) {
-                id
-                stage
-              }
+        const publishAuthorMutation = gql`
+          mutation PublishAuthor($id: ID!) {
+            publishAuthor(where: { id: $id }, to: PUBLISHED) {
+              id
+              stage
             }
-          `;
+          }
+        `;
 
-          const publishResult = await graphqlClient.request(
-            publishAuthorMutation,
-            {
-              id: authors[0].id,
-            }
-          );
-
-          console.log(
-            `✅ Existing author published: Stage = ${publishResult.publishAuthor.stage}`
-          );
-        } catch (publishError) {
-          console.warn(
-            `⚠️ Could not publish existing author: ${publishError.message}`
-          );
-          // Continue even if publishing fails
-        }
+        await graphqlClient.request(publishAuthorMutation, {
+          id: authors[0].id,
+        });
       }
-
       return authors[0].id;
     }
-
-    console.log(`🆕 Creating new author: "${authorName}"`);
 
     const createAuthorMutation = gql`
       mutation CreateAuthor($name: String!) {
         createAuthor(
           data: {
             name: $name
-            avatar: { connect: { id: "cm7oeouvfbcvl07zt1jv1risk" } } # Required asset
+            avatar: { connect: { id: "cm7oeouvfbcvl07zt1jv1risk" } }
           }
         ) {
           id
@@ -102,44 +69,41 @@ const getOrCreateAuthor = async (authorName) => {
       name: authorName,
     });
 
-    console.log(`✅ Author created successfully (ID: ${createAuthor.id})`);
-
-    // Publish the author immediately after creation
-    try {
-      const publishAuthorMutation = gql`
-        mutation PublishAuthor($id: ID!) {
-          publishAuthor(where: { id: $id }, to: PUBLISHED) {
-            id
-            stage
-          }
+    const publishAuthorMutation = gql`
+      mutation PublishAuthor($id: ID!) {
+        publishAuthor(where: { id: $id }, to: PUBLISHED) {
+          id
+          stage
         }
-      `;
+      }
+    `;
 
-      const publishResult = await graphqlClient.request(publishAuthorMutation, {
-        id: createAuthor.id,
-      });
-
-      console.log(
-        `✅ Author published successfully: Stage = ${publishResult.publishAuthor.stage}`
-      );
-    } catch (publishError) {
-      console.warn(
-        `⚠️ Could not publish author, but it was created: ${publishError.message}`
-      );
-      // Continue even if publishing fails
-    }
+    await graphqlClient.request(publishAuthorMutation, {
+      id: createAuthor.id,
+    });
 
     return createAuthor.id;
   } catch (error) {
-    console.error("❌ Error handling author:", error);
-    if (error.response) {
-      console.error(
-        "🔍 Full Response:",
-        JSON.stringify(error.response, null, 2)
-      );
-    }
     throw new APIError(500, `Failed to create or find author "${authorName}"`);
   }
+};
+
+const createSlug = (str) => {
+  // Chuyển về lowercase và bỏ dấu tiếng Việt
+  str = str
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
+
+  // Thay thế ký tự đặc biệt bằng dấu gạch ngang
+  str = str
+    .replace(/[^a-z0-9]+/g, "-") // thay thế ký tự không phải chữ và số bằng dấu gạch ngang
+    .replace(/^-+|-+$/g, "") // xóa dấu gạch ngang ở đầu và cuối
+    .replace(/-+/g, "-"); // thay thế nhiều dấu gạch ngang liên tiếp bằng một dấu
+
+  return str;
 };
 
 const createPost = async (
@@ -149,21 +113,21 @@ const createPost = async (
   category,
   authorName,
   coverPhotoUrl,
-  postDate
+  postDate,
+  req
 ) => {
+  if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
+    throw new APIError(
+      403,
+      "Only admin and couple therapist can create a post"
+    );
+  }
   try {
-    // Import gql from graphql-request
     const { gql } = await import("graphql-request");
     const graphqlClient = await initializeClient();
-
     const authorId = await getOrCreateAuthor(authorName);
 
-    // Xử lý và chuyển đổi định dạng content
     let formattedContent;
-
-    // Log định dạng content nhận được để debug
-    console.log("📄 Received content:", typeof content);
-
     if (typeof content === "string") {
       try {
         formattedContent = JSON.parse(content);
@@ -178,12 +142,10 @@ const createPost = async (
         };
       }
     } else if (content?.children) {
-      // Đã có định dạng đúng
       formattedContent = content;
     } else if (content?.raw?.children) {
       formattedContent = content.raw;
     } else if (content?.type === "doc" && content?.content) {
-      // Chuyển đổi cấu trúc content thành children
       formattedContent = {
         children: content.content.map((item) => {
           const transformNode = (node) => {
@@ -198,39 +160,19 @@ const createPost = async (
         }),
       };
     } else {
-      console.error(
-        "❌ Invalid content format received:",
-        JSON.stringify(content, null, 2)
-      );
       throw new APIError(
         400,
         "Invalid content format. Expected RichTextAST compatible format."
       );
     }
 
-    // Log định dạng content sau khi chuyển đổi
-    console.log(
-      "📄 Formatted content:",
-      JSON.stringify(formattedContent, null, 2)
-    );
+    const slug = createSlug(title);
 
-    const slug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
+    let formattedPostDate =
+      postDate && !isNaN(Date.parse(postDate))
+        ? new Date(postDate).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0];
 
-    // Xử lý postDate - chuyển thành YYYY-MM-DD
-    let formattedPostDate;
-    if (postDate && !isNaN(Date.parse(postDate))) {
-      formattedPostDate = new Date(postDate).toISOString().split("T")[0];
-    } else {
-      formattedPostDate = new Date().toISOString().split("T")[0];
-      console.warn(
-        "⚠️ Warning: Invalid postDate provided, using current date."
-      );
-    }
-
-    // Mutation kết hợp tạo và xuất bản bài viết
     const createAndPublishMutation = gql`
       mutation CreateAndPublishPost(
         $title: String!
@@ -242,7 +184,6 @@ const createPost = async (
         $coverPhoto: String!
         $postDate: Date!
       ) {
-        # Step 1: Create the post
         createPost(
           data: {
             title: $title
@@ -274,7 +215,6 @@ const createPost = async (
           stage
         }
 
-        # Step 2: Publish the post immediately
         publishPost(where: { slug: $slug }, to: PUBLISHED) {
           id
           stage
@@ -282,7 +222,6 @@ const createPost = async (
       }
     `;
 
-    // Đây là điểm quan trọng - đảm bảo định dạng biến chính xác
     const variables = {
       title,
       slug,
@@ -294,234 +233,12 @@ const createPost = async (
       postDate: formattedPostDate,
     };
 
-    console.log("📝 Creating and publishing post with variables:", {
-      title,
-      slug,
-      description,
-      category,
-      authorId,
-      coverPhoto: coverPhotoUrl || DEFAULT_COVER_PHOTO_URL,
-      postDate: formattedPostDate,
-    });
-
-    // Thực hiện mutation với kiểm tra lỗi chi tiết
-    try {
-      const response = await graphqlClient.request(
-        createAndPublishMutation,
-        variables
-      );
-
-      if (!response?.createPost?.id) {
-        throw new APIError(500, "Failed to create post - no ID returned");
-      }
-
-      console.log(
-        `✅ Post created and published successfully: ID = ${response.createPost.id}, Stage = ${response.publishPost.stage}`
-      );
-      return response;
-    } catch (graphqlError) {
-      console.error("❌ GraphQL Error:", graphqlError);
-
-      // Kiểm tra lỗi cụ thể
-      if (
-        graphqlError.message &&
-        graphqlError.message.includes("RichTextAST")
-      ) {
-        console.error("💡 Có vẻ như lỗi liên quan đến định dạng RichTextAST");
-
-        // Thử lại với định dạng khác và cũng xuất bản luôn
-        console.log("🔄 Thử lại với kiểu dữ liệu JSON...");
-
-        const alternativeMutation = gql`
-          mutation CreateAndPublishPostAlternative(
-            $title: String!
-            $slug: String!
-            $description: String!
-            $category: String!
-            $content: JSON!
-            $authorId: ID!
-            $coverPhoto: String!
-            $postDate: Date!
-          ) {
-            # Step 1: Create the post
-            createPost(
-              data: {
-                title: $title
-                slug: $slug
-                description: $description
-                postDate: $postDate
-                category: $category
-                content: $content
-                author: { connect: { id: $authorId } }
-                coverPhoto: $coverPhoto
-              }
-            ) {
-              id
-              title
-              description
-              postDate
-              slug
-              category
-              content {
-                html
-              }
-              author {
-                name
-                avatar {
-                  id
-                }
-              }
-              coverPhoto
-              stage
-            }
-
-            # Step 2: Publish the post immediately
-            publishPost(where: { slug: $slug }, to: PUBLISHED) {
-              id
-              stage
-            }
-          }
-        `;
-
-        const altResponse = await graphqlClient.request(
-          alternativeMutation,
-          variables
-        );
-
-        if (!altResponse?.createPost?.id) {
-          throw new APIError(
-            500,
-            "Failed to create post with alternative method"
-          );
-        }
-
-        console.log(
-          `✅ Post created and published successfully with alternative method: ID = ${altResponse.createPost.id}, Stage = ${altResponse.publishPost.stage}`
-        );
-        return altResponse;
-      }
-
-      // Nếu lỗi không phải do RichTextAST, thử tạo bài viết trước rồi xuất bản sau
-      if (
-        graphqlError.message &&
-        graphqlError.message.includes("publishPost")
-      ) {
-        console.error("💡 Có vẻ như lỗi liên quan đến việc xuất bản đồng thời");
-        console.log("🔄 Thử tạo bài viết trước, sau đó xuất bản riêng...");
-
-        // Bước 1: Tạo bài viết
-        const createPostMutation = gql`
-          mutation CreatePost(
-            $title: String!
-            $slug: String!
-            $description: String!
-            $category: String!
-            $content: RichTextAST!
-            $authorId: ID!
-            $coverPhoto: String!
-            $postDate: Date!
-          ) {
-            createPost(
-              data: {
-                title: $title
-                slug: $slug
-                description: $description
-                postDate: $postDate
-                category: $category
-                content: $content
-                author: { connect: { id: $authorId } }
-                coverPhoto: $coverPhoto
-              }
-            ) {
-              id
-              title
-              description
-              postDate
-              slug
-              category
-              content {
-                html
-              }
-              author {
-                name
-                avatar {
-                  id
-                }
-              }
-              coverPhoto
-            }
-          }
-        `;
-
-        const createResponse = await graphqlClient.request(
-          createPostMutation,
-          variables
-        );
-
-        if (!createResponse?.createPost?.id) {
-          throw new APIError(500, "Failed to create post - no ID returned");
-        }
-
-        console.log(
-          `✅ Post created successfully: ID = ${createResponse.createPost.id}`
-        );
-
-        // Bước 2: Xuất bản bài viết
-        try {
-          const publishPostMutation = gql`
-            mutation PublishPost($id: ID!) {
-              publishPost(where: { id: $id }, to: PUBLISHED) {
-                id
-                stage
-              }
-            }
-          `;
-
-          const publishResponse = await graphqlClient.request(
-            publishPostMutation,
-            {
-              id: createResponse.createPost.id,
-            }
-          );
-
-          console.log(
-            `✅ Post published successfully: Stage = ${publishResponse.publishPost.stage}`
-          );
-
-          // Kết hợp kết quả
-          return {
-            ...createResponse,
-            publishPost: publishResponse.publishPost,
-          };
-        } catch (publishError) {
-          console.error(
-            "⚠️ Could not publish post, but it was created:",
-            publishError
-          );
-          return createResponse; // Trả về kết quả tạo bài viết dù không xuất bản được
-        }
-      }
-
-      // Nếu không phải các lỗi đã xử lý, ném lỗi ban đầu
-      throw graphqlError;
-    }
+    const response = await graphqlClient.request(
+      createAndPublishMutation,
+      variables
+    );
+    return response;
   } catch (error) {
-    console.error("❌ Error creating post:", error);
-
-    if (error.response?.errors) {
-      console.error(
-        "🔍 GraphQL Errors:",
-        JSON.stringify(error.response.errors, null, 2)
-      );
-    }
-
-    if (error.response) {
-      console.error(
-        "🔍 Full Response:",
-        JSON.stringify(error.response, null, 2)
-      );
-    }
-
     throw new APIError(
       500,
       "Error creating post: " + (error.message || "Unknown error")
@@ -529,7 +246,170 @@ const createPost = async (
   }
 };
 
+const updatePost = async (postId, updateData, req) => {
+  if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
+    throw new APIError(403, "Only admin and couple therapist can update posts");
+  }
+
+  try {
+    const { gql } = await import("graphql-request");
+    const graphqlClient = await initializeClient();
+
+    // Format content if it exists in updateData
+    if (updateData.content) {
+      updateData.content = formatContent(updateData.content);
+    }
+
+    // Create new slug if title is updated
+    if (updateData.title) {
+      updateData.slug = createSlug(updateData.title);
+    }
+
+    // Format date if it exists
+    if (updateData.postDate) {
+      updateData.postDate = new Date(updateData.postDate)
+        .toISOString()
+        .split("T")[0];
+    }
+
+    const updatePostMutation = gql`
+      mutation UpdatePost(
+        $postId: ID!
+        $title: String
+        $slug: String
+        $description: String
+        $category: String
+        $content: RichTextAST
+        $coverPhoto: String
+        $postDate: Date
+      ) {
+        updatePost(
+          where: { id: $postId }
+          data: {
+            title: $title
+            slug: $slug
+            description: $description
+            category: $category
+            content: $content
+            coverPhoto: $coverPhoto
+            postDate: $postDate
+          }
+        ) {
+          id
+          title
+          description
+          slug
+          category
+          content {
+            html
+          }
+          coverPhoto
+          postDate
+        }
+
+        publishPost(where: { id: $postId }, to: PUBLISHED) {
+          id
+          stage
+        }
+      }
+    `;
+
+    const response = await graphqlClient.request(updatePostMutation, {
+      postId,
+      ...updateData,
+    });
+
+    return response;
+  } catch (error) {
+    throw new APIError(
+      500,
+      "Error updating post: " + (error.message || "Unknown error")
+    );
+  }
+};
+
+const deletePost = async (postId, req) => {
+  if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
+    throw new APIError(403, "Only admin and couple therapist can delete posts");
+  }
+
+  try {
+    const { gql } = await import("graphql-request");
+    const graphqlClient = await initializeClient();
+
+    // First unpublish the post
+    const unpublishMutation = gql`
+      mutation UnpublishPost($postId: ID!) {
+        unpublishPost(where: { id: $postId }) {
+          id
+        }
+      }
+    `;
+
+    await graphqlClient.request(unpublishMutation, { postId });
+
+    // Then delete the post
+    const deletePostMutation = gql`
+      mutation DeletePost($postId: ID!) {
+        deletePost(where: { id: $postId }) {
+          id
+          title
+        }
+      }
+    `;
+
+    const response = await graphqlClient.request(deletePostMutation, {
+      postId,
+    });
+    return response;
+  } catch (error) {
+    throw new APIError(
+      500,
+      "Error deleting post: " + (error.message || "Unknown error")
+    );
+  }
+};
+
+// Add helper function to format content
+const formatContent = (content) => {
+  if (typeof content === "string") {
+    try {
+      return JSON.parse(content);
+    } catch (e) {
+      return {
+        children: [
+          {
+            type: "paragraph",
+            children: [{ text: content }],
+          },
+        ],
+      };
+    }
+  } else if (content?.children) {
+    return content;
+  } else if (content?.raw?.children) {
+    return content.raw;
+  } else if (content?.type === "doc" && content?.content) {
+    return {
+      children: content.content.map((item) => {
+        const transformNode = (node) => {
+          const newNode = { ...node };
+          if (newNode.content) {
+            newNode.children = newNode.content.map(transformNode);
+            delete newNode.content;
+          }
+          return newNode;
+        };
+        return transformNode(item);
+      }),
+    };
+  }
+  throw new APIError(400, "Invalid content format");
+};
+
 module.exports = {
   createPost,
   getOrCreateAuthor,
+  updatePost,
+  deletePost,
 };

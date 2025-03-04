@@ -4,6 +4,9 @@ const APIError = require("../utils/ApiError");
 
 class ReservationResultService {
   async createReservationResult(data) {
+    if (req.user.role !== "couple_therapist") {
+      throw new APIError(403, "Permission denied");
+    }
     // Validate reservation exists
     if (!(await RESERVATION.findById(data.reservationID))) {
       throw new APIError(400, "Reservation not found");
@@ -35,6 +38,9 @@ class ReservationResultService {
   }
 
   async updateReservationResult(reservationResultID, data) {
+    if (req.user.role !== "couple_therapist") {
+      throw new APIError(403, "Permission denied");
+    }
     const updatedReservationResult = await reservationResultRepo.updateById(
       reservationResultID,
       { questions: data.questions, answers: data.answers }
@@ -46,6 +52,9 @@ class ReservationResultService {
   }
 
   async deleteReservationResult(reservationResultID, deleteReason) {
+    if (req.user.role !== "couple_therapist") {
+      throw new APIError(403, "Permission denied");
+    }
     if (!deleteReason) {
       throw new APIError(400, "Delete reason is required");
     }

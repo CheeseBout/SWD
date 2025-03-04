@@ -16,6 +16,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ActivityIndicator, View } from "react-native";
 import { ForgotPasswordScreen } from "./screens/ForgotPassword/ForgotPassword";
 import Toast from "react-native-toast-message";
+import TherapistDetailScreen from "./screens/TherapistDetail/TherapistDetail";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -103,6 +104,11 @@ const NavigationScreens = () => {
           />
         </>
       )}
+      <Stack.Screen
+        name="TherapistDetail"
+        component={TherapistDetailScreen}
+        options={{ headerShown: true, title: "Find a Therapist" }}
+      />
     </Stack.Navigator>
   );
 };

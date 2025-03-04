@@ -11,15 +11,17 @@ const TopicDetail = lazy(() => import("../pages/Topics/TopicDetail"));
 const AboutUs = lazy(() => import("../pages/AboutUs"));
 const Contact = lazy(() => import("../pages/Contact"));
 const PrivacyPolicy = lazy(() => import("../pages/Policy/PrivacyPolicy"));
-const QuizDetail = lazy(() => import('../pages/Quiz/QuizDetail'));
+const QuizDetail = lazy(() => import("../pages/Quiz/QuizDetail"));
 const SearchTherapist = lazy(() =>
   import("../pages/Therapist/SearchTherapist")
 );
 const FAQs = lazy(() => import("../pages/FAQs"));
 const ProfilePage = lazy(() => import("../pages/Profile"));
 const LoginPage = lazy(() => import("../pages/Login"));
-const RegisterPage = lazy(() => import("../pages/Register"));const CookiePolicy = lazy(() => import('../pages/Policy/CookiePolicy'));
-const TermsOfService = lazy(() => import('../pages/Policy/TermsOfService'));
+const RegisterPage = lazy(() => import("../pages/Register"));
+const CookiePolicy = lazy(() => import("../pages/Policy/CookiePolicy"));
+const TermsOfService = lazy(() => import("../pages/Policy/TermsOfService"));
+const ForgotPasswordPage = lazy(() => import("../pages/Forgot-password"));
 
 const LazyLoad = ({ children }) => (
   <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
@@ -39,6 +41,14 @@ export function AppRoutes() {
           element={
             <LazyLoad>
               <LoginPage />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="forgot-password"
+          element={
+            <LazyLoad>
+              <ForgotPasswordPage />
             </LazyLoad>
           }
         />
@@ -153,18 +163,22 @@ export function AppRoutes() {
             </LazyLoad>
           }
         />
-
-        <Route path="cookies" element={
-          <LazyLoad>
-            <CookiePolicy />
-          </LazyLoad>
-        } />
-
-        <Route path="terms" element={
-          <LazyLoad>
-            <TermsOfService />
-          </LazyLoad>
-        } />
+        <Route
+          path="cookies"
+          element={
+            <LazyLoad>
+              <CookiePolicy />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="terms"
+          element={
+            <LazyLoad>
+              <TermsOfService />
+            </LazyLoad>
+          }
+        />
       </Route>
     </Routes>
   );

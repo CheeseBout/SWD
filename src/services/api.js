@@ -18,8 +18,22 @@ export const authService = {
   loginWithGoogle: async (role) => {
     const failedURL = `${window.location.origin}/login`;
     const successURL = `${window.location.origin}/google-callback`;
-    
+
     window.location.href = `${BASE_URL}/api/v1/auth/login/google?role=${role}&failRedirectURL=${failedURL}&successRedirectURL=${successURL}`;
+  },
+
+  register: async (formData) => {
+    try {
+      const response = await api.post("/api/v1/auth/register", formData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || "Registration failed";
+    }
+  },
+
+  forgotPassword: async (email) => {
+    const response = await api.post("/api/v1/auth/forgot-password", { email });
+    return response.data;
   },
 };
 
@@ -49,5 +63,5 @@ export const quizService = {
       console.error(`Error fetching quiz with ID ${id}:`, error);
       throw error;
     }
-  }
+  },
 };

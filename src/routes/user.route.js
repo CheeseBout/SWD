@@ -6,7 +6,7 @@ const {
   getUserByIdValidation,
   updateProfileValidation,
 } = require("../validations/user.validation");
-const auth = require("../middlewares/auth.middleware");
+const { auth } = require("../middlewares/auth.middleware");
 const {
   updateExpertProfileValidation,
 } = require("../validations/auth.validation");

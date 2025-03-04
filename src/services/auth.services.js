@@ -19,33 +19,47 @@ class AuthService {
     fullname,
     username,
     email,
+    address,
     password,
     dob,
     gender,
-    role = "user",
+    role = "member",
   }) {
-    const existingUser = await authRepo.findUserByEmailAndUsername(
-      email,
-      username
-    );
-    if (existingUser) {
-      throw new APIError(400, "Email/User already in use");
+    try {
+      // Check for existing user first
+      const existingUser = await authRepo.findUserByEmailAndUsername(
+        email,
+        username
+      );
+      if (existingUser) {
+        throw new APIError(400, "Email/Username already in use");
+      }
+
+      // Create the user document
+      const user = await authRepo.createUser({
+        fullname,
+        username,
+        email,
+        address,
+        password,
+        dob: new Date(dob),
+        gender,
+        role,
+        isVerified: false,
+      });
+
+      if (!user._id) {
+        throw new APIError(500, "Failed to create user");
+      }
+
+      // Create initial token after user is created successfully
+      await tokenRepo.createInitialToken(user._id);
+
+      return { user };
+    } catch (error) {
+      console.error("Registration error:", error);
+      throw error.isOperational ? error : new APIError(400, error.message);
     }
-
-    const user = await authRepo.createUser({
-      fullname,
-      username,
-      email,
-      password,
-      dob,
-      gender,
-      role,
-    });
-
-    // Use token repository instead
-    await tokenRepo.createInitialToken(user._id);
-
-    return { user };
   }
 
   async updateExpertProfile(
@@ -80,6 +94,7 @@ class AuthService {
       category,
       updatedAt: new Date(),
       isCertificateVerified: false,
+      reason: "",
     };
 
     return await authRepo.updateTherapistProfile(userId, {
@@ -88,16 +103,40 @@ class AuthService {
     });
   }
 
-  async createTherapistProfile(userID) {
-    return await authRepo.createTherapistProfile({
-      userID,
-      description: "New Couple Therapist",
-      isVerified: false,
-      certifications: [],
-      rating: 0,
-      reviewCount: 0,
-      category: "General",
-    });
+  async createTherapistProfile(userId) {
+    try {
+      if (!userId) {
+        throw new APIError(400, "User ID is required");
+      }
+
+      // Validate that the user exists
+      const user = await authRepo.findUserById(userId);
+      if (!user) {
+        throw new APIError(404, "User not found");
+      }
+
+      const therapistProfile = await authRepo.createTherapistProfile({
+        userID: userId,
+        description: "New Couple Therapist",
+        isVerified: false,
+        certificates: [],
+        rating: 0,
+        reviewCount: 0,
+        category: "General",
+      });
+
+      if (!therapistProfile) {
+        throw new APIError(500, "Failed to create therapist profile");
+      }
+
+      return therapistProfile;
+    } catch (error) {
+      console.error("Create therapist profile error:", error);
+      if (error.isOperational) {
+        throw error;
+      }
+      throw new APIError(400, "Failed to create therapist profile");
+    }
   }
 
   async login({ email, password }) {
@@ -227,7 +266,7 @@ class AuthService {
     return user;
   }
 
-  async loginWithGoogle(idToken) {
+  async loginWithGoogle(idToken, role) {
     try {
       if (!idToken) {
         throw new APIError(400, "Missing Google ID Token");
@@ -253,8 +292,8 @@ class AuthService {
         email: payload.email,
         name: payload.name,
         picture: payload.picture,
-        aud: payload.aud, // The audience the token was issued to
-        iss: payload.iss, // The issuer
+        aud: payload.aud,
+        iss: payload.iss,
       });
 
       const googleEmail = payload.email;
@@ -262,6 +301,8 @@ class AuthService {
 
       // Nếu user chưa tồn tại, tạo user mới
       if (!user) {
+        const userRole =
+          role === "couple_therapist" ? "couple_therapist" : "member";
         user = await authRepo.createUser({
           fullname: payload.name || googleEmail,
           username: googleEmail.split("@")[0],
@@ -270,10 +311,15 @@ class AuthService {
           dob: new Date(),
           gender: "other",
           photoURL: payload.picture,
-          role: "user",
+          role: userRole,
           isVerified: true,
           address: "None",
         });
+
+        // Create therapist profile if role is couple_therapist
+        if (userRole === "couple_therapist") {
+          await this.createTherapistProfile(user._id);
+        }
       }
 
       // Tạo JWT Token để frontend sử dụng
@@ -290,7 +336,7 @@ class AuthService {
           dob: user.dob,
           gender: user.gender,
           photoURL: user.photoURL,
-          role: "user",
+          role: user.role,
           isVerified: true,
           address: "None",
         },
@@ -299,7 +345,6 @@ class AuthService {
     } catch (error) {
       console.error("Google login service error details:", error);
 
-      // More specific error handling
       if (error.message && error.message.includes("audience")) {
         throw new APIError(
           400,

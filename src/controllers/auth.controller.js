@@ -12,21 +12,52 @@ const authGoogle = passport.authenticate("google", {
 });
 class AuthController {
   register = catchAsync(async (req, res) => {
-    const { fullname, username, email, password, dob, gender, photoURL, role } =
-      req.body;
-    const result = await authServices.register({
+    const {
       fullname,
       username,
       email,
       password,
+      address,
       dob,
       gender,
       photoURL,
       role,
+    } = req.body;
+
+    // Create user first
+    const result = await authServices.register({
+      fullname,
+      username,
+      email,
+      address,
+      password,
+      dob,
+      gender,
+      photoURL,
+      role: role || "member", // Default to member if no role specified
     });
 
-    if (role === "couple_therapist") {
-      await authServices.createTherapistProfile(result.user._id); // Thay đổi ở đây: result._id -> result.user._id
+    // Create therapist profile if role is couple_therapist
+    if (role === "couple_therapist" && result?.user?._id) {
+      try {
+        const therapistProfile = await authServices.createTherapistProfile(
+          result.user._id
+        );
+        return OK(res, "Registration successful", {
+          user: result.user,
+          therapistProfile,
+        });
+      } catch (error) {
+        // If therapist profile creation fails, still return the user but with an error message
+        return OK(
+          res,
+          "User registered but therapist profile creation failed",
+          {
+            user: result.user,
+            error: error.message,
+          }
+        );
+      }
     }
 
     return OK(res, "Registration successful", result);
@@ -125,19 +156,14 @@ class AuthController {
       const { idToken } = req.body;
 
       if (!idToken) {
-        // Fix: The first parameter should be a message, the second a numeric status code
-        throw new APIError(400, "Missing Google ID Token");
+        throw new APIError("Missing Google ID Token", 400);
       }
 
       const result = await authServices.loginWithGoogle(idToken);
       return OK(res, "Google login successful", result);
     } catch (error) {
       console.error("Google login error:", error);
-      // Fix: Use numeric status code and properly handle the error
-      return res.status(error.statusCode || 500).json({
-        status: "error",
-        message: error.message || "An error occurred during Google login",
-      });
+      return res.status(error.status || 500).json({ message: error.message });
     }
   };
 }

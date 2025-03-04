@@ -2,6 +2,8 @@ const jwt = require("jsonwebtoken");
 const USER = require("../models/user.model");
 const APIError = require("../utils/ApiError");
 const appConfig = require("../configs/app.config"); // Thêm dòng này
+const coupleTherapistRepo = require("../repositories/coupleTherapist.repo");
+const certificateRepository = require("../repositories/certificate.repository");
 
 const auth = async (req, res, next) => {
   try {
@@ -38,4 +40,46 @@ const auth = async (req, res, next) => {
   }
 };
 
-module.exports = auth;
+const checkCertificate = async (req, res, next) => {
+  try {
+    // Kiểm tra user (phải có từ middleware auth trước đó)
+    if (!req.user) {
+      throw new APIError(401, "Please authenticate");
+    }
+
+    // Kiểm tra role có phải là couple_therapist
+    if (req.user.role !== "couple_therapist") {
+      throw new APIError(
+        403,
+        "Access denied. Only therapists can access this resource"
+      );
+    }
+
+    // Kiểm tra certificate từ coupleTherapist collection
+    const therapist = await coupleTherapistRepo.findOne({
+      userID: req.user._id,
+    });
+
+    if (!therapist) {
+      throw new APIError(403, "No therapist profile found");
+    }
+
+    // Kiểm tra xem có certificate nào được verify không
+    const hasVerifiedCertificate = therapist.certificates.some(
+      (cert) => cert.isCertificateVerified === true
+    );
+
+    if (!hasVerifiedCertificate) {
+      throw new APIError(
+        403,
+        "You must have at least one verified certificate"
+      );
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { auth, checkCertificate };

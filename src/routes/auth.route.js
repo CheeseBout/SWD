@@ -1,6 +1,5 @@
 const express = require("express");
 const router = express.Router();
-const auth = require("../middlewares/auth.middleware");
 const validate = require("../middlewares/validate.middleware");
 const {
   createUserValidation,
@@ -15,6 +14,7 @@ const {
   updateExpertProfileValidation,
   changePasswordValidation,
 } = require("../validations/auth.validation");
+const { auth } = require("../middlewares/auth.middleware");
 
 // Public routes
 router.post(

@@ -27,6 +27,7 @@ const createUserValidation = {
       .message("Email must be a valid Gmail address"),
     fullname: Joi.string().required(),
     username: Joi.string().required(),
+    address: Joi.string().required(),
     dob: Joi.date().required(),
     gender: Joi.string().required(),
     role: Joi.optional().valid("user", "couple_therapist", "admin"),

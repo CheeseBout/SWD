@@ -1,6 +1,6 @@
 const express = require("express");
 const meetController = require("../controllers/meet.controller");
-const auth = require("../middlewares/auth.middleware"); // Add this
+const { auth } = require("../middlewares/auth.middleware");
 const router = express.Router();
 
 // Thêm middleware auth để đảm bảo có user data

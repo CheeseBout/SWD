@@ -62,7 +62,6 @@ export const ProfileScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header Section */}
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.editButton}
@@ -72,16 +71,14 @@ export const ProfileScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Profile Information */}
         <View style={styles.profileContainer}>
           <Image
             source={{
-              uri:
-                user.photoURL ||
-                user?.data?.user?.photoURL ||
-                user.gender === "male"
-                  ? "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEz1ve3QQhGM3EKWe1dDjnQAOqyMv0RUEcnw&s"
-                  : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTxrd4dsitg-Rhwx0aUZsGjzqkZn34JbVC9-w&s",
+              uri: user?.photoURL
+                ? user.photoURL
+                : user.gender === "male"
+                ? "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEz1ve3QQhGM3EKWe1dDjnQAOqyMv0RUEcnw&s"
+                : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTxrd4dsitg-Rhwx0aUZsGjzqkZn34JbVC9-w&s",
             }}
             style={styles.profileImage}
           />
@@ -111,7 +108,12 @@ export const ProfileScreen = ({ navigation }) => {
           <View style={styles.infoRow}>
             <Ionicons name="person-outline" size={18} color="#4a6ee0" />
             <Text style={styles.infoText}>
-              Gender: {user.gender === "male" ? "Male" : "Female" || "Others"}
+              Gender:{" "}
+              {user.gender === "male"
+                ? "Male"
+                : user.gender === "female"
+                ? "Female"
+                : "Others"}
             </Text>
           </View>
         </View>

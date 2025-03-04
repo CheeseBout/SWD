@@ -12,6 +12,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import SearchTherapistScreen from "./screens/SearchTherapist/SearchTherapist";
 import SearchTherapistResultScreen from "./screens/SearchTherapistResult/SearchTherapistResult";
+import TherapistDetailScreen from "./screens/TherapistDetail/TherapistDetail";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -98,6 +99,11 @@ export default function App() {
         <Stack.Screen
           name="SearchTherapistResult"
           component={SearchTherapistResultScreen}
+          options={{ headerShown: true, title: "Find a Therapist" }}
+        />
+        <Stack.Screen
+          name="TherapistDetail"
+          component={TherapistDetailScreen}
           options={{ headerShown: true, title: "Find a Therapist" }}
         />
       </Stack.Navigator>

@@ -21,7 +21,6 @@ const MOCK_THERAPISTS = [
     reviews: 124,
     location: "New York, NY",
     image: "https://randomuser.me/api/portraits/women/44.jpg",
-    available: true,
   },
   {
     id: "2",
@@ -32,7 +31,6 @@ const MOCK_THERAPISTS = [
     reviews: 98,
     location: "Boston, MA",
     image: "https://randomuser.me/api/portraits/men/32.jpg",
-    available: true,
   },
   {
     id: "3",
@@ -43,7 +41,6 @@ const MOCK_THERAPISTS = [
     reviews: 86,
     location: "Chicago, IL",
     image: "https://randomuser.me/api/portraits/women/68.jpg",
-    available: false,
   },
   {
     id: "4",
@@ -54,7 +51,6 @@ const MOCK_THERAPISTS = [
     reviews: 112,
     location: "San Francisco, CA",
     image: "https://randomuser.me/api/portraits/men/75.jpg",
-    available: true,
   },
   {
     id: "5",
@@ -65,7 +61,6 @@ const MOCK_THERAPISTS = [
     reviews: 79,
     location: "Seattle, WA",
     image: "https://randomuser.me/api/portraits/women/33.jpg",
-    available: true,
   },
 ];
 
@@ -122,15 +117,6 @@ export default function SearchTherapistResultScreen({ navigation, route }) {
       <View style={styles.therapistInfo}>
         <View style={styles.nameContainer}>
           <Text style={styles.therapistName}>{item.name}</Text>
-          {item.available ? (
-            <View style={styles.availableTag}>
-              <Text style={styles.availableText}>Available</Text>
-            </View>
-          ) : (
-            <View style={[styles.availableTag, styles.unavailableTag]}>
-              <Text style={styles.unavailableText}>Unavailable</Text>
-            </View>
-          )}
         </View>
 
         <Text style={styles.therapistSpecialty}>{item.specialty}</Text>

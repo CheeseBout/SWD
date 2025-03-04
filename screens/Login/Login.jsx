@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,17 +8,90 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Image,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { styles } from "./styles";
+import { GoogleSigninButton } from "@react-native-google-signin/google-signin";
+import {
+  signInWithGoogle,
+  isSignedIn,
+  getCurrentUser,
+} from "../../services/authServices";
+import { troubleshootGoogleSignIn } from "../../utils/GoogleSignInHelper";
+import { useAuth } from "../../context/AuthContext";
 
 export const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [userInfo, setUserInfo] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const { setIsAuthenticated, login } = useAuth();
 
-  const handleLogin = () => {
-    // Add login logic here
-    navigation.navigate("Home");
+  useEffect(() => {
+    // Check for existing sign-in when component mounts
+    const checkGoogleSignIn = async () => {
+      try {
+        const isUserSignedIn = await isSignedIn();
+        if (isUserSignedIn) {
+          const userData = await getCurrentUser();
+          setUserInfo(userData);
+          console.log("User already signed in:", userData);
+        }
+      } catch (error) {
+        console.log("Error checking sign-in status:", error);
+      }
+    };
+
+    // Run troubleshooter in development
+    if (__DEV__) {
+      troubleshootGoogleSignIn().then((result) => {
+        console.log("Google Sign-In Configuration:", result);
+      });
+    }
+
+    checkGoogleSignIn();
+  }, []);
+
+  const handleLogin = async (credentials) => {
+    try {
+      // Thực hiện API login ở đây
+      // Giả sử response có dạng: { user: { id, email, name, ... }, token: "..." }
+      const response = await loginAPI(credentials);
+      await login(response.user);
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Login Error", error.message);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      const result = await signInWithGoogle();
+
+      if (result && result.backendResponse) {
+        const { data } = result.backendResponse;
+
+        // Lưu toàn bộ response data, bao gồm tokens và user info
+        await login(data);
+      } else {
+        Alert.alert(
+          "Login Failed",
+          "Could not get user information from server"
+        );
+      }
+    } catch (error) {
+      console.error("Google login error:", error);
+      Alert.alert(
+        "Login Error",
+        error.message || "Failed to sign in with Google"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -70,6 +143,36 @@ export const LoginScreen = ({ navigation }) => {
 
             <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
               <Text style={styles.loginButtonText}>Sign In</Text>
+            </TouchableOpacity>
+
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.googleButton, loading && { opacity: 0.7 }]}
+              onPress={handleGoogleLogin}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator
+                  size="small"
+                  color="#4285F4"
+                  style={{ marginRight: 10 }}
+                />
+              ) : (
+                <Image
+                  source={{
+                    uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png",
+                  }}
+                  style={styles.googleIcon}
+                />
+              )}
+              <Text style={styles.googleButtonText}>
+                {loading ? "Signing in..." : "Continue with Google"}
+              </Text>
             </TouchableOpacity>
 
             <View style={styles.registerContainer}>

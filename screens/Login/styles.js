@@ -120,6 +120,27 @@ export const styles = StyleSheet.create({
     height: 60,
     backgroundColor: "#f5f5f7",
   },
+  googleButton: {
+    flexDirection: 'row',
+    backgroundColor: '#ffffff',
+    padding: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 10,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  googleIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 10,
+  },
+  googleButtonText: {
+    color: '#333',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   registerContainer: {
     flexDirection: "row",
     justifyContent: "center",

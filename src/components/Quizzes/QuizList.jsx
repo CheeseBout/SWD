@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import QuizCard from "./QuizCard";
 import { quizService } from "../../services/api";
+import LoadingSpinner from "../common/LoadingSpinner";
 
 export default function QuizList() {
   const [quizzes, setQuizzes] = useState([]);
@@ -33,7 +34,7 @@ export default function QuizList() {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  if (loading) return <div className="text-center py-4">Loading...</div>;
+  if (loading) return <div><LoadingSpinner/></div>;
   if (error)
     return <div className="text-center text-red-500 py-4">{error}</div>;
 

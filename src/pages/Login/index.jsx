@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState(null);
   const [resetEmail, setResetEmail] = useState("");
+  const [role, setRole] = useState("user");
   const navigate = useNavigate();
   const {
     register,
@@ -126,6 +127,18 @@ export default function LoginPage() {
           >
             SIGN IN
           </button>
+          <div className="flex items-center my-6">
+            <div className="flex-grow border-t border-gray-300"></div>
+            <span className="mx-4 text-gray-500">OR</span>
+            <div className="flex-grow border-t border-gray-300"></div>
+          </div>
+          <button
+            type="button"
+            className="w-full text-black p-3 rounded-lg border-1 border-gray-300 hover:border-[#4096ff] hover:text-[#4096ff]"
+            onClick={() => authService.loginWithGoogle()}
+          >
+            <i className="fa-solid fa-g"></i> SIGN IN WITH GOOGLE
+          </button>
         </form>
 
         <div className="mt-6 text-center">
@@ -167,6 +180,50 @@ export default function LoginPage() {
           </button>
         </div>
       </dialog>
+
+      {/* <dialog id="loginGoogle_modal" className="modal">
+        <div className="modal-box">
+          <h3 className="font-bold text-lg">Choose your role</h3>
+
+          <div className="flex flex-col gap-2">
+            <label className="flex items-center">
+              <input
+                type="radio"
+                name="role"
+                value="user"
+                className="radio radio-info"
+                checked={role === "user"}
+                onChange={() => setRole("user")}
+              />
+              <span className="ml-2">User</span>
+            </label>
+
+            <label className="flex items-center">
+              <input
+                type="radio"
+                name="role"
+                value="coupleTherapist"
+                className="radio radio-info"
+                checked={role === "coupleTherapist"}
+                onChange={() => setRole("coupleTherapist")}
+              />
+              <span className="ml-2">Couple Therapist</span>
+            </label>
+          </div>
+
+          <div className="modal-action">
+            <form method="dialog">
+              <button className="btn">Close</button>
+            </form>
+            <button
+              className="btn btn-primary ml-2"
+              onClick={() => authService.loginWithGoogle(role)}
+            >
+              Login
+            </button>
+          </div>
+        </div>
+      </dialog> */}
     </div>
   );
 }

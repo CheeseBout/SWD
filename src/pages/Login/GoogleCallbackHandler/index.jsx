@@ -8,6 +8,7 @@ const GoogleCallback = () => {
     const params = new URLSearchParams(window.location.search);
     const accessToken = params.get("accessToken");
     const refreshToken = params.get("refreshToken");
+    console.log(accessToken, refreshToken);
 
     if (accessToken && refreshToken) {
       localStorage.setItem("accessToken", accessToken);
@@ -19,7 +20,7 @@ const GoogleCallback = () => {
       console.error("Không tìm thấy token từ Google.");
       navigate("/login");
     }
-  }, [navigate]);
+  }, []);
 
   return <p>Đang xử lý đăng nhập...</p>;
 };

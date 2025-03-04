@@ -15,11 +15,8 @@ export const authService = {
     return response.data;
   },
 
-  loginWithGoogle: async (role) => {
-    const failedURL = `${window.location.origin}/login`;
-    const successURL = `${window.location.origin}/google-callback`;
-
-    window.location.href = `${BASE_URL}/api/v1/auth/login/google?role=${role}&failRedirectURL=${failedURL}&successRedirectURL=${successURL}`;
+  loginWithGoogle: async () => {
+    window.location.href = `${BASE_URL}/api/v1/auth/login/google`;
   },
 
   register: async (formData) => {

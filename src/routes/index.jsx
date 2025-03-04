@@ -53,7 +53,7 @@ export function AppRoutes() {
           }
         />
         <Route
-          path="google-callback"
+          path="/google-callback"
           element={
             <LazyLoad>
               <GoogleCallbackHandler />

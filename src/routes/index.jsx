@@ -3,7 +3,6 @@ import { HomePage } from "@pages/HomePage";
 import App from "../App";
 import { Suspense, lazy } from "react";
 import PropTypes from "prop-types";
-import GoogleCallbackHandler from "../pages/Login/GoogleCallbackHandler";
 
 const Topics = lazy(() => import("../pages/Topics"));
 const Quizzes = lazy(() => import("../pages/Quiz/Quizzes"));
@@ -49,14 +48,6 @@ export function AppRoutes() {
           element={
             <LazyLoad>
               <ForgotPasswordPage />
-            </LazyLoad>
-          }
-        />
-        <Route
-          path="/google-callback"
-          element={
-            <LazyLoad>
-              <GoogleCallbackHandler />
             </LazyLoad>
           }
         />

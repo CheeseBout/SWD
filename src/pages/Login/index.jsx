@@ -18,7 +18,6 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState(null);
   const [resetEmail, setResetEmail] = useState("");
-  const [role, setRole] = useState("user");
   const navigate = useNavigate();
   const {
     register,
@@ -34,7 +33,7 @@ export default function LoginPage() {
 
       // Use the AuthContext login function instead
       login(accessToken);
-      
+
       if (remember) {
         localStorage.setItem("refreshToken", refreshToken);
       }
@@ -184,50 +183,6 @@ export default function LoginPage() {
           </button>
         </div>
       </dialog>
-
-      {/* <dialog id="loginGoogle_modal" className="modal">
-        <div className="modal-box">
-          <h3 className="font-bold text-lg">Choose your role</h3>
-
-          <div className="flex flex-col gap-2">
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="role"
-                value="user"
-                className="radio radio-info"
-                checked={role === "user"}
-                onChange={() => setRole("user")}
-              />
-              <span className="ml-2">User</span>
-            </label>
-
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="role"
-                value="coupleTherapist"
-                className="radio radio-info"
-                checked={role === "coupleTherapist"}
-                onChange={() => setRole("coupleTherapist")}
-              />
-              <span className="ml-2">Couple Therapist</span>
-            </label>
-          </div>
-
-          <div className="modal-action">
-            <form method="dialog">
-              <button className="btn">Close</button>
-            </form>
-            <button
-              className="btn btn-primary ml-2"
-              onClick={() => authService.loginWithGoogle(role)}
-            >
-              Login
-            </button>
-          </div>
-        </div>
-      </dialog> */}
     </div>
   );
 }

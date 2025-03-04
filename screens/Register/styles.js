@@ -151,4 +151,14 @@ export const styles = StyleSheet.create({
     marginBottom: 5,
     marginLeft: 5,
   },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    marginBottom: 15,
+    backgroundColor: "#fff",
+  },
+  picker: {
+    height: 50,
+  },
 });

@@ -108,6 +108,27 @@ const getCurrentUser = async () => {
   }
 };
 
+
+const register = async (formData) => {
+  try {
+    const response = await apiClient.post("/auth/register", formData);
+    return response.data;
+  } catch (error) {
+    console.error("Registration error:", error);
+    throw error;
+  }
+};
+
+const loginAPI = async (credentials) => {
+  try {
+    const response = await apiClient.post("/auth/login", credentials);
+    return response.data;
+  } catch (error) {
+    console.error("Login error:", error);
+    throw error;
+  }
+};
+
 // Function to sign out
 const signOut = async () => {
   try {
@@ -120,4 +141,22 @@ const signOut = async () => {
   }
 };
 
-export { signInWithGoogle, isSignedIn, getCurrentUser, signOut };
+const forgotPassword = async (email) => {
+  try {
+    const response = await apiClient.post("/auth/forgot-password", { email });
+    return response.data;
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    throw error;
+  }
+};
+
+export {
+  signInWithGoogle,
+  isSignedIn,
+  getCurrentUser,
+  loginAPI,
+  register,
+  signOut,
+  forgotPassword,
+};

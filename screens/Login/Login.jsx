@@ -9,7 +9,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -19,9 +18,13 @@ import {
   signInWithGoogle,
   isSignedIn,
   getCurrentUser,
+  loginAPI,
 } from "../../services/authServices";
 import { troubleshootGoogleSignIn } from "../../utils/GoogleSignInHelper";
 import { useAuth } from "../../context/AuthContext";
+import { jwtDecode } from "jwt-decode";
+import { getUserById } from "../../services/userServices";
+import Toast from "react-native-toast-message";
 
 export const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -55,15 +58,44 @@ export const LoginScreen = ({ navigation }) => {
     checkGoogleSignIn();
   }, []);
 
-  const handleLogin = async (credentials) => {
+  const handleLogin = async () => {
     try {
-      // Thực hiện API login ở đây
-      // Giả sử response có dạng: { user: { id, email, name, ... }, token: "..." }
+      const credentials = {
+        email,
+        password,
+      };
+
+      if (!credentials.email || !credentials.password) {
+        Toast.show({
+          type: "error",
+          text1: "Login Failed",
+          text2: "Please fill in all fields",
+        });
+        return;
+      }
       const response = await loginAPI(credentials);
-      await login(response.user);
+
+      if (response.data.tokens) {
+        // Login successful, save tokens
+        await login(response.data);
+        //decode access token to get user info
+        const user = jwtDecode(response.data.tokens.accessToken);
+        await getUserById(user.userId);
+        Toast.show({
+          type: "success",
+          text1: "Login Successful",
+          text2: "Welcome back! 🎉",
+        });
+        console.log("User info from token:", user);
+        console.log("Login successful");
+      }
     } catch (error) {
       console.error(error);
-      Alert.alert("Login Error", error.message);
+      Toast.show({
+        type: "error",
+        text1: "Login Failed",
+        text2: error.message || "Failed to sign in",
+      });
     }
   };
 
@@ -78,17 +110,19 @@ export const LoginScreen = ({ navigation }) => {
         // Lưu toàn bộ response data, bao gồm tokens và user info
         await login(data);
       } else {
-        Alert.alert(
-          "Login Failed",
-          "Could not get user information from server"
-        );
+        Toast.show({
+          type: "error",
+          text1: "Google Sign-In Failed",
+          text2: "Please try again",
+        });
       }
     } catch (error) {
       console.error("Google login error:", error);
-      Alert.alert(
-        "Login Error",
-        error.message || "Failed to sign in with Google"
-      );
+      Toast.show({
+        type: "error",
+        text1: "Google Sign-In Failed",
+        text2: error.message || "An error occurred",
+      });
     } finally {
       setLoading(false);
     }
@@ -137,7 +171,10 @@ export const LoginScreen = ({ navigation }) => {
               />
             </View>
 
-            <TouchableOpacity style={styles.forgotPassword}>
+            <TouchableOpacity
+              style={styles.forgotPassword}
+              onPress={() => navigation.navigate("ForgotPassword")}
+            >
               <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
             </TouchableOpacity>
 

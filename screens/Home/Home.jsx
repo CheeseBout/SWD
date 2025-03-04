@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { styles } from "./styles";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useAuth } from "../../context/AuthContext";
 
 const Icon = ({ name, size, color }) => (
   <View
@@ -23,15 +24,25 @@ const Icon = ({ name, size, color }) => (
 );
 
 export const HomeScreen = ({ navigation }) => {
+  const { userInfo, logout } = useAuth();
+  const user = userInfo?.user || userInfo?.data?.user || {};
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Text style={styles.welcomeText}>Hello, John!</Text>
+          <Text style={styles.welcomeText}>Hello, {user.fullname}!</Text>
           <Image
             style={styles.profileImage}
-            source={{ uri: "https://randomuser.me/api/portraits/men/32.jpg" }}
+            source={{
+              uri:
+                user.photoURL ||
+                user?.data?.user?.photoURL ||
+                user.gender === "male"
+                  ? "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEz1ve3QQhGM3EKWe1dDjnQAOqyMv0RUEcnw&s"
+                  : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTxrd4dsitg-Rhwx0aUZsGjzqkZn34JbVC9-w&s",
+            }}
           />
         </View>
 

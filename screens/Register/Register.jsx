@@ -11,44 +11,79 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { styles } from "./styles";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Picker } from "@react-native-picker/picker";
+import { register } from "../../services/authServices";
 
 export const RegisterScreen = ({ navigation }) => {
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    confirmPassword: "",
+    fullname: "",
+    username: "",
+    dob: new Date(),
+    gender: "other",
+    role: "user",
+  });
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [errors, setErrors] = useState({});
 
   const validate = () => {
     const newErrors = {};
-    if (!fullName) newErrors.fullName = "Name is required";
-    if (!email) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = "Email is invalid";
+    if (!formData.fullname) newErrors.fullname = "Full name is required";
+    if (!formData.username) newErrors.username = "Username is required";
+    if (!formData.email) newErrors.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(formData.email))
+      newErrors.email = "Email is invalid";
 
-    if (!password) newErrors.password = "Password is required";
-    else if (password.length < 6)
-      newErrors.password = "Password must be at least 6 characters";
+    if (!formData.password) newErrors.password = "Password is required";
+    else if (
+      !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/.test(
+        formData.password
+      )
+    )
+      newErrors.password =
+        "Password must be at least 8 characters and contain at least one uppercase letter, one lowercase letter, one number, and one special character";
 
-    if (password !== confirmPassword)
+    if (formData.password !== formData.confirmPassword)
       newErrors.confirmPassword = "Passwords don't match";
-
-    if (!agreedToTerms) newErrors.terms = "You must agree to the terms";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (validate()) {
-      // Add registration logic here
-      console.log("Registration data:", { fullName, email, password });
-      navigation.navigate("Login");
+      console.log("Registration data:", formData);
+
+      try {
+        const { confirmPassword, ...registerData } = formData;
+        const response = await register(registerData);
+        navigation.navigate("Login");
+
+        console.log("Registration response:", response.data);
+      } catch (error) {
+        console.error("Registration error:", error);
+        if (error.response) {
+          setErrors({ terms: error.response.data.message });
+        } else {
+          setErrors({ terms: "An error occurred. Please try again." });
+        }
+      }
     }
   };
 
   const handleBackButton = () => {
     navigation.goBack();
+  };
+
+  const onDateChange = (event, selectedDate) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      setFormData((prev) => ({ ...prev, dob: selectedDate }));
+    }
   };
 
   return (
@@ -87,32 +122,84 @@ export const RegisterScreen = ({ navigation }) => {
               <TextInput
                 style={styles.input}
                 placeholder="Enter your full name"
-                value={fullName}
-                onChangeText={setFullName}
+                value={formData.fullname}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({ ...prev, fullname: text }))
+                }
               />
-              {errors.fullName && (
-                <Text style={styles.errorText}>{errors.fullName}</Text>
+              {errors.fullname && (
+                <Text style={styles.errorText}>{errors.fullname}</Text>
+              )}
+
+              <Text style={styles.inputLabel}>Username</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Choose a username"
+                value={formData.username}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({ ...prev, username: text }))
+                }
+              />
+              {errors.username && (
+                <Text style={styles.errorText}>{errors.username}</Text>
               )}
 
               <Text style={styles.inputLabel}>Email</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Enter your email"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
+                value={formData.email}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({ ...prev, email: text }))
+                }
                 keyboardType="email-address"
+                autoCapitalize="none"
               />
               {errors.email && (
                 <Text style={styles.errorText}>{errors.email}</Text>
               )}
 
+              <Text style={styles.inputLabel}>Date of Birth</Text>
+              <TouchableOpacity
+                style={styles.input}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Text>{formData.dob.toLocaleDateString("vi-VN")}</Text>
+              </TouchableOpacity>
+
+              {showDatePicker && (
+                <DateTimePicker
+                  value={formData.dob}
+                  mode="date"
+                  display="default"
+                  onChange={onDateChange}
+                  maximumDate={new Date()}
+                />
+              )}
+
+              <Text style={styles.inputLabel}>Gender</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={formData.gender}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, gender: value }))
+                  }
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Male" value="male" />
+                  <Picker.Item label="Female" value="female" />
+                  <Picker.Item label="Other" value="other" />
+                </Picker>
+              </View>
+
               <Text style={styles.inputLabel}>Password</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Create a password"
-                value={password}
-                onChangeText={setPassword}
+                value={formData.password}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({ ...prev, password: text }))
+                }
                 secureTextEntry
               />
               {errors.password && (
@@ -123,8 +210,10 @@ export const RegisterScreen = ({ navigation }) => {
               <TextInput
                 style={styles.input}
                 placeholder="Confirm your password"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
+                value={formData.confirmPassword}
+                onChangeText={(text) =>
+                  setFormData((prev) => ({ ...prev, confirmPassword: text }))
+                }
                 secureTextEntry
               />
               {errors.confirmPassword && (

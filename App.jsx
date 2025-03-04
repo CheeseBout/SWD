@@ -14,6 +14,8 @@ import SearchTherapistScreen from "./screens/SearchTherapist/SearchTherapist";
 import SearchTherapistResultScreen from "./screens/SearchTherapistResult/SearchTherapistResult";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ActivityIndicator, View } from "react-native";
+import { ForgotPasswordScreen } from "./screens/ForgotPassword/ForgotPassword";
+import Toast from "react-native-toast-message";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -71,6 +73,11 @@ const NavigationScreens = () => {
             component={RegisterScreen}
             options={{ headerShown: false }}
           />
+          <Stack.Screen
+            name="ForgotPassword"
+            component={ForgotPasswordScreen}
+            options={{ headerShown: false }}
+          />
         </>
       ) : (
         <>
@@ -106,6 +113,7 @@ export default function App() {
       <NavigationContainer>
         <NavigationScreens />
       </NavigationContainer>
+      <Toast />
     </AuthProvider>
   );
 }

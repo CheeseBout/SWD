@@ -10,6 +10,9 @@ const TOKEN = require("../models/token.model");
 const ms = require("ms");
 const appConfig = require("../configs/app.config");
 const userRepo = require("../repositories/user.repo");
+const { OAuth2Client } = require("google-auth-library");
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 class AuthService {
   async register({
@@ -224,50 +227,56 @@ class AuthService {
     return user;
   }
 
-  async loginWithGoogle(profile, tokens) {
+  async loginWithGoogle(idToken) {
     try {
-      if (!profile?.emails?.[0]?.value) {
-        throw new APIError(400, "Invalid profile data from Google");
+      if (!idToken) {
+        throw new APIError(400, "Missing Google ID Token");
       }
 
-      const googleEmail = profile.emails[0].value;
+      // Xác thực Google ID Token
+      const ticket = await client.verifyIdToken({
+        idToken,
+        audience: [
+          appConfig.GOOGLE.FIREBASE_WEB_ID,
+          appConfig.GOOGLE.ANDROID_ID,
+          appConfig.GOOGLE.IOS_ID,
+        ].filter(Boolean),
+      });
+
+      const payload = ticket.getPayload();
+      if (!payload || !payload.email) {
+        throw new APIError(400, "Invalid Google ID Token");
+      }
+
+      // Log payload info for debugging
+      console.log("Google Auth Payload:", {
+        email: payload.email,
+        name: payload.name,
+        picture: payload.picture,
+        aud: payload.aud, // The audience the token was issued to
+        iss: payload.iss, // The issuer
+      });
+
+      const googleEmail = payload.email;
       let user = await authRepo.findUserByEmail(googleEmail);
 
-      // Kiểm tra xem có token hiện tại không (người dùng đang đăng nhập)
-      const existingToken = await tokenRepo.findTokenByUserId(user?._id);
-      if (
-        existingToken &&
-        existingToken.userEmail &&
-        existingToken.userEmail !== googleEmail
-      ) {
-        throw new APIError(400, {
-          message: "Please use the same email address as your login account",
-          currentEmail: existingToken.userEmail,
-          attemptedEmail: googleEmail,
-        });
-      }
-
+      // Nếu user chưa tồn tại, tạo user mới
       if (!user) {
         user = await authRepo.createUser({
-          fullname: profile.displayName || googleEmail,
+          fullname: payload.name || googleEmail,
           username: googleEmail.split("@")[0],
           email: googleEmail,
-          password: crypto.randomBytes(16).toString("hex"),
+          password: null,
           dob: new Date(),
           gender: "other",
-          photoURL: profile.photos?.[0]?.value,
+          photoURL: payload.picture,
           role: "user",
           isVerified: true,
           address: "None",
         });
       }
 
-      await tokenRepo.updateGoogleToken(
-        user._id,
-        tokens.access_token,
-        googleEmail
-      );
-
+      // Tạo JWT Token để frontend sử dụng
       const authTokens = await tokenServices.generateAuthToken(
         user._id.toString()
       );
@@ -276,15 +285,29 @@ class AuthService {
         user: {
           _id: user._id,
           fullname: user.fullname,
+          username: user.username,
           email: user.email,
-          role: user.role,
+          dob: user.dob,
+          gender: user.gender,
           photoURL: user.photoURL,
+          role: "user",
+          isVerified: true,
+          address: "None",
         },
         ...authTokens,
       };
     } catch (error) {
-      console.error("Google login service error:", error);
-      throw error;
+      console.error("Google login service error details:", error);
+
+      // More specific error handling
+      if (error.message && error.message.includes("audience")) {
+        throw new APIError(
+          400,
+          "Invalid client ID. Token was issued for a different application."
+        );
+      }
+
+      throw new APIError(400, "Google login failed: " + error.message);
     }
   }
 

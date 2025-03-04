@@ -33,7 +33,6 @@ router.post(
   validate(resetPasswordValidation),
   authController.resetPassword
 );
-
 router.post(
   "/change-password",
   validate(changePasswordValidation),
@@ -41,17 +40,11 @@ router.post(
   authController.changePassword
 );
 
+// OAuth Redirect for Web
 router.get(
   "/login/google",
   passport.authenticate("google", {
-    scope: [
-      "email",
-      "profile",
-      "https://www.googleapis.com/auth/calendar",
-      "https://www.googleapis.com/auth/calendar.events",
-      "https://www.googleapis.com/auth/calendar.settings.readonly",
-      "https://www.googleapis.com/auth/meetings.space.created",
-    ],
+    scope: ["email", "profile"],
     accessType: "offline",
     prompt: "consent",
   })
@@ -63,8 +56,26 @@ router.get(
     session: false,
     failureRedirect: `${appConfig.CLIENT_URL}?error=google_login_failed`,
   }),
-  authController.loginWithGoogle
+  authController.authCallBack
 );
+
+// API Google Login for Mobile
+router.post("/google-login", authController.loginWithGoogle);
+
+// DEBUG only - remove in production
+router.get("/debug/google-config", (req, res) => {
+  res.json({
+    clientIDs: {
+      web: process.env.GOOGLE_CLIENT_ID?.substring(0, 10) + "...",
+      android:
+        process.env.GOOGLE_ANDROID_CLIENT_ID?.substring(0, 10) + "..." ||
+        "not set",
+      ios:
+        process.env.GOOGLE_IOS_CLIENT_ID?.substring(0, 10) + "..." || "not set",
+    },
+    note: "This endpoint should be removed in production",
+  });
+});
 
 // Protected routes
 router.post(

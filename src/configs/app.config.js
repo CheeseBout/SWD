@@ -37,6 +37,11 @@ module.exports = {
       rejectUnauthorized: false,
     },
   },
+  GOOGLE: {
+    FIREBASE_WEB_ID: process.env.GOOGLE_FIREBASE_WEB_CLIENT_ID,
+    ANDROID_ID: process.env.GOOGLE_ANDROID_CLIENT_ID,
+    IOS_ID: process.env.GOOGLE_IOS_CLIENT_ID,
+  },
   VNPay: {
     vnp_TmnCode: process.env.VNP_TMN_CODE,
     vnp_HashSecret: process.env.VNP_HASH_SECRET,

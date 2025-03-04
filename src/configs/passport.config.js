@@ -13,15 +13,13 @@ passport.use(
     },
     async (req, accessToken, refreshToken, profile, done) => {
       try {
-        // Pass both profile and tokens
-        profile.tokens = {
-          access_token: accessToken,
-          refresh_token: refreshToken,
-          expiry_date: 3600000, // 1 hour
-        };
+        const user = await authRepo.findUserByEmail(profile.emails[0].value);
+
+        // Gán tokens vào profile để gửi đến `loginWithGoogle`
+        profile.tokens = { accessToken, refreshToken };
         return done(null, profile);
       } catch (error) {
-        return done(error);
+        return done(error, null);
       }
     }
   )

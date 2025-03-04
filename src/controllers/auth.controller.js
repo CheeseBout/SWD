@@ -4,7 +4,12 @@ const { createTokenPair } = require("../services/token.services");
 const catchAsync = require("../utils/catchAsync");
 const { OK } = require("../utils/response");
 const config = require("../configs/app.config");
+const APIError = require("../utils/ApiError");
+const passport = require("passport");
 
+const authGoogle = passport.authenticate("google", {
+  scope: ["profile", "email"],
+});
 class AuthController {
   register = catchAsync(async (req, res) => {
     const { fullname, username, email, password, dob, gender, photoURL, role } =
@@ -95,49 +100,46 @@ class AuthController {
   });
 
   /**
-   * Google OAuth2.0
+   * Google OAuth Callback for Web
    */
-  authGoogle = async (req, res) => {
-    const url = getAuthURL();
-    res.redirect(url);
-  };
-
-  authCallBack = catchAsync(async (req, res) => {
-    const { code } = req.query;
+  authCallBack = async (req, res) => {
     try {
-      await saveToken(code);
-      res.send("✅ Xác thực thành công! Bạn có thể tạo Google Meet.");
-    } catch (error) {
-      res.status(500).send("❌ Xác thực thất bại: " + error.message);
-    }
-  });
-
-  loginWithGoogle = catchAsync(async (req, res) => {
-    try {
-      // Kiểm tra nếu không có profile từ passport
-      if (!req.user) {
+      const { tokens } = req.user;
+      if (!tokens || !tokens.id_token) {
         return res.redirect(`${config.CLIENT_URL}?error=login_failed`);
       }
 
-      // Lấy tokens từ profile đã được passport đính kèm
-      const tokens = req.user.tokens || {};
-
-      // Xử lý login và lưu token
-      const result = await authServices.loginWithGoogle(req.user, tokens);
-
-      // Redirect về client URL với tokens
-      const redirectUrl = config.CLIENT_URL;
-      const queryParams = new URLSearchParams({
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-      });
-
-      res.redirect(`${redirectUrl}?${queryParams.toString()}`);
+      const result = await authServices.loginWithGoogle(tokens.id_token);
+      return res.json(result);
     } catch (error) {
       console.error("Google login error:", error);
       res.redirect(`${config.CLIENT_URL}?error=login_failed`);
     }
-  });
+  };
+
+  /**
+   * Google Login API for Mobile & Web (Using idToken)
+   */
+  loginWithGoogle = async (req, res) => {
+    try {
+      const { idToken } = req.body;
+
+      if (!idToken) {
+        // Fix: The first parameter should be a message, the second a numeric status code
+        throw new APIError(400, "Missing Google ID Token");
+      }
+
+      const result = await authServices.loginWithGoogle(idToken);
+      return OK(res, "Google login successful", result);
+    } catch (error) {
+      console.error("Google login error:", error);
+      // Fix: Use numeric status code and properly handle the error
+      return res.status(error.statusCode || 500).json({
+        status: "error",
+        message: error.message || "An error occurred during Google login",
+      });
+    }
+  };
 }
 
 module.exports = new AuthController();

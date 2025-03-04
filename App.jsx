@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { LoginScreen } from "./screens/Login/Login";
@@ -12,6 +12,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import SearchTherapistScreen from "./screens/SearchTherapist/SearchTherapist";
 import SearchTherapistResultScreen from "./screens/SearchTherapistResult/SearchTherapistResult";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { ActivityIndicator, View } from "react-native";
 import TherapistDetailScreen from "./screens/TherapistDetail/TherapistDetail";
 
 const Stack = createNativeStackNavigator();
@@ -45,68 +47,71 @@ const TabItems = () => {
   );
 };
 
-export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+const NavigationScreens = () => {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#4a6ee0" />
+      </View>
+    );
+  }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen
-          name="MainTabs"
-          component={TabItems}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Login"
-          component={LoginScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Register"
-          component={RegisterScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Home"
-          component={HomeScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Calendar"
-          component={CalendarScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Chat"
-          component={ChatScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Profile"
-          component={ProfileScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Setting"
-          component={SettingScreen}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="SearchTherapist"
-          component={SearchTherapistScreen}
-          options={{ headerShown: true, title: "Find a Therapist" }}
-        />
-        <Stack.Screen
-          name="SearchTherapistResult"
-          component={SearchTherapistResultScreen}
-          options={{ headerShown: true, title: "Find a Therapist" }}
-        />
-        <Stack.Screen
-          name="TherapistDetail"
-          component={TherapistDetailScreen}
-          options={{ headerShown: true, title: "Find a Therapist" }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <Stack.Navigator>
+      {!isAuthenticated ? (
+        <>
+          <Stack.Screen
+            name="Login"
+            component={LoginScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="Register"
+            component={RegisterScreen}
+            options={{ headerShown: false }}
+          />
+        </>
+      ) : (
+        <>
+          <Stack.Screen
+            name="MainTabs"
+            component={TabItems}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="Setting"
+            component={SettingScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="SearchTherapist"
+            component={SearchTherapistScreen}
+            options={{ headerShown: true, title: "Find a Therapist" }}
+          />
+          <Stack.Screen
+            name="SearchTherapistResult"
+            component={SearchTherapistResultScreen}
+            options={{ headerShown: true, title: "Find a Therapist" }}
+          />
+        </>
+      )}
+      <Stack.Screen
+        name="TherapistDetail"
+        component={TherapistDetailScreen}
+        options={{ headerShown: true, title: "Find a Therapist" }}
+      />
+    </Stack.Navigator>
+  );
+};
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <NavigationContainer>
+        <NavigationScreens />
+      </NavigationContainer>
+    </AuthProvider>
   );
 }

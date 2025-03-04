@@ -5,20 +5,17 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import React, { useState } from "react";
+import React from "react";
 import { styles } from "./styles";
+import { useAuth } from "../../context/AuthContext";
 
 export const ProfileScreen = ({ navigation }) => {
-  const [user, setUser] = useState({
-    id: "123456",
-    name: "John Doe",
-    email: "john.doe@example.com",
-    phone: "+1 (123) 456-7890",
-    joinDate: "May 2023",
-    profileImage: "https://randomuser.me/api/portraits/men/32.jpg",
-  });
+  const { userInfo, logout } = useAuth();
+  const user = userInfo?.user || {};
+  console.log("UserInfo from storage:", userInfo);
 
   const menuItems = [
     {
@@ -47,6 +44,21 @@ export const ProfileScreen = ({ navigation }) => {
     },
   ];
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      Alert.alert("Logout Error", "Failed to logout. Please try again.");
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+    });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -54,7 +66,7 @@ export const ProfileScreen = ({ navigation }) => {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.editButton}
-            onPress={() => console.log("Edit profile")}
+            onPress={() => navigation.navigate("Setting")}
           >
             <Ionicons name="pencil" size={20} color="#fff" />
           </TouchableOpacity>
@@ -63,30 +75,35 @@ export const ProfileScreen = ({ navigation }) => {
         {/* Profile Information */}
         <View style={styles.profileContainer}>
           <Image
-            source={{ uri: user.profileImage }}
+            source={{ uri: user.photoURL || "https://via.placeholder.com/150" }}
             style={styles.profileImage}
           />
-          <Text style={styles.name}>{user.name}</Text>
-          <Text style={styles.bio}>{user.bio}</Text>
+          <Text style={styles.name}>{user.fullname}</Text>
 
           <View style={styles.infoRow}>
             <Ionicons name="mail-outline" size={18} color="#4a6ee0" />
             <Text style={styles.infoText}>{user.email}</Text>
           </View>
 
-          <View style={styles.infoRow}>
-            <Ionicons name="call-outline" size={18} color="#4a6ee0" />
-            <Text style={styles.infoText}>{user.phone}</Text>
-          </View>
+          {user.address && (
+            <View style={styles.infoRow}>
+              <Ionicons name="location-outline" size={18} color="#4a6ee0" />
+              <Text style={styles.infoText}>{user.address}</Text>
+            </View>
+          )}
+
+          {user.dob && (
+            <View style={styles.infoRow}>
+              <Ionicons name="calendar-outline" size={18} color="#4a6ee0" />
+              <Text style={styles.infoText}>DOB: {formatDate(user.dob)}</Text>
+            </View>
+          )}
 
           <View style={styles.infoRow}>
-            <Ionicons name="location-outline" size={18} color="#4a6ee0" />
-            <Text style={styles.infoText}>{user.address}</Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Ionicons name="calendar-outline" size={18} color="#4a6ee0" />
-            <Text style={styles.infoText}>Member since {user.joinDate}</Text>
+            <Ionicons name="person-outline" size={18} color="#4a6ee0" />
+            <Text style={styles.infoText}>
+              Gender: {user.gender || "Not specified"}
+            </Text>
           </View>
         </View>
 
@@ -113,10 +130,7 @@ export const ProfileScreen = ({ navigation }) => {
         </View>
 
         {/* Logout Button */}
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={() => console.log("Logout")}
-        >
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={20} color="#ff3b30" />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>

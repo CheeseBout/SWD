@@ -1,6 +1,15 @@
 const CERTIFICATE = require("../models/certificate.model");
+const COUPLETHERAPIST = require("../models/coupleTherapist.model");
 
 class CertificateRepository {
+  async findOne(filter) {
+    return await CERTIFICATE.findOne(filter);
+  }
+
+  async findCertificateById(certificateID) {
+    return await CERTIFICATE.findById(certificateID);
+  }
+
   async updateCertificateVerification(certificateID) {
     return await CERTIFICATE.findByIdAndUpdate(
       certificateID,
@@ -12,17 +21,42 @@ class CertificateRepository {
   }
 
   async createCertificateDenial({ certificateID, reason }) {
-    return await CERTIFICATE.findByIdAndUpdate(
-      certificateID,
-      {
-        $set: { reason },
-      },
-      { new: true }
-    );
-  }
+    try {
+      // Update in COUPLETHERAPIST collection
+      await COUPLETHERAPIST.findOneAndUpdate(
+        { "certificates.certificateID": certificateID },
+        {
+          $set: {
+            "certificates.$[cert].isCertificateVerified": false,
+            "certificates.$[cert].reason": reason,
+          },
+        },
+        {
+          arrayFilters: [{ "cert.certificateID": certificateID }],
+          new: true,
+        }
+      );
 
-  async deleteCertificate(certificateID) {
-    return await CERTIFICATE.findByIdAndDelete(certificateID);
+      const updatedCertificate = await CERTIFICATE.findByIdAndUpdate(
+        certificateID,
+        {
+          $set: {
+            reason,
+            isCertificateVerified: false,
+          },
+        },
+        { new: true }
+      );
+
+      if (!updatedCertificate) {
+        throw new Error(`Certificate with ID ${certificateID} not found`);
+      }
+
+      return updatedCertificate;
+    } catch (error) {
+      console.error("Error in createCertificateDenial:", error);
+      throw error;
+    }
   }
 }
 

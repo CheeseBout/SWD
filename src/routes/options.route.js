@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { getUserByIdValidation } = require("../validations/user.validation");
-const auth = require("../middlewares/auth.middleware");
+const { auth } = require("../middlewares/auth.middleware");
 const optionsController = require("../controllers/options.controller");
 
 //Public Routes

@@ -1,3 +1,4 @@
+const CERTIFICATE = require("../models/certificate.model");
 const COUPLETHERAPIST = require("../models/coupleTherapist.model");
 const COUPLETHERAPIST_AVAILABILITY = require("../models/coupleTherapistAvailability.model");
 
@@ -52,11 +53,16 @@ class TherapistRepo {
   }
 
   async updateTherapistCertificate(certificateID) {
+    await CERTIFICATE.findOneAndUpdate(
+      { _id: certificateID },
+      { isCertificateVerified: true, reason: "" }
+    );
     return await COUPLETHERAPIST.findOneAndUpdate(
       { "certificates.certificateID": certificateID },
       {
         $set: {
           "certificates.$[cert].isCertificateVerified": true,
+          "certificates.$[cert].reason": "",
         },
       },
       {
@@ -101,6 +107,10 @@ class TherapistRepo {
       updateData,
       { new: true }
     );
+  }
+
+  async findOne(filter) {
+    return await COUPLETHERAPIST.findOne(filter);
   }
 
   async deleteAvailability(availabilityId) {

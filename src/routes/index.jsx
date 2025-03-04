@@ -24,7 +24,7 @@ const TermsOfService = lazy(() => import("../pages/Policy/TermsOfService"));
 const ForgotPasswordPage = lazy(() => import("../pages/Forgot-password"));
 
 const LazyLoad = ({ children }) => (
-  <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+  <Suspense fallback={<div></div>}>{children}</Suspense>
 );
 
 LazyLoad.propTypes = {

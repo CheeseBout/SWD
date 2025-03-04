@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { authService } from "../../services/api";
+import { AuthContext } from "../../contexts/AuthContextObject";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useForm } from "react-hook-form";
@@ -13,6 +14,7 @@ const schema = yup.object({
 });
 
 export default function LoginPage() {
+  const { login } = useContext(AuthContext);
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState(null);
   const [resetEmail, setResetEmail] = useState("");
@@ -30,11 +32,13 @@ export default function LoginPage() {
       const response = await authService.login(data.email, data.password);
       const { accessToken, refreshToken } = response.data.tokens;
 
-      localStorage.setItem("accessToken", accessToken);
+      // Use the AuthContext login function instead
+      login(accessToken);
+      
       if (remember) {
         localStorage.setItem("refreshToken", refreshToken);
       }
-      navigate("/profile");
+      navigate("/");
     } catch (err) {
       setError(
         err.response?.data?.message || "Login failed. Please try again."

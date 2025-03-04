@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import TopicCard from "./TopicCard";
 import { topicService } from "../../services/api";
 import PropTypes from 'prop-types';
+import LoadingSpinner from "../common/LoadingSpinner";
 
 export default function TopicList({ limit }) {
   const [topics, setTopics] = React.useState([]);
@@ -33,7 +34,7 @@ export default function TopicList({ limit }) {
     .filter(topic => topic.status === 'active')
     .slice(0, limit);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div><LoadingSpinner/></div>;
   if (error) return <div>Error: {error}</div>;
 
   return (

@@ -21,10 +21,9 @@ const ratingSchema = mongoose.Schema(
       max: 5,
       required: true,
     },
-    status: {
-      type: String,
-      enum: ["created", "deleted"],
-      default: "created",
+    reviewCount: {
+      type: Number,
+      default: 0,
     },
   },
   { timestamps: true }

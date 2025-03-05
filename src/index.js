@@ -4,8 +4,6 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 const port = appConfig.PORT || 8080;
-// Remove old db import
-// const db = require("./configs/db.config");
 const { connectToDatabase } = require("./configs/connection");
 const passport = require("./configs/passport.config");
 const {
@@ -13,8 +11,10 @@ const {
   errorHandler,
 } = require("./middlewares/error.middleware");
 const morgan = require("morgan");
+const swaggerJSDoc = require("swagger-jsdoc");
+const swaggerUi = require("swagger-ui-express");
+const swaggerOptions = require("./configs/swagger.config");
 
-// Replace db() with new connection handling
 const startServer = async () => {
   try {
     await connectToDatabase();
@@ -31,6 +31,10 @@ const startServer = async () => {
     app.get("/", (req, res) => {
       res.send("Hello World!");
     });
+
+    // Swagger setup
+    const swaggerSpec = swaggerJSDoc(swaggerOptions);
+    app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
     app.use("/api/v1", require("./routes"));
     app.use("*", (req, res) => {

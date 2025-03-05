@@ -42,15 +42,6 @@ const coupleTherapistSchema = new mongoose.Schema(
         ref: "Packages",
       },
     ],
-    rating: {
-      type: Number,
-      default: 0,
-      max: 5,
-    },
-    reviewCount: {
-      type: Number,
-      default: 0,
-    },
     category: {
       type: String,
       default: "General",

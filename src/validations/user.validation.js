@@ -30,7 +30,7 @@ const createUserValidation = {
     address: Joi.string().required(),
     dob: Joi.date().required(),
     gender: Joi.string().required(),
-    role: Joi.optional().valid("user", "couple_therapist", "admin"),
+    role: Joi.optional().valid("member", "couple_therapist", "admin"),
     photoURL: Joi.string().uri().optional(),
   }),
 };

@@ -2,6 +2,7 @@ require("dotenv").config();
 const appConfig = require("./configs/app.config");
 const express = require("express");
 const cors = require("cors");
+const session = require("express-session");
 const app = express();
 const port = appConfig.PORT || 8080;
 const { connectToDatabase } = require("./configs/connection");
@@ -19,11 +20,35 @@ const startServer = async () => {
   try {
     await connectToDatabase();
 
-    app.use(cors());
+    // Configure CORS with credentials
+    app.use(
+      cors({
+        origin: process.env.CLIENT_URL || "http://localhost:5173",
+        credentials: true,
+      })
+    );
+
+    // Session middleware configuration
+    app.use(
+      session({
+        secret: process.env.SESSION_SECRET || "your-secret-key",
+        resave: true,
+        saveUninitialized: true,
+        cookie: {
+          secure: process.env.NODE_ENV === "production",
+          httpOnly: true,
+          maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        },
+      })
+    );
+
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     app.use(morgan("dev"));
+
+    // Initialize Passport after session middleware
     app.use(passport.initialize());
+    app.use(passport.session());
 
     const googleMeetRoutes = require("./routes/meet.route");
     app.use("/api/v1/google-meet", googleMeetRoutes);

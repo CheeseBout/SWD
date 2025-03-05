@@ -268,20 +268,24 @@ class AuthService {
     return user;
   }
 
-  async loginWithGoogle(idToken, role) {
+  async loginWithGoogle(idToken, role = "member") {
     try {
       if (!idToken) {
         throw new APIError(400, "Missing Google ID Token");
       }
 
-      // Xác thực Google ID Token
+      console.log(
+        "Verifying token with client ID:",
+        process.env.GOOGLE_FIREBASE_WEB_CLIENT_ID
+      );
+
       const ticket = await client.verifyIdToken({
-        idToken,
+        idToken: idToken,
         audience: [
           appConfig.GOOGLE.FIREBASE_WEB_ID,
           appConfig.GOOGLE.ANDROID_ID,
           appConfig.GOOGLE.IOS_ID,
-        ].filter(Boolean),
+        ],
       });
 
       const payload = ticket.getPayload();
@@ -301,33 +305,36 @@ class AuthService {
       const googleEmail = payload.email;
       let user = await authRepo.findUserByEmail(googleEmail);
 
-      // Nếu user chưa tồn tại, tạo user mới
+      // If user doesn't exist, create new one with specified role
       if (!user) {
-        const userRole =
-          role === "couple_therapist" ? "couple_therapist" : "member";
+        console.log("Creating new user with role:", role);
+        const randomPassword = crypto.randomBytes(20).toString("hex");
+
         user = await authRepo.createUser({
           fullname: payload.name || googleEmail,
           username: googleEmail.split("@")[0],
           email: googleEmail,
-          password: null,
+          password: randomPassword,
           dob: new Date(),
           gender: "other",
           photoURL: payload.picture,
-          role: userRole,
+          role: role, // Use the provided role
           isVerified: true,
           address: "None",
+          isGoogleUser: true,
         });
 
-        // Create therapist profile if role is couple_therapist
-        if (userRole === "couple_therapist") {
+        // If user is created as couple_therapist, create therapist profile
+        if (role === "couple_therapist") {
           await this.createTherapistProfile(user._id);
         }
+      } else {
+        console.log("Existing user found with role:", user.role);
       }
 
-      // Tạo JWT Token để frontend sử dụng
-      const authTokens = await tokenServices.generateAuthToken(
-        user._id.toString()
-      );
+      // Generate auth tokens
+      const { accessToken, refreshToken } =
+        await tokenServices.generateAuthToken(user._id.toString());
 
       return {
         user: {
@@ -340,9 +347,10 @@ class AuthService {
           photoURL: user.photoURL,
           role: user.role,
           isVerified: true,
-          address: "None",
+          address: user.address || "None",
         },
-        ...authTokens,
+        accessToken,
+        refreshToken,
       };
     } catch (error) {
       console.error("Google login service error details:", error);

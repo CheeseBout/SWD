@@ -8,8 +8,17 @@ const APIError = require("../utils/ApiError");
 const passport = require("passport");
 
 const authGoogle = passport.authenticate("google", {
-  scope: ["profile", "email"],
+  scope: [
+    "email",
+    "profile",
+    "https://www.googleapis.com/auth/userinfo.profile",
+    "https://www.googleapis.com/auth/userinfo.email",
+    "openid",
+  ],
+  accessType: "offline",
+  prompt: "consent",
 });
+
 class AuthController {
   register = catchAsync(async (req, res) => {
     const {
@@ -135,16 +144,75 @@ class AuthController {
    */
   authCallBack = async (req, res) => {
     try {
-      const { tokens } = req.user;
-      if (!tokens || !tokens.id_token) {
-        return res.redirect(`${config.CLIENT_URL}?error=login_failed`);
+      if (!req.user || !req.user.tokens) {
+        console.error("No user data found in request");
+        return res.redirect(
+          `${config.CLIENT_URL}/login?error=missing_user_data`
+        );
       }
 
-      const result = await authServices.loginWithGoogle(tokens.id_token);
-      return res.json(result);
+      // Safely access session data
+      const requestedRole = req.session?.requestedRole || "member";
+      console.log("Session data:", {
+        requestedRole,
+        sessionId: req.sessionID,
+        hasSession: !!req.session,
+      });
+
+      const { tokens } = req.user;
+
+      console.log("Debug - Auth Callback:", {
+        sessionData: req.session,
+        requestedRole: requestedRole,
+        hasTokens: !!tokens,
+      });
+
+      if (!tokens.id_token) {
+        console.error("No ID token found:", tokens);
+        return res.redirect(
+          `${config.CLIENT_URL}/login?error=missing_id_token`
+        );
+      }
+
+      // Truyền role vào hàm loginWithGoogle
+      const result = await authServices.loginWithGoogle(
+        tokens.id_token,
+        requestedRole || "member"
+      );
+
+      // Debug log
+      console.log("Auth result:", {
+        hasUser: !!result.user,
+        hasTokens: !!(result.accessToken && result.refreshToken),
+      });
+
+      if (!result?.user || !result?.accessToken) {
+        console.error("Invalid login result:", result);
+        return res.redirect(
+          `${config.CLIENT_URL}/login?error=invalid_login_result`
+        );
+      }
+
+      // Construct redirect URL with tokens
+      const redirectUrl = new URL(`${config.CLIENT_URL}`);
+      redirectUrl.searchParams.append("accessToken", result.accessToken);
+      redirectUrl.searchParams.append("refreshToken", result.refreshToken);
+      redirectUrl.searchParams.append("success", "true");
+
+      // Optional: Add minimal user info
+      redirectUrl.searchParams.append("userId", result.user._id);
+      redirectUrl.searchParams.append("role", result.user.role);
+
+      return res.redirect(redirectUrl.toString());
     } catch (error) {
-      console.error("Google login error:", error);
-      res.redirect(`${config.CLIENT_URL}?error=login_failed`);
+      console.error("Google callback error:", error);
+      return res.redirect(
+        `${
+          config.CLIENT_URL
+        }/login?error=callback_failed&message=${encodeURIComponent(
+          error.message
+        )}`
+      );
     }
   };
 
@@ -154,12 +222,13 @@ class AuthController {
   loginWithGoogle = async (req, res) => {
     try {
       const { idToken } = req.body;
+      const role = req.params.role;
 
       if (!idToken) {
         throw new APIError("Missing Google ID Token", 400);
       }
 
-      const result = await authServices.loginWithGoogle(idToken);
+      const result = await authServices.loginWithGoogle(idToken, role);
       return OK(res, "Google login successful", result);
     } catch (error) {
       console.error("Google login error:", error);

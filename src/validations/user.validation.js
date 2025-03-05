@@ -38,26 +38,12 @@ const createUserValidation = {
       }),
     username: Joi.string().required(),
     address: Joi.string().required(),
-    dob: Joi.string()
+    dob: Joi.date()
       .required()
-      .pattern(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/)
-      .custom((value, helpers) => {
-        const [day, month, year] = value.split("/");
-        const date = new Date(year, month - 1, day);
-
-        // Check if date is valid and not in future
-        if (isNaN(date.getTime())) {
-          return helpers.error("date.invalid");
-        }
-        if (date > new Date()) {
-          return helpers.error("date.future");
-        }
-        return value;
-      })
+      .max('now')
       .messages({
-        "string.pattern.base": "Date must be in DD/MM/YYYY format",
-        "date.invalid": "Invalid date",
-        "date.future": "Date of birth cannot be in the future",
+        "date.base": "Invalid date format",
+        "date.max": "Date of birth cannot be in the future",
         "any.required": "Date of birth is required",
       }),
     gender: Joi.string().required(),

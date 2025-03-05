@@ -69,6 +69,10 @@ const userSchema = new mongoose.Schema(
       },
     ],
     googleId: String,
+    isGoogleUser: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
@@ -77,6 +81,11 @@ const userSchema = new mongoose.Schema(
 
 // Hash password before saving
 userSchema.pre("save", async function (next) {
+  // Nếu password không thay đổi hoặc là Google user, bỏ qua validation
+  if (!this.isModified("password") || this.isGoogleUser) {
+    return next();
+  }
+
   if (this.isModified("password") && this.password) {
     this.password = await bcrypt.hash(this.password, 10);
   }

@@ -256,10 +256,31 @@ router.post(
 // OAuth Redirect for Web
 router.get(
   "/login/google",
+  (req, res, next) => {
+    // Store role in session properly
+    if (req.query.role) {
+      req.session.requestedRole = req.query.role;
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+        }
+        next();
+      });
+    } else {
+      next();
+    }
+  },
   passport.authenticate("google", {
-    scope: ["email", "profile"],
+    scope: [
+      "email",
+      "profile",
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/userinfo.email",
+      "openid",
+    ],
     accessType: "offline",
-    prompt: "consent",
+    prompt: "select_account consent",
+    session: true, // Changed to true
   })
 );
 
@@ -267,7 +288,8 @@ router.get(
   "/login/google/callback",
   passport.authenticate("google", {
     session: false,
-    failureRedirect: `${appConfig.CLIENT_URL}?error=google_login_failed`,
+    failureRedirect: `${appConfig.CLIENT_URL}/login?error=google_auth_failed`,
+    failureMessage: true,
   }),
   authController.authCallBack
 );

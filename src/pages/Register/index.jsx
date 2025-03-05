@@ -4,6 +4,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Link, useNavigate } from "react-router-dom";
 import { authService } from "../../services/api";
+import dayjs from "dayjs";
 
 const schema = yup.object({
   email: yup
@@ -27,11 +28,24 @@ const schema = yup.object({
   fullname: yup.string().required("Please enter your full name"),
   username: yup.string().required("Please enter your username"),
   dob: yup
-    .string()
-    .transform((value) => (value === "" ? null : value))
+    .date()
+    .transform((value, originalValue) => {
+      if (!originalValue) return null;
+      const formattedDate = dayjs(originalValue, "YYYY-MM-DD", true);
+      return formattedDate.isValid() ? formattedDate.toDate() : null; // Trả về kiểu Date
+    })
+    // .transform((value) => (value === "" ? null : value))
+    // .transform((value, originalValue) => {
+    //   if (!originalValue) return null;
+    //   const formattedDate = dayjs(originalValue, "YYYY-MM-DD", true);
+    //   return formattedDate.isValid()
+    //     ? formattedDate.format("DD/MM/YYYY")
+    //     : null;
+    // })
     .nullable()
     .required("Please select your date of birth"),
   gender: yup.string().required("Please select your gender"),
+  address: yup.string().required("Please enter your address"),
 });
 
 export default function Register() {
@@ -53,7 +67,7 @@ export default function Register() {
   const password = watch("password");
   const confirmPassword = watch("confirmPassword");
   useEffect(() => {
-    setValue("role", "user");
+    setValue("role", "member");
   }, []);
   useEffect(() => {
     if (confirmPassword) {
@@ -82,6 +96,7 @@ export default function Register() {
         dob: data.dob,
         gender: data.gender,
         role: data.role,
+        address: data.address,
       };
 
       await authService.register(payload);
@@ -96,7 +111,7 @@ export default function Register() {
     } catch (error) {
       setNotification({
         type: "error",
-        message: "Email or Username already in use",
+        message: error?.message,
       });
 
       setTimeout(() => {
@@ -159,12 +174,12 @@ export default function Register() {
                     <label className="flex items-center space-x-2">
                       <input
                         type="radio"
-                        value="user"
+                        value="member"
                         defaultChecked
                         {...register("role")}
-                        checked={watch("role") === "user"}
+                        checked={watch("role") === "member"}
                       />
-                      <span>User</span>
+                      <span>Member</span>
                     </label>
                     <label className="flex items-center space-x-2">
                       <input
@@ -305,6 +320,20 @@ export default function Register() {
                       {errors.username?.message}
                     </p>
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Address
+                    </label>
+                    <input
+                      type="text"
+                      {...register("address")}
+                      placeholder="Enter your address"
+                      className="input w-full"
+                    />
+                    <p className="text-red-500 text-sm">
+                      {errors.address?.message}
+                    </p>
+                  </div>
 
                   {/* Date of Birth */}
                   <div>
@@ -333,9 +362,9 @@ export default function Register() {
                       <option value="" disabled selected>
                         What is your gender?
                       </option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
                     </select>
                     <p className="text-red-500 text-sm">
                       {errors.gender?.message}

@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const ratingController = require("../controllers/rating.controller");
+const { auth } = require("../middlewares/auth.middleware");
 
 /**
  * @swagger
@@ -196,10 +197,10 @@ const ratingController = require("../controllers/rating.controller");
  *         description: Rating not found
  */
 
-router.post("/", ratingController.createRating);
+router.post("/", auth, ratingController.createRating);
 router.get("/", ratingController.getAllRating);
 router.get("/:ratingId", ratingController.getRatingById);
-router.put("/:ratingId", ratingController.updateRating);
-router.delete("/:ratingId", ratingController.deleteRating);
+router.put("/:ratingId", auth, ratingController.updateRating);
+router.delete("/:ratingId", auth, ratingController.deleteRating);
 
 module.exports = router;

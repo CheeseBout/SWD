@@ -13,6 +13,9 @@ class ReservationService {
   }
 
   async createReservation(data) {
+    if (req.user.role !== "member") {
+      throw new APIError(403, "Permission denied");
+    }
     const isDuplicate = await reservationsRepo.checkDuplicate(
       data.coupleTherapistID,
       data.startTime,
@@ -32,6 +35,9 @@ class ReservationService {
   }
 
   async updateReservation(id, data) {
+    if (req.user.role !== "member") {
+      throw new APIError(403, "Permission denied");
+    }
     const reservation = await this.getReservationById(id);
     if (!reservation) throw new APIError(404, "Reservation not found");
 
@@ -47,12 +53,18 @@ class ReservationService {
   }
 
   async cancelReservation(reservationID) {
+    if (req.user.role !== "member") {
+      throw new APIError(403, "Permission denied");
+    }
     const canceledReservation = await reservationsRepo.cancel(reservationID);
     if (!canceledReservation) throw new APIError(404, "Reservation not found");
     return canceledReservation;
   }
 
   async approveReservation(reservationID) {
+    if (req.user.role !== "couple_therapist") {
+      throw new APIError(403, "Permission denied");
+    }
     const reservation = await reservationsRepo.approveReservation(
       reservationID
     );
@@ -61,6 +73,9 @@ class ReservationService {
   }
 
   async denyReservation(reservationID, reason) {
+    if (req.user.role !== "couple_therapist") {
+      throw new APIError(403, "Permission denied");
+    }
     if (!reason) throw new APIError(400, "Reason is required");
     const reservation = await reservationsRepo.denyReservation(
       reservationID,

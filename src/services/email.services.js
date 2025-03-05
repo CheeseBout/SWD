@@ -80,6 +80,49 @@ class EmailService {
       resetHTML
     );
   };
+
+  async sendCertificateStatus({
+    email,
+    certificateTitle,
+    status,
+    reason = null,
+  }) {
+    const subject = `Certificate ${
+      status === "approved" ? "Approved" : "Denied"
+    } - ${certificateTitle}`;
+
+    let html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: ${status === "approved" ? "#28a745" : "#dc3545"};">
+          Certificate ${status === "approved" ? "Approved" : "Denied"}
+        </h2>
+        <p>Dear Therapist,</p>
+        <p>Your certificate "<strong>${certificateTitle}</strong>" has been ${status}.</p>
+    `;
+
+    if (status === "approved") {
+      html += `
+        <p>You can now provide counseling services on our platform.</p>
+        <p>Congratulations!</p>
+      `;
+    } else if (status === "denied") {
+      html += `
+        <p>Reason for denial:</p>
+        <p style="padding: 10px; background-color: #f8d7da; border-radius: 4px;">
+          ${reason || "No specific reason provided"}
+        </p>
+        <p>Please review the reason and submit a new certificate if needed.</p>
+      `;
+    }
+
+    html += `
+        <p>Thank you for your participation.</p>
+        <p>Best regards,<br>Admin Team</p>
+      </div>
+    `;
+
+    await this.sendEmail(email, subject, "Certificate Status Update", html);
+  }
 }
 
 module.exports = new EmailService();

@@ -15,21 +15,24 @@ const coupleTherapistSchema = new mongoose.Schema(
       {
         certificateID: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "Certificate",
+          ref: "Certificates",
         },
         title: String,
         issuedDate: Date,
         expiryDate: Date,
         documentURL: String,
         category: String,
-        isCertificateVerified: {
-          type: Boolean,
-          default: false,
-        },
-        reason: {
+        status: {
           type: String,
-          default: "",
+          enum: ["pending", "approved", "denied"],
+          default: "pending",
         },
+        processedAt: Date,
+        processedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Users",
+        },
+        denialReason: String,
         updatedAt: {
           type: Date,
           default: Date.now,

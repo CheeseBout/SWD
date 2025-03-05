@@ -25,7 +25,7 @@ class PackageServices {
     if (await this.checkDuplicate(data)) {
       throw new APIError(400, "Pack duplicated");
     }
-    const discountPackage = await PACKAGE.creat(data);
+    const discountPackage = await PACKAGE.create(data);
     return discountPackage;
   }
   async deletePackage(packageID) {

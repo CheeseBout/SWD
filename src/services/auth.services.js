@@ -83,6 +83,7 @@ class AuthService {
       documentURL,
       category,
       isCertificateVerified: false,
+      status: "pending",
     });
 
     const therapistCertificate = {
@@ -94,6 +95,7 @@ class AuthService {
       category,
       updatedAt: new Date(),
       isCertificateVerified: false,
+      status: "pending",
       reason: "",
     };
 

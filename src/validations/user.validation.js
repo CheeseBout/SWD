@@ -25,10 +25,41 @@ const createUserValidation = {
       .required()
       .pattern(/^[a-zA-Z0-9._%+-]+@gmail\.com$/)
       .message("Email must be a valid Gmail address"),
-    fullname: Joi.string().required(),
+    fullname: Joi.string()
+      .required()
+      .min(3)
+      .max(50)
+      .pattern(/^[a-zA-Z\s]*$/)
+      .messages({
+        "string.empty": "Full name is required",
+        "string.min": "Full name must be at least 3 characters long",
+        "string.max": "Full name cannot exceed 50 characters",
+        "string.pattern.base": "Full name must contain only letters and spaces",
+      }),
     username: Joi.string().required(),
     address: Joi.string().required(),
-    dob: Joi.date().required(),
+    dob: Joi.string()
+      .required()
+      .pattern(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/)
+      .custom((value, helpers) => {
+        const [day, month, year] = value.split("/");
+        const date = new Date(year, month - 1, day);
+
+        // Check if date is valid and not in future
+        if (isNaN(date.getTime())) {
+          return helpers.error("date.invalid");
+        }
+        if (date > new Date()) {
+          return helpers.error("date.future");
+        }
+        return value;
+      })
+      .messages({
+        "string.pattern.base": "Date must be in DD/MM/YYYY format",
+        "date.invalid": "Invalid date",
+        "date.future": "Date of birth cannot be in the future",
+        "any.required": "Date of birth is required",
+      }),
     gender: Joi.string().required(),
     role: Joi.optional().valid("member", "couple_therapist", "admin"),
     photoURL: Joi.string().uri().optional(),
@@ -74,11 +105,36 @@ const updateProfileValidation = {
         "address",
    */
   body: Joi.object().keys({
-    fullname: Joi.string().min(5).max(50),
-    dob: Joi.string()
-      .pattern(/^([0-2][0-9]|3[0-1])\/(0[1-9]|1[0-2])\/\d{4}$/)
+    fullname: Joi.string()
+      .required()
+      .min(3)
+      .max(50)
+      .pattern(/^[a-zA-Z\s]*$/)
       .messages({
-        "string.pattern.base": "Date must be in the format DD/MM/YYYY",
+        "string.empty": "Full name is required",
+        "string.min": "Full name must be at least 3 characters long",
+        "string.max": "Full name cannot exceed 50 characters",
+        "string.pattern.base": "Full name must contain only letters and spaces",
+      }),
+    dob: Joi.string()
+      .pattern(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/)
+      .custom((value, helpers) => {
+        const [day, month, year] = value.split("/");
+        const date = new Date(year, month - 1, day);
+
+        // Check if date is valid and not in future
+        if (isNaN(date.getTime())) {
+          return helpers.error("date.invalid");
+        }
+        if (date > new Date()) {
+          return helpers.error("date.future");
+        }
+        return value;
+      })
+      .messages({
+        "string.pattern.base": "Date must be in DD/MM/YYYY format",
+        "date.invalid": "Invalid date",
+        "date.future": "Date of birth cannot be in the future",
       }),
     gender: Joi.string().valid("Male", "Female", "Other"),
     address: Joi.string().min(5).max(100),

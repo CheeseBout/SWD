@@ -66,7 +66,7 @@ const checkCertificate = async (req, res, next) => {
 
     // Kiểm tra xem có certificate nào được verify không
     const hasVerifiedCertificate = therapist.certificates.some(
-      (cert) => cert.isCertificateVerified === true
+      (cert) => cert.status === "approved"
     );
 
     if (!hasVerifiedCertificate) {

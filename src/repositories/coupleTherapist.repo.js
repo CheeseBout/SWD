@@ -52,10 +52,10 @@ class TherapistRepo {
     return await COUPLETHERAPIST.aggregate(pipeline);
   }
 
-  async updateTherapistCertificate(certificateID) {
+  async updateTherapistCertificate(certificateID, userId) {
     await CERTIFICATE.findOneAndUpdate(
       { _id: certificateID },
-      { isCertificateVerified: true, reason: "" }
+      { isCertificateVerified: true, status: "approved", reason: "" }
     );
     return await COUPLETHERAPIST.findOneAndUpdate(
       { "certificates.certificateID": certificateID },
@@ -63,6 +63,9 @@ class TherapistRepo {
         $set: {
           "certificates.$[cert].isCertificateVerified": true,
           "certificates.$[cert].reason": "",
+          "certificates.$[cert].status": "approved",
+          "certificates.$[cert].processedAt": new Date(),
+          "certificates.$[cert].processedBy": userId,
         },
       },
       {
@@ -115,6 +118,12 @@ class TherapistRepo {
 
   async deleteAvailability(availabilityId) {
     return await COUPLETHERAPIST_AVAILABILITY.findByIdAndDelete(availabilityId);
+  }
+
+  async findTherapistByCertificateId(certificateId) {
+    return await COUPLETHERAPIST.findOne({
+      "certificates.certificateID": certificateId,
+    });
   }
 }
 

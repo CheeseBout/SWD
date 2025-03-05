@@ -1,41 +1,48 @@
 const mongoose = require("mongoose");
 
-const certificateSchema = new mongoose.Schema({
-  coupleTherapistID: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "CoupleTherapist",
+const certificateSchema = new mongoose.Schema(
+  {
+    coupleTherapistID: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CoupleTherapist",
+    },
+    title: {
+      type: String,
+      required: true,
+    },
+    issuedDate: {
+      type: Date,
+      required: true,
+    },
+    expiryDate: {
+      type: Date,
+    },
+    documentURL: {
+      type: String,
+      required: true,
+    },
+    category: {
+      type: String,
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "denied"],
+      default: "pending",
+    },
+    processedAt: {
+      type: Date,
+    },
+    processedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Users",
+    },
+    denialReason: {
+      type: String,
+    },
   },
-  title: {
-    type: String,
-    required: true,
-  },
-  reason:{
-    type: String
-  },
-  issuedDate: {
-    type: Date,
-    required: true,
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now(),
-  },
-  expiryDate: {
-    type: Date,
-  },
-  documentURL: {
-    type: String,
-    required: true,
-  },
-  category: {
-    type: String,
-    required: true,
-  },
-  isCertificateVerified: {
-    type: Boolean,
-    default: false,
-  },
-});
+  { timestamps: true }
+);
 
 const CERTIFICATE = mongoose.model("Certificates", certificateSchema);
 module.exports = CERTIFICATE;

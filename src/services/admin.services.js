@@ -1,65 +1,106 @@
 const APIError = require("../utils/ApiError");
 const certificateRepository = require("../repositories/certificate.repository");
 const coupleTherapistRepo = require("../repositories/coupleTherapist.repo");
+const emailServices = require("../services/email.services");
+const userRepo = require("../repositories/user.repo");
 
 class AdminServices {
   async manageCertificate({ certificateID, req, action, reason }) {
     const userRole = req?.user?.role;
-    const certificateStatus = await certificateRepository.findCertificateById(
+    const certificate = await certificateRepository.findCertificateById(
       certificateID
     );
-    console.log(certificateStatus?.isCertificateVerified);
+
     if (!certificateID || !action) {
       throw new APIError(
         400,
         "Certificate ID, request, and action are required"
       );
     }
+
     if (userRole !== "admin") {
       throw new APIError(401, "You are not authorized to perform this action");
     }
 
+    // Check if certificate exists
+    if (!certificate) {
+      throw new APIError(404, "Certificate not found");
+    }
+
+    // Check if certificate has already been processed
+    if (certificate.status !== "pending") {
+      throw new APIError(
+        400,
+        `Certificate has already been ${certificate.status}. No further actions allowed`
+      );
+    }
+
+    const therapist = await coupleTherapistRepo.findTherapistByCertificateId(
+      certificateID
+    );
+    if (!therapist) {
+      throw new APIError(404, "Therapist not found");
+    }
+
+    const user = await userRepo.getByID(therapist.userID);
+    if (!user) {
+      throw new APIError(404, "User not found");
+    }
+
     if (action === "approve") {
-      //Check if the certificates is already verified
-      if (certificateStatus?.isCertificateVerified === true) {
-        throw new APIError(400, "Certificate already verified");
-      }
       const updatedTherapist =
         await coupleTherapistRepo.updateTherapistCertificate(certificateID);
       if (!updatedTherapist) {
         throw new APIError(400, "Certificate not found in therapist profile");
       }
 
-      const certificate =
+      const updatedCertificate =
         await certificateRepository.updateCertificateVerification(
-          certificateID
+          certificateID,
+          req.user._id
         );
-      if (!certificate) {
-        throw new APIError(400, "Certificate not found");
-      }
+
+      // Send approval email
+      await emailServices.sendCertificateStatus({
+        email: user.email,
+        certificateTitle: certificate.title,
+        status: "approved",
+      });
 
       return {
+        message: "Certificate approved successfully",
         updatedTherapist,
+        certificate: updatedCertificate,
       };
     } else if (action === "deny") {
-      //Check if the certificates is already denied
-      if (certificateStatus?.isCertificateVerified === false) {
-        throw new APIError(400, "Certificate already denied");
+      if (!reason) {
+        throw new APIError(400, "Reason is required for denying a certificate");
       }
 
-      if (!certificateID) {
-        throw new APIError(400, "Certificate not found");
-      }
-      if (reason) {
-        await certificateRepository.createCertificateDenial({
+      const updatedCertificate =
+        await certificateRepository.createCertificateDenial(
           certificateID,
           reason,
-        });
-      }
+          req.user._id
+        );
+
+      // Send denial email
+      await emailServices.sendCertificateStatus({
+        email: user.email,
+        certificateTitle: certificate.title,
+        status: "denied",
+        reason,
+      });
 
       return {
-        message: "Certificate deny successfully",
+        message: "Certificate denied successfully",
+        certificate: updatedCertificate,
       };
+    } else {
+      throw new APIError(
+        400,
+        "Invalid action. Must be either 'approve' or 'deny'"
+      );
     }
   }
 }

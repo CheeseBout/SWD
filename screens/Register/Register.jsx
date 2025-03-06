@@ -14,6 +14,7 @@ import { styles } from "./styles";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
 import { register } from "../../services/authServices";
+import { validateEmail, validatePassword } from "../../utils/validations";
 
 export const RegisterScreen = ({ navigation }) => {
   const [formData, setFormData] = useState({
@@ -35,17 +36,13 @@ export const RegisterScreen = ({ navigation }) => {
     if (!formData.fullname) newErrors.fullname = "Full name is required";
     if (!formData.username) newErrors.username = "Username is required";
     if (!formData.email) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(formData.email))
-      newErrors.email = "Email is invalid";
+    else if (!validateEmail(formData.email))
+      newErrors.email = "Please enter a valid email address";
 
     if (!formData.password) newErrors.password = "Password is required";
-    else if (
-      !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/.test(
-        formData.password
-      )
-    )
+    else if (!validatePassword(formData.password))
       newErrors.password =
-        "Password must be at least 8 characters and contain at least one uppercase letter, one lowercase letter, one number, and one special character";
+        "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character";
 
     if (formData.password !== formData.confirmPassword)
       newErrors.confirmPassword = "Passwords don't match";

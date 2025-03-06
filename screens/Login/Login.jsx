@@ -25,6 +25,8 @@ import { useAuth } from "../../context/AuthContext";
 import { jwtDecode } from "jwt-decode";
 import { getUserById } from "../../services/userServices";
 import Toast from "react-native-toast-message";
+import { validateEmail } from "../../utils/validations";
+import { saveTokens } from "../../utils/tokenStorage";
 
 export const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -73,21 +75,48 @@ export const LoginScreen = ({ navigation }) => {
         });
         return;
       }
-      const response = await loginAPI(credentials);
 
-      if (response.data.tokens) {
-        // Login successful, save tokens
-        await login(response.data);
-        //decode access token to get user info
-        const user = jwtDecode(response.data.tokens.accessToken);
-        await getUserById(user.userId);
+      if (!validateEmail(credentials.email)) {
         Toast.show({
-          type: "success",
-          text1: "Login Successful",
-          text2: "Welcome back! 🎉",
+          type: "error",
+          text1: "Invalid Email",
+          text2: "Please enter a valid email address",
         });
-        console.log("User info from token:", user);
-        console.log("Login successful");
+        return;
+      }
+
+      const response = await loginAPI(credentials);
+      console.log("Full login response:", response);
+
+      if (response.data && response.data.tokens) {
+        await saveTokens(response.data.tokens);
+        const decodedToken = jwtDecode(response.data.tokens.accessToken);
+        console.log("Decoded token:", decodedToken);
+
+        try {
+          const userInfo = await getUserById(decodedToken.userId);
+          console.log("User info after fetch:", userInfo);
+
+          if (!userInfo || !userInfo.data || !userInfo.data.user) {
+            throw new Error("Invalid user data received");
+          }
+
+          await login(userInfo);
+          Toast.show({
+            type: "success",
+            text1: "Login Successful",
+            text2: "Welcome back! 🎉",
+          });
+        } catch (userError) {
+          console.error("Error fetching user data:", userError);
+          Toast.show({
+            type: "error",
+            text1: "Error Loading Profile",
+            text2: "Could not load user profile",
+          });
+        }
+      } else {
+        throw new Error("Invalid response from server");
       }
     } catch (error) {
       console.error(error);
@@ -107,8 +136,20 @@ export const LoginScreen = ({ navigation }) => {
       if (result && result.backendResponse) {
         const { data } = result.backendResponse;
 
-        // Lưu toàn bộ response data, bao gồm tokens và user info
-        await login(data);
+        // Tách và lưu tokens riêng
+        if (data.tokens) {
+          await saveTokens(data.tokens);
+
+          // Lưu thông tin user không bao gồm tokens
+          const userInfo = {
+            data: {
+              user: data.user,
+            },
+            message: data.message,
+            status: data.status,
+          };
+          await login(userInfo);
+        }
       } else {
         Toast.show({
           type: "error",

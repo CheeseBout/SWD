@@ -8,21 +8,24 @@ import {
   Alert,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import React from "react";
+import React, { useEffect } from "react";
 import { styles } from "./styles";
 import { useAuth } from "../../context/AuthContext";
 
 export const ProfileScreen = ({ navigation }) => {
   const { userInfo, logout } = useAuth();
-  const user = userInfo?.user || userInfo?.data?.user || {};
-  console.log("UserInfo from storage:", userInfo);
+  const user = userInfo?.data?.user || {};
+
+  useEffect(() => {
+    console.log("Current userInfo in Profile:", userInfo);
+  }, [userInfo]);
 
   const menuItems = [
     {
       icon: "person-outline",
       title: "Personal Information",
       subtitle: "Update your personal information",
-      action: () => console.log("Open modal with personal information form"),
+      action: () => navigation.navigate("ProfileDetail"),
     },
     {
       icon: "settings-outline",
@@ -42,6 +45,12 @@ export const ProfileScreen = ({ navigation }) => {
       subtitle: "Terms, policies and app info",
       action: () => console.log("Navigate to About page"),
     },
+    {
+      icon: "lock-closed-outline",
+      title: "Change Password",
+      subtitle: "Update your password",
+      action: () => navigation.navigate("ChangePassword"),
+    },
   ];
 
   const handleLogout = async () => {
@@ -53,6 +62,7 @@ export const ProfileScreen = ({ navigation }) => {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return "";
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -76,29 +86,27 @@ export const ProfileScreen = ({ navigation }) => {
             source={{
               uri: user?.photoURL
                 ? user.photoURL
-                : user.gender === "male"
+                : user?.gender === "male"
                 ? "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEz1ve3QQhGM3EKWe1dDjnQAOqyMv0RUEcnw&s"
                 : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTxrd4dsitg-Rhwx0aUZsGjzqkZn34JbVC9-w&s",
             }}
             style={styles.profileImage}
           />
-          <Text style={styles.name}>
-            {user.fullname || user?.data?.user?.fullname}
-          </Text>
+          <Text style={styles.name}>{user?.fullname || "No name"}</Text>
 
           <View style={styles.infoRow}>
             <Ionicons name="mail-outline" size={18} color="#4a6ee0" />
-            <Text style={styles.infoText}>{user.email}</Text>
+            <Text style={styles.infoText}>{user?.email || "No email"}</Text>
           </View>
 
-          {user.address && (
+          {user?.address && (
             <View style={styles.infoRow}>
               <Ionicons name="location-outline" size={18} color="#4a6ee0" />
               <Text style={styles.infoText}>{user.address}</Text>
             </View>
           )}
 
-          {user.dob && (
+          {user?.dob && (
             <View style={styles.infoRow}>
               <Ionicons name="calendar-outline" size={18} color="#4a6ee0" />
               <Text style={styles.infoText}>DOB: {formatDate(user.dob)}</Text>
@@ -109,11 +117,9 @@ export const ProfileScreen = ({ navigation }) => {
             <Ionicons name="person-outline" size={18} color="#4a6ee0" />
             <Text style={styles.infoText}>
               Gender:{" "}
-              {user.gender === "male"
-                ? "Male"
-                : user.gender === "female"
-                ? "Female"
-                : "Others"}
+              {user?.gender
+                ? user.gender.charAt(0).toUpperCase() + user.gender.slice(1)
+                : "Not specified"}
             </Text>
           </View>
         </View>

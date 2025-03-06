@@ -1,5 +1,6 @@
 import axios from "axios";
 import appConfig from "./app.config";
+import { getTokens } from "../utils/tokenStorage";
 
 // Create an Axios instance with default configs
 const apiClient = axios.create({
@@ -14,36 +15,38 @@ const apiClient = axios.create({
 // Request interceptor for API calls
 apiClient.interceptors.request.use(
   async (config) => {
-    // You can add auth tokens here later if needed
-    console.log(`Making request to: ${config.baseURL}${config.url}`);
+    const tokens = await getTokens();
+    if (tokens?.accessToken) {
+      config.headers.Authorization = `Bearer ${tokens.accessToken}`;
+    }
     return config;
   },
   (error) => {
-    console.error("Request error:", error);
     return Promise.reject(error);
   }
 );
 
-// Response interceptor for API calls
+// Thêm interceptor để refresh token khi token hết hạn
 apiClient.interceptors.response.use(
   (response) => {
-    console.log("Response received:", response.status);
+    console.log("API Response:", {
+      url: response.config.url,
+      status: response.status,
+      data: response.data,
+    });
     return response;
   },
-  (error) => {
-    console.error("Response error:", error);
-    // You can handle specific error statuses here
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      console.error("Error data:", error.response.data);
-      console.error("Error status:", error.response.status);
-    } else if (error.request) {
-      // The request was made but no response was received
-      console.error("No response received:", error.request);
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      console.error("Error message:", error.message);
+  async (error) => {
+    console.error("API Error:", {
+      url: error.config?.url,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+    const originalRequest = error.config;
+    if (error.response.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      const tokens = await getTokens();
+      // Thêm logic refresh token ở đây
     }
     return Promise.reject(error);
   }

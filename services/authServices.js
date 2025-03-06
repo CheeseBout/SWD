@@ -108,7 +108,6 @@ const getCurrentUser = async () => {
   }
 };
 
-
 const register = async (formData) => {
   try {
     const response = await apiClient.post("/auth/register", formData);
@@ -122,6 +121,15 @@ const register = async (formData) => {
 const loginAPI = async (credentials) => {
   try {
     const response = await apiClient.post("/auth/login", credentials);
+
+    // Log để debug
+    console.log("Login response:", {
+      user: response.data.user,
+      message: response.data.message,
+      status: response.data.status,
+      hasTokens: !!response.data.tokens,
+    });
+
     return response.data;
   } catch (error) {
     console.error("Login error:", error);
@@ -151,6 +159,19 @@ const forgotPassword = async (email) => {
   }
 };
 
+const changePassword = async (oldPassword, newPassword) => {
+  try {
+    const response = await apiClient.post("/auth/change-password", {
+      oldPassword,
+      newPassword,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Change password error:", error);
+    throw error;
+  }
+};
+
 export {
   signInWithGoogle,
   isSignedIn,
@@ -159,4 +180,5 @@ export {
   register,
   signOut,
   forgotPassword,
+  changePassword,
 };

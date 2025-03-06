@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -24,19 +24,25 @@ const Icon = ({ name, size, color }) => (
 );
 
 export const HomeScreen = ({ navigation }) => {
-  const { userInfo, logout } = useAuth();
-  const user = userInfo?.user || userInfo?.data?.user || {};
+  const { userInfo } = useAuth();
+  const user = userInfo?.data?.user || {};
+
+  useEffect(() => {
+    console.log("Full userInfo in Home:", userInfo);
+  }, [userInfo]);
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Text style={styles.welcomeText}>Hello, {user.fullname}!</Text>
+          <Text style={styles.welcomeText}>
+            Hello, {user?.fullname || "Guest"}!
+          </Text>
           <Image
             style={styles.profileImage}
             source={{
-              uri: user?.photoURL
+              uri: user.photoURL
                 ? user.photoURL
                 : user.gender === "male"
                 ? "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEz1ve3QQhGM3EKWe1dDjnQAOqyMv0RUEcnw&s"

@@ -14,6 +14,7 @@ import { styles } from "./styles";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { forgotPassword } from "../../services/authServices";
 import Toast from "react-native-toast-message";
+import { validateEmail } from "../../utils/validations";
 
 export const ForgotPasswordScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -27,6 +28,15 @@ export const ForgotPasswordScreen = ({ navigation }) => {
         text1: "Email is required 📧",
         visibilityTime: 3000,
         autoHide: true,
+      });
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      Toast.show({
+        type: "error",
+        text1: "Invalid Email",
+        text2: "Please enter a valid email address",
       });
       return;
     }

@@ -30,11 +30,8 @@ class QuizService {
   }
 
   async createQuiz(req) {
-    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
-      throw new APIError(
-        403,
-        "Only admin and couple therapist can create quiz"
-      );
+    if (req.user.role !== "admin") {
+      throw new APIError(403, "Only admin can create quiz");
     }
 
     const { quizName, quizDescription, questions, imageUrl, topicID } =
@@ -66,11 +63,8 @@ class QuizService {
   }
 
   async updateQuiz(req) {
-    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
-      throw new APIError(
-        403,
-        "Only admin and couple therapist can update quiz"
-      );
+    if (req.user.role !== "admin") {
+      throw new APIError(403, "Only admin can update quiz");
     }
 
     const { quizId } = req.params;
@@ -123,31 +117,59 @@ class QuizService {
   }
 
   async deleteQuiz(req) {
-    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
-      throw new APIError(
-        403,
-        "Only admin and couple therapist can delete quiz"
-      );
+    if (req.user.role !== "admin") {
+      throw new APIError(403, "Only admin can delete quiz");
     }
 
-    const { quizId } = req.params;
-    const { deletedReason } = req.body;
+    const { quizId } = req.body;
+
+    if (!quizId) {
+      throw new APIError(400, "Quiz ID is required");
+    }
 
     try {
-      const deletedQuiz = await quizRepo.updateQuizStatus(
-        quizId,
-        "inactive",
-        deletedReason
-      );
-
-      if (!deletedQuiz) {
+      const quiz = await quizRepo.findQuizById(quizId);
+      if (!quiz) {
         throw new APIError(404, "Quiz not found");
       }
+
+      const deletedQuiz = await quizRepo.updateQuizStatus(quizId, "inactive");
 
       return {
         success: true,
         message: "Quiz deleted successfully",
         quiz: deletedQuiz,
+      };
+    } catch (error) {
+      if (error.name === "CastError") {
+        throw new APIError(400, "Invalid quiz ID format");
+      }
+      throw error;
+    }
+  }
+
+  async activateQuiz(req) {
+    if (req.user.role !== "admin") {
+      throw new APIError(403, "Only admin can activate quiz");
+    }
+
+    const { quizId } = req.body;
+    if (!quizId) {
+      throw new APIError(400, "Quiz ID is required");
+    }
+
+    try {
+      const quiz = await quizRepo.findQuizById(quizId);
+      if (!quiz) {
+        throw new APIError(404, "Quiz not found");
+      }
+
+      const activatedQuiz = await quizRepo.updateQuizStatus(quizId, "active");
+
+      return {
+        success: true,
+        message: "Quiz activated successfully",
+        quiz: activatedQuiz,
       };
     } catch (error) {
       if (error.name === "CastError") {

@@ -7,7 +7,12 @@ class TopicServices {
     return { topics };
   }
 
-  async getTopicById(topicId) {
+  async getTopicById(req) {
+    const { topicId } = req.body;
+    if (!topicId) {
+      throw new APIError(400, "Topic ID is required");
+    }
+
     const topic = await topicRepo.findById(topicId);
     if (!topic) {
       throw new APIError(400, "Topic not found");
@@ -21,11 +26,8 @@ class TopicServices {
       throw new APIError(400, "User not found");
     }
 
-    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
-      throw new APIError(
-        403,
-        "Only admin and couple therapist can create topics"
-      );
+    if (req.user.role !== "admin") {
+      throw new APIError(403, "Only admin can create topics");
     }
 
     const data = await topicRepo.create(req.body);
@@ -33,11 +35,14 @@ class TopicServices {
   }
 
   async updateTopic(req) {
-    const { topicId } = req.params;
-    const userID = req.user._id;
+    const { topicId, name, description, imageUrl } = req.body;
 
-    if (!userID) {
-      throw new APIError(400, "User not found");
+    if (!topicId) {
+      throw new APIError(400, "Topic ID is required");
+    }
+
+    if (req.user.role !== "admin") {
+      throw new APIError(403, "Only admin can update topics");
     }
 
     const topic = await topicRepo.findById(topicId);
@@ -45,20 +50,23 @@ class TopicServices {
       throw new APIError(400, "Topic not found");
     }
 
-    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
-      throw new APIError(
-        403,
-        "Only admin and couple therapist can update topics"
-      );
-    }
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (description) updateData.description = description;
+    if (imageUrl) updateData.imageUrl = imageUrl;
+    updateData.lastEdited = Date.now();
 
-    const updatedTopic = await topicRepo.update(topicId, req.body);
+    const updatedTopic = await topicRepo.update(topicId, updateData);
     return { updatedTopic };
   }
 
   async deleteTopic(req) {
-    const { topicId } = req.params;
-    const { deletedReason } = req.body;
+    const { topicId } = req.body;
+
+    if (!topicId) {
+      throw new APIError(400, "Topic ID is required");
+    }
+
     const userID = req.user._id;
 
     if (!userID) {
@@ -70,19 +78,12 @@ class TopicServices {
       throw new APIError(400, "Topic not found");
     }
 
-    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
-      throw new APIError(
-        403,
-        "Only admin and couple therapist can delete topics"
-      );
+    if (req.user.role !== "admin") {
+      throw new APIError(403, "Only admin can delete topics");
     }
 
     try {
-      const deletedTopic = await topicRepo.updateStatus(
-        topicId,
-        "inactive",
-        deletedReason
-      );
+      const deletedTopic = await topicRepo.updateStatus(topicId, "inactive");
       if (!deletedTopic) {
         throw new APIError(404, "Topic not found");
       }
@@ -91,6 +92,51 @@ class TopicServices {
         success: true,
         message: "Topic deleted successfully",
         data: deletedTopic,
+      };
+    } catch (error) {
+      if (error.name === "CastError") {
+        throw new APIError(400, "Invalid topic ID format");
+      }
+      throw error;
+    }
+  }
+
+  async activateTopic(req) {
+    const { topicId } = req.body;
+    const userID = req.user._id;
+
+    if (!userID) {
+      throw new APIError(400, "User not found");
+    }
+
+    if (!topicId) {
+      throw new APIError(400, "Topic ID is required");
+    }
+
+    const topic = await topicRepo.findById(topicId);
+    if (!topic) {
+      throw new APIError(400, "Topic not found");
+    }
+
+    if (req.user.role !== "admin") {
+      throw new APIError(403, "Only admin can activate topics");
+    }
+
+    try {
+      const activatedTopic = await topicRepo.updateStatus(topicId, "active");
+
+      // Optionally activate associated quizzes
+      if (topic.quiz && topic.quiz.length > 0) {
+        for (const quiz of topic.quiz) {
+          quiz.status = "active";
+        }
+        await topic.save();
+      }
+
+      return {
+        success: true,
+        message: "Topic activated successfully",
+        data: activatedTopic,
       };
     } catch (error) {
       if (error.name === "CastError") {

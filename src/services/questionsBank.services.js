@@ -4,11 +4,8 @@ const questionsRepo = require("../repositories/questions.repo");
 class QuestionsBankService {
   async createQuestionBank(req) {
     console.log("req.user", req.user);
-    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
-      throw new APIError(
-        403,
-        "Only admin and couple therapist can create question bank"
-      );
+    if (req.user.role !== "admin") {
+      throw new APIError(403, "Only admin can create question bank");
     }
 
     const requestBody = { ...req.body };
@@ -55,8 +52,12 @@ class QuestionsBankService {
   }
 
   async updateQuestionBank(req) {
-    const questionBankId = req.params.questionBankId;
-    console.log("questionBankId", questionBankId);
+    const { questionBankId, questionBankName, description } = req.body;
+
+    if (!questionBankId) {
+      throw new APIError(400, "Question Bank ID is required");
+    }
+
     const questionBank = await questionsRepo.findQuestionBankById(
       questionBankId
     );
@@ -64,24 +65,55 @@ class QuestionsBankService {
       throw new APIError(400, "Question Bank not found");
     }
 
-    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
-      throw new APIError(
-        403,
-        "Only admin and couple therapist can update question bank"
-      );
+    if (req.user.role !== "admin") {
+      throw new APIError(403, "Only admin can update question bank");
     }
 
-    const { questionBankName, description } = req.body;
+    const updateData = {};
+    if (questionBankName) updateData.questionBankName = questionBankName;
+    if (description) updateData.description = description;
+    updateData.lastEdited = Date.now();
 
     const updatedQuestionBank = await questionsRepo.updateQuestionBank(
       questionBankId,
-      { questionBankName, description }
+      updateData
     );
     return { updatedQuestionBank };
   }
 
-  async deleteQuestionBank(req) {
+  async enableQuestionBank(req) {
     const questionBankId = req.params.questionBankId;
+    const questionBank = await questionsRepo.findQuestionBankById(
+      questionBankId
+    );
+    if (req.user.role !== "admin") {
+      throw new APIError(403, "Only admin can enable question bank");
+    }
+    if (!questionBank) {
+      throw new APIError(400, "Question Bank not found");
+    }
+    try {
+      await questionsRepo.updateQuestionBankStatus(questionBankId, {
+        status: "active",
+      });
+      return {
+        message: "Question bank enable successfully",
+      };
+    } catch (error) {
+      if (error.name === "CastError") {
+        throw new APIError(400, "Invalid ID format");
+      }
+      throw error;
+    }
+  }
+
+  async deleteQuestionBank(req) {
+    const { questionBankId } = req.body;
+
+    if (!questionBankId) {
+      throw new APIError(400, "Question Bank ID is required");
+    }
+
     const questionBank = await questionsRepo.findQuestionBankById(
       questionBankId
     );
@@ -95,7 +127,7 @@ class QuestionsBankService {
       });
 
       return {
-        message: "Question deleted successfully",
+        message: "Question bank deleted successfully",
       };
     } catch (error) {
       if (error.name === "CastError") {
@@ -121,11 +153,8 @@ class QuestionsBankService {
   }
 
   async createQuestion(req) {
-    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
-      throw new APIError(
-        403,
-        "Only admin and couple therapist can create questions"
-      );
+    if (req.user.role !== "admin") {
+      throw new APIError(403, "Only admin can create questions");
     }
 
     const requestBody = { ...req.body };
@@ -161,8 +190,11 @@ class QuestionsBankService {
   }
 
   async updateQuestion(req) {
-    const questionId = req.params.questionId;
-    const { questionContent } = req.body;
+    const { questionId, questionContent } = req.body;
+
+    if (!questionId) {
+      throw new APIError(400, "Question ID is required");
+    }
 
     if (!questionContent) {
       throw new APIError(400, "Question content is required");
@@ -173,16 +205,32 @@ class QuestionsBankService {
       throw new APIError(400, "Question not found");
     }
 
-    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
-      throw new APIError(
-        403,
-        "Only admin and couple therapist can update questions"
-      );
+    if (req.user.role !== "admin") {
+      throw new APIError(403, "Only admin can update questions");
     }
 
     const updatedQuestion = await questionsRepo.updateQuestion(questionId, {
       questionContent,
     });
+    return { updatedQuestion };
+  }
+
+  async enableQuestion(req) {
+    const questionId = req.params.questionId;
+    const question = await questionsRepo.findQuestionById(questionId);
+
+    if (!question) {
+      throw new APIError(400, "Question not found");
+    }
+
+    if (req.user.role !== "admin") {
+      throw new APIError(403, "Only admin can enable questions");
+    }
+
+    const updatedQuestion = await questionsRepo.updateQuestionStatus(
+      questionId,
+      { status: "active" }
+    );
     return { updatedQuestion };
   }
 
@@ -195,11 +243,8 @@ class QuestionsBankService {
       throw new APIError(400, "Question not found");
     }
 
-    if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
-      throw new APIError(
-        403,
-        "Only admin and couple therapist can delete questions"
-      );
+    if (req.user.role !== "admin") {
+      throw new APIError(403, "Only admin can delete questions");
     }
 
     try {
@@ -223,6 +268,89 @@ class QuestionsBankService {
   async getQuestionByTopic(topicId) {
     const data = await questionsRepo.findQuestionsByTopic(topicId);
     return { data };
+  }
+
+  async activateQuestion(req) {
+    const { questionId } = req.body;
+    if (!questionId) {
+      throw new APIError(400, "Question ID is required");
+    }
+
+    const question = await questionsRepo.findQuestionById(questionId);
+    if (!question) {
+      throw new APIError(400, "Question not found");
+    }
+
+    if (req.user.role !== "admin") {
+      throw new APIError(403, "Only admin can activate questions");
+    }
+
+    try {
+      const activatedQuestion = await questionsRepo.updateQuestionStatus(
+        questionId,
+        {
+          status: "active",
+        }
+      );
+
+      // Also activate the question in its bank if it exists
+      if (question.questionBank) {
+        await questionsRepo.updateQuestionStatusInBank(
+          questionId,
+          question.questionBank,
+          "active"
+        );
+      }
+
+      return {
+        success: true,
+        message: "Question activated successfully",
+        data: activatedQuestion,
+      };
+    } catch (error) {
+      if (error.name === "CastError") {
+        throw new APIError(400, "Invalid ID format");
+      }
+      throw error;
+    }
+  }
+
+  async activateQuestionBank(req) {
+    const { questionBankId } = req.body;
+    if (!questionBankId) {
+      throw new APIError(400, "Question Bank ID is required");
+    }
+
+    const questionBank = await questionsRepo.findQuestionBankById(
+      questionBankId
+    );
+    if (!questionBank) {
+      throw new APIError(400, "Question Bank not found");
+    }
+
+    if (req.user.role !== "admin") {
+      throw new APIError(403, "Only admin can activate question banks");
+    }
+
+    try {
+      const activatedBank = await questionsRepo.updateQuestionBankStatus(
+        questionBankId,
+        {
+          status: "active",
+        }
+      );
+
+      return {
+        success: true,
+        message: "Question bank activated successfully",
+        data: activatedBank,
+      };
+    } catch (error) {
+      if (error.name === "CastError") {
+        throw new APIError(400, "Invalid ID format");
+      }
+      throw error;
+    }
   }
 }
 

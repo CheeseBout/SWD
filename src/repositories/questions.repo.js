@@ -69,6 +69,10 @@ class QuestionsRepository {
     ).populate("questions");
   }
 
+  async updateQuestionBankStatus(bankId, status) {
+    return await QUESTION_BANK.findByIdAndUpdate(bankId, status, { new: true });
+  }
+
   async removeQuestionFromBank(bankId, questionId) {
     return await QUESTION_BANK.findOneAndUpdate(
       { questions: questionId },

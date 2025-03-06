@@ -8,11 +8,7 @@ class QuizController {
   });
 
   getQuizById = catchAsync(async (req, res) => {
-    return OK(
-      res,
-      "Success",
-      await quizServices.getQuizById(req.params.quizId)
-    );
+    return OK(res, "Success", await quizServices.getQuizById(req));
   });
 
   createQuiz = catchAsync(async (req, res) => {
@@ -24,7 +20,7 @@ class QuizController {
   });
 
   deleteQuiz = catchAsync(async (req, res) => {
-    return OK(res, "Success", await quizServices.deleteQuiz(req.params.quizId));
+    return OK(res, "Success", await quizServices.deleteQuiz(req));
   });
 
   getQuizQuestions = catchAsync(async (req, res) => {
@@ -33,6 +29,10 @@ class QuizController {
       "Success",
       await quizServices.getQuizQuestions(req.params.quizId)
     );
+  });
+
+  activateQuiz = catchAsync(async (req, res) => {
+    return OK(res, "Success", await quizServices.activateQuiz(req));
   });
 }
 

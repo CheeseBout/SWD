@@ -61,32 +61,26 @@ router.get("/", quizController.getAllQuizzes);
 
 /**
  * @swagger
- * /quiz/{quizId}:
+ * /quiz/get-quiz:
  *   get:
  *     summary: Get quiz by ID
  *     tags: [Quiz]
- *     parameters:
- *       - in: path
- *         name: quizId
- *         required: true
- *         schema:
- *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - quizId
+ *             properties:
+ *               quizId:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Quiz details
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 quiz:
- *                   $ref: '#/components/schemas/Quiz'
- *       404:
- *         description: Quiz not found
- *       400:
- *         description: Quiz is inactive
  */
-router.get("/:quizId", quizController.getQuizById);
+router.get("/get-quiz", quizController.getQuizById);
 
 /**
  * @swagger
@@ -144,74 +138,51 @@ router.post("/create-quiz", auth, quizController.createQuiz);
 
 /**
  * @swagger
- * /quiz/update-quiz/{quizId}:
+ * /quiz/update-quiz:
  *   put:
  *     summary: Update a quiz
  *     tags: [Quiz]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: quizId
- *         required: true
- *         schema:
- *           type: string
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - quizId
  *             properties:
+ *               quizId:
+ *                 type: string
  *               quizName:
  *                 type: string
  *               quizDescription:
  *                 type: string
  *               questionID:
  *                 type: string
- *                 description: ID of new question to add
- *     responses:
- *       200:
- *         description: Quiz updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 quiz:
- *                   $ref: '#/components/schemas/Quiz'
- *       400:
- *         description: Question already exists in quiz
- *       403:
- *         description: Only admin and couple therapist can update quiz
- *       404:
- *         description: Quiz not found
  */
-router.put("/update-quiz/:quizId", auth, quizController.updateQuiz);
+router.put("/update-quiz", auth, quizController.updateQuiz);
 
 /**
  * @swagger
- * /quiz/delete-quiz/{quizId}:
+ * /quiz/delete-quiz:
  *   put:
  *     summary: Soft delete a quiz
  *     tags: [Quiz]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: quizId
- *         required: true
- *         schema:
- *           type: string
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - quizId
  *             properties:
+ *               quizId:
+ *                 type: string
  *               deletedReason:
  *                 type: string
  *                 example: "Quiz content outdated"
@@ -234,6 +205,33 @@ router.put("/update-quiz/:quizId", auth, quizController.updateQuiz);
  *       404:
  *         description: Quiz not found
  */
-router.put("/delete-quiz/:quizId", auth, quizController.deleteQuiz);
+router.put("/delete-quiz", auth, quizController.deleteQuiz);
+
+/**
+ * @swagger
+ * /quiz/activate-quiz:
+ *   put:
+ *     summary: Activate a quiz
+ *     tags: [Quiz]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - quizId
+ *             properties:
+ *               quizId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Quiz activated successfully
+ *       403:
+ *         description: Only admin and couple therapist can activate quiz
+ */
+router.put("/activate-quiz", auth, quizController.activateQuiz);
 
 module.exports = router;

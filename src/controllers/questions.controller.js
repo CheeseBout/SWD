@@ -28,11 +28,27 @@ class QuestionsController {
     );
   });
 
+  enableQuestionBank = catchAsync(async (req, res) => {
+    return OK(
+      res,
+      "Success",
+      await questionsBankServices.enableQuestionBank(req)
+    );
+  });
+
   deleteQuestionsBank = catchAsync(async (req, res) => {
     return OK(
       res,
       "Success",
       await questionsBankServices.deleteQuestionBank(req)
+    );
+  });
+
+  activateQuestionBank = catchAsync(async (req, res) => {
+    return OK(
+      res,
+      "Success",
+      await questionsBankServices.activateQuestionBank(req)
     );
   });
 
@@ -59,6 +75,14 @@ class QuestionsController {
 
   deleteQuestion = catchAsync(async (req, res) => {
     return OK(res, "Success", await questionsBankServices.deleteQuestion(req));
+  });
+
+  activateQuestion = catchAsync(async (req, res) => {
+    return OK(
+      res,
+      "Success",
+      await questionsBankServices.activateQuestion(req)
+    );
   });
 }
 

@@ -8,9 +8,19 @@ class QuizRepository {
   }
 
   async findQuizById(quizId) {
-    return await QUIZZES.findById(quizId)
-      .populate("questions")
-      .populate("userAnswer");
+    try {
+      const topic = await TOPIC.findOne({
+        "quiz._id": quizId,
+      });
+
+      if (!topic) {
+        return null;
+      }
+
+      return topic.quiz.id(quizId);
+    } catch (error) {
+      throw error;
+    }
   }
 
   async createQuiz(quizData) {
@@ -87,15 +97,36 @@ class QuizRepository {
   }
 
   async updateQuizStatus(quizId, status, deletedReason) {
-    return await QUIZZES.findByIdAndUpdate(
-      quizId,
-      {
-        status,
-        deletedReason,
-        lastEdited: Date.now(),
-      },
-      { new: true }
-    );
+    try {
+      // Update quiz in topic
+      const topic = await TOPIC.findOne({
+        "quiz._id": quizId,
+      });
+
+      if (!topic) {
+        throw new Error("Quiz not found in any topic");
+      }
+
+      const quiz = topic.quiz.id(quizId);
+      quiz.status = status;
+      quiz.deletedReason = deletedReason;
+      quiz.lastEdited = Date.now();
+
+      await topic.save();
+
+      await QUIZZES.findByIdAndUpdate(
+        quizId,
+        {
+          status: status,
+          lastEdited: Date.now(),
+        },
+        { new: true }
+      );
+
+      return quiz;
+    } catch (error) {
+      throw error;
+    }
   }
 }
 

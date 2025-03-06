@@ -24,6 +24,22 @@ class UserController {
       await userServices.changeAvatar(req)
     );
   });
+
+  inactiveUser = catchAsync(async (req, res) => {
+    return OK(
+      res,
+      "User has been deactivated successfully",
+      await userServices.inactiveUser(req)
+    );
+  });
+
+  activeUser = catchAsync(async (req, res) => {
+    return OK(
+      res,
+      "User has been activated successfully",
+      await userServices.activeUser(req)
+    );
+  });
 }
 
 module.exports = new UserController();

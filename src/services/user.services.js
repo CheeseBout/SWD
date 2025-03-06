@@ -70,6 +70,49 @@ class UserService {
 
     return await userRepo.update(userID, { photoURL: avatarLink });
   };
+
+  inactiveUser = async (req) => {
+    const { userId } = req.body;
+    if (!userId) {
+      throw new APIError(400, "User ID is required");
+    }
+
+    // Only admin can deactivate users
+    if (req.user.role !== "admin") {
+      throw new APIError(403, "Only admin can deactivate users");
+    }
+
+    const user = await userRepo.getByID(userId);
+    if (!user) {
+      throw new APIError(404, "User not found");
+    }
+
+    // Cannot deactivate another admin
+    if (user.role === "admin") {
+      throw new APIError(403, "Cannot deactivate admin users");
+    }
+
+    return await userRepo.update(userId, { status: "inactive" });
+  };
+
+  activeUser = async (req) => {
+    const { userId } = req.body;
+    if (!userId) {
+      throw new APIError(400, "User ID is required");
+    }
+
+    // Only admin can activate users
+    if (req.user.role !== "admin") {
+      throw new APIError(403, "Only admin can activate users");
+    }
+
+    const user = await userRepo.getByID(userId);
+    if (!user) {
+      throw new APIError(404, "User not found");
+    }
+
+    return await userRepo.update(userId, { status: "active" });
+  };
 }
 
 module.exports = new UserService();

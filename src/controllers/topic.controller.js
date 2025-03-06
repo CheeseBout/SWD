@@ -8,11 +8,7 @@ class TopicController {
   });
 
   getTopicById = catchAsync(async (req, res) => {
-    return OK(
-      res,
-      "Success",
-      await topicServices.getTopicById(req.params.topicId)
-    );
+    return OK(res, "Success", await topicServices.getTopicById(req));
   });
 
   createTopic = catchAsync(async (req, res) => {
@@ -24,11 +20,11 @@ class TopicController {
   });
 
   deleteTopic = catchAsync(async (req, res) => {
-    return OK(
-      res,
-      "Success",
-      await topicServices.deleteTopic(req.params.topicId)
-    );
+    return OK(res, "Success", await topicServices.deleteTopic(req));
+  });
+
+  activateTopic = catchAsync(async (req, res) => {
+    return OK(res, "Success", await topicServices.activateTopic(req));
   });
 }
 

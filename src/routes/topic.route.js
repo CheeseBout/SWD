@@ -79,16 +79,21 @@ router.get("/", topicController.getAllTopics);
 
 /**
  * @swagger
- * /topics/{topicId}:
+ * /topics/get-topic:
  *   get:
  *     summary: Get topic by ID
  *     tags: [Topics]
- *     parameters:
- *       - in: path
- *         name: topicId
- *         required: true
- *         schema:
- *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - topicId
+ *             properties:
+ *               topicId:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Topic details retrieved successfully
@@ -102,7 +107,7 @@ router.get("/", topicController.getAllTopics);
  *       404:
  *         description: Topic not found
  */
-router.get("/:topicId", topicController.getTopicById);
+router.get("/get-topic", topicController.getTopicById);
 
 /**
  * @swagger
@@ -148,25 +153,23 @@ router.post("/create-topic", auth, topicController.createTopic);
 
 /**
  * @swagger
- * /topics/update-topic/{topicId}:
+ * /topics/update-topic:
  *   put:
  *     summary: Update a topic
  *     tags: [Topics]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: topicId
- *         required: true
- *         schema:
- *           type: string
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - topicId
  *             properties:
+ *               topicId:
+ *                 type: string
  *               name:
  *                 type: string
  *               description:
@@ -188,22 +191,16 @@ router.post("/create-topic", auth, topicController.createTopic);
  *       404:
  *         description: Topic not found
  */
-router.put("/update-topic/:topicId", auth, topicController.updateTopic);
+router.put("/update-topic", auth, topicController.updateTopic);
 
 /**
  * @swagger
- * /topics/delete-topic/{topicId}:
+ * /topics/delete-topic:
  *   put:
  *     summary: Soft delete a topic
  *     tags: [Topics]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: topicId
- *         required: true
- *         schema:
- *           type: string
  *     requestBody:
  *       required: true
  *       content:
@@ -211,11 +208,10 @@ router.put("/update-topic/:topicId", auth, topicController.updateTopic);
  *           schema:
  *             type: object
  *             required:
- *               - deletedReason
+ *               - topicId
  *             properties:
- *               deletedReason:
+ *               topicId:
  *                 type: string
- *                 example: "Content outdated"
  *     responses:
  *       200:
  *         description: Topic deleted successfully
@@ -235,6 +231,44 @@ router.put("/update-topic/:topicId", auth, topicController.updateTopic);
  *       404:
  *         description: Topic not found
  */
-router.put("/delete-topic/:topicId", auth, topicController.deleteTopic);
+router.put("/delete-topic", auth, topicController.deleteTopic);
+
+/**
+ * @swagger
+ * /topics/activate-topic:
+ *   put:
+ *     summary: Activate a topic
+ *     tags: [Topics]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - topicId
+ *             properties:
+ *               topicId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Topic activated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/Topic'
+ *       403:
+ *         description: Only admin and couple therapist can activate topics
+ */
+router.put("/activate-topic", auth, topicController.activateTopic);
 
 module.exports = router;

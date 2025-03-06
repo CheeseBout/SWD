@@ -249,4 +249,54 @@ router.patch(
  *         description: Unauthorized
  */
 
+/**
+ * @swagger
+ * /users/inactive-user:
+ *   put:
+ *     summary: Deactivate a user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *             properties:
+ *               userId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: User deactivated successfully
+ */
+router.put("/inactive-user", auth, userController.inactiveUser);
+
+/**
+ * @swagger
+ * /users/active-user:
+ *   put:
+ *     summary: Activate a user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *             properties:
+ *               userId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: User activated successfully
+ */
+router.put("/active-user", auth, userController.activeUser);
+
 module.exports = router;

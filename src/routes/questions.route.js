@@ -133,112 +133,199 @@ router.post(
 
 /**
  * @swagger
- * /questions/update-question/{questionId}:
+ * /questions/activate-question:
+ *   put:
+ *     summary: Activate a question
+ *     tags: [Questions]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - questionId
+ *             properties:
+ *               questionId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Question activated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/Question'
+ */
+router.put("/activate-question", auth, questionsController.activateQuestion);
+
+/**
+ * @swagger
+ * /questions/activate-question-bank:
+ *   put:
+ *     summary: Activate a question bank
+ *     tags: [Questions]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - questionBankId
+ *             properties:
+ *               questionBankId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Question bank activated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/QuestionBank'
+ */
+router.put(
+  "/activate-question-bank",
+  auth,
+  questionsController.activateQuestionBank
+);
+
+/**
+ * @swagger
+ * /questions/get-question:
+ *   get:
+ *     summary: Get question by ID
+ *     tags: [Questions]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - questionId
+ *             properties:
+ *               questionId:
+ *                 type: string
+ */
+router.get("/get-question", questionsController.getQuestionById);
+
+/**
+ * @swagger
+ * /questions/update-question:
  *   put:
  *     summary: Update a question
  *     tags: [Questions]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: questionId
- *         required: true
- *         schema:
- *           type: string
  *     requestBody:
  *       required: true
- *       content: {"application/json":{"schema":{"type":"object","required":["questionContent"],"properties":{"questionContent":{"type":"string"}}}}}
- *     responses:
- *       200:
- *         description: Question updated successfully
- *       403:
- *         description: Only admin and couple therapist can update questions
- *       404:
- *         description: Question not found
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - questionId
+ *               - questionContent
+ *             properties:
+ *               questionId:
+ *                 type: string
+ *               questionContent:
+ *                 type: string
  */
-router.put(
-  "/update-question/:questionId",
-  auth,
-  questionsController.updateQuestion
-);
+router.put("/update-question", auth, questionsController.updateQuestion);
 
 /**
  * @swagger
- * /questions/update-question-bank/{questionBankId}:
+ * /questions/update-question-bank:
  *   put:
  *     summary: Update a question bank
  *     tags: [Questions]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: questionBankId
- *         required: true
- *         schema:
- *           type: string
  *     requestBody:
  *       required: true
- *       content: {"application/json":{"schema":{"type":"object","properties":{"questionBankName":{"type":"string"},"description":{"type":"string"}}}}}
- *     responses:
- *       200:
- *         description: Question bank updated successfully
- *       403:
- *         description: Only admin and couple therapist can update question banks
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - questionBankId
+ *             properties:
+ *               questionBankId:
+ *                 type: string
+ *               questionBankName:
+ *                 type: string
+ *               description:
+ *                 type: string
  */
 router.put(
-  "/update-question-bank/:questionBankId",
+  "/update-question-bank",
   auth,
   questionsController.updateQuestionsBank
 );
 
 /**
  * @swagger
- * /questions/delete-question/{questionId}:
+ * /questions/delete-question:
  *   put:
  *     summary: Soft delete a question
  *     tags: [Questions]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: questionId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Question deleted successfully
- *       403:
- *         description: Only admin and couple therapist can delete questions
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - questionId
+ *             properties:
+ *               questionId:
+ *                 type: string
  */
-router.put(
-  "/delete-question/:questionId",
-  auth,
-  questionsController.deleteQuestion
-);
+router.put("/delete-question", auth, questionsController.deleteQuestion);
 
 /**
  * @swagger
- * /questions/delete-question-bank/{questionBankId}:
+ * /questions/delete-question-bank:
  *   put:
  *     summary: Soft delete a question bank
  *     tags: [Questions]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: questionBankId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Question bank deleted successfully
- *       403:
- *         description: Only admin and couple therapist can delete question banks
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - questionBankId
+ *             properties:
+ *               questionBankId:
+ *                 type: string
  */
 router.put(
-  "/delete-question-bank/:questionBankId",
+  "/delete-question-bank",
   auth,
   questionsController.deleteQuestionsBank
 );

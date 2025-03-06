@@ -25,12 +25,15 @@ api.interceptors.request.use(
 export const authService = {
   login: async (email, password) => {
     try {
-      const response = await api.post("/api/v1/auth/login", { email, password });
+      const response = await api.post("/api/v1/auth/login", {
+        email,
+        password,
+      });
       console.log("Login API response:", response.data); // Add this line
-      
+
       // Store the token
-      localStorage.setItem('accessToken', response.data.token);
-      
+      localStorage.setItem("accessToken", response.data.token);
+
       // Return the full response data
       return response.data;
     } catch (error) {
@@ -58,6 +61,25 @@ export const authService = {
   },
 };
 
+export const therapistService = {
+  // getAllTherapists: async (searchName) => {
+  //   const response = await api.get("/api/v1/coupletherapist", {
+  //     searchName,
+  //   });
+  //   return response.data;
+  // },
+  getTherapistById: async (id) => {
+    const response = await api.get(`/api/v1/coupletherapist/${id}`);
+    return response.data;
+  },
+  searchTherapistsByName: async (searchName) => {
+    const response = await api.get("/api/v1/coupletherapist", {
+      params: { searchName },
+    });
+    return response.data;
+  },
+};
+
 export const userService = {
   getAllUsers: async () => {
     const response = await api.get("/api/v1/users");
@@ -67,7 +89,7 @@ export const userService = {
   getUserById: async (id) => {
     try {
       if (!id) {
-        throw new Error('User ID is required');
+        throw new Error("User ID is required");
       }
       console.log(`Fetching user with ID: ${id}`);
       const response = await api.get(`/api/v1/users/${id}`);

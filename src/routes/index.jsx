@@ -21,6 +21,9 @@ const RegisterPage = lazy(() => import("../pages/Register"));
 const CookiePolicy = lazy(() => import("../pages/Policy/CookiePolicy"));
 const TermsOfService = lazy(() => import("../pages/Policy/TermsOfService"));
 const ForgotPasswordPage = lazy(() => import("../pages/Forgot-password"));
+const TherapistDetail = lazy(() =>
+  import("../pages/Therapist/TherapistDetail")
+);
 
 const LazyLoad = ({ children }) => (
   <Suspense fallback={<div></div>}>{children}</Suspense>
@@ -167,6 +170,14 @@ export function AppRoutes() {
           element={
             <LazyLoad>
               <TermsOfService />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="therapist/:id"
+          element={
+            <LazyLoad>
+              <TherapistDetail />
             </LazyLoad>
           }
         />

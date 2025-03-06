@@ -20,6 +20,7 @@
     "dayjs": "^1.11.13",
     "framer-motion": "^12.4.7",
     "jwt-decode": "^4.0.0",
+    "lodash": "^4.17.21",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.2",

@@ -168,31 +168,30 @@ router.post(
 
 /**
  * @swagger
- * /coupletherapist/get-availability:
+ * /coupletherapist/get-availability/{id}:
  *   get:
- *     summary: Get therapist availability
+ *     summary: Get therapist availability by ID
  *     tags: [Couple Therapist]
  *     parameters:
- *       - in: query
- *         name: therapistId
+ *       - in: path
+ *         name: id
+ *         required: true
  *         schema:
  *           type: string
- *       - in: query
- *         name: date
- *         schema:
- *           type: string
- *           format: date
  *     responses:
  *       200:
- *         description: List of availability slots
+ *         description: Therapist availability details
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Availability'
+ *               $ref: '#/components/schemas/Availability'
+ *       404:
+ *         description: Availability not found
  */
-router.get("/get-availability", coupleTherapistController.getAvailabilityById);
+router.get(
+  "/get-availability/:id",
+  coupleTherapistController.getAvailabilityById
+);
 
 /**
  * @swagger

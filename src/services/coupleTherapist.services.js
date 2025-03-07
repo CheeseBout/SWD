@@ -34,11 +34,9 @@ class CoupleTherapistServices {
   }
 
   async getAvailabilityById(id) {
-    const data = await therapistRepo.getAvailabilityById(id);
-    if (!data) {
-      throw new APIError(400, "Couple therapist not found");
-    }
-    return data;
+    return await COUPLETHERAPIST_AVAILABILITY.findOne({
+      coupleTherapistID: id,
+    }).select("coupleTherapistID timeAvailable notTimeAvailable");
   }
 
   async createAvailability(coupleTherapistId, timeAvailable, notTimeAvailable) {

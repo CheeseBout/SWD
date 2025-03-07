@@ -76,9 +76,9 @@ class TherapistRepo {
   }
 
   async getAvailabilityById(id) {
-    return await COUPLETHERAPIST_AVAILABILITY.findById(id)
-      .populate("userID", "fullname")
-      .select("userID");
+    return await COUPLETHERAPIST_AVAILABILITY.findOne({
+      coupleTherapistID: id,
+    }).select("coupleTherapistID timeAvailable notTimeAvailable");
   }
 
   async createAvailability(coupleTherapistId, timeAvailable, notTimeAvailable) {

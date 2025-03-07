@@ -6,9 +6,22 @@ const therapistRepo = require("../repositories/coupleTherapist.repo");
 
 class CoupleTherapistServices {
   async getAllCoupleTherapist(req) {
-    const filterQuery = req.query;
-    const therapists = await therapistRepo.searchTherapists(filterQuery);
-    return therapists;
+    try {
+      const filterQuery = req.query;
+      const therapists = await therapistRepo.searchTherapists(filterQuery);
+      //Filter verified therapists
+      const verifiedTherapist = therapists.filter(
+        (therapist) =>
+          therapist.certificates.filter(
+            (certificate) => certificate.isCertificateVerified === true
+          ).length > 0
+      );
+
+      console.log("verifiedTherapist", verifiedTherapist);
+      return verifiedTherapist;
+    } catch (error) {
+      throw new APIError(404, "No verified couple therapist found");
+    }
   }
 
   async getCoupleTherapistById(coupleTherapistId) {

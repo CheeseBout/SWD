@@ -39,6 +39,7 @@ const certificateSchema = new mongoose.Schema(
     },
     denialReason: {
       type: String,
+      required: true,
     },
   },
   { timestamps: true }

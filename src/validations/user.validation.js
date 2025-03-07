@@ -13,11 +13,7 @@ const createUserValidation = {
     password: Joi.string()
       .required()
       .min(8)
-      .pattern(
-        new RegExp(
-          "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#])[A-Za-z\\d@$!%*?&#]{8,}$"
-        )
-      )
+      .pattern(new RegExp())
       .message(
         "Password must be at least 8 characters, including uppercase, lowercase, number and symbol"
       ),
@@ -38,14 +34,11 @@ const createUserValidation = {
       }),
     username: Joi.string().required(),
     address: Joi.string().required(),
-    dob: Joi.date()
-      .required()
-      .max('now')
-      .messages({
-        "date.base": "Invalid date format",
-        "date.max": "Date of birth cannot be in the future",
-        "any.required": "Date of birth is required",
-      }),
+    dob: Joi.date().required().max("now").messages({
+      "date.base": "Invalid date format",
+      "date.max": "Date of birth cannot be in the future",
+      "any.required": "Date of birth is required",
+    }),
     gender: Joi.string().required(),
     role: Joi.optional().valid("member", "couple_therapist", "admin"),
     photoURL: Joi.string().uri().optional(),
@@ -102,27 +95,12 @@ const updateProfileValidation = {
         "string.max": "Full name cannot exceed 50 characters",
         "string.pattern.base": "Full name must contain only letters and spaces",
       }),
-    dob: Joi.string()
-      .pattern(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/)
-      .custom((value, helpers) => {
-        const [day, month, year] = value.split("/");
-        const date = new Date(year, month - 1, day);
-
-        // Check if date is valid and not in future
-        if (isNaN(date.getTime())) {
-          return helpers.error("date.invalid");
-        }
-        if (date > new Date()) {
-          return helpers.error("date.future");
-        }
-        return value;
-      })
-      .messages({
-        "string.pattern.base": "Date must be in DD/MM/YYYY format",
-        "date.invalid": "Invalid date",
-        "date.future": "Date of birth cannot be in the future",
-      }),
-    gender: Joi.string().valid("Male", "Female", "Other"),
+    dob: Joi.date().required().max("now").messages({
+      "date.base": "Invalid date format",
+      "date.max": "Date of birth cannot be in the future",
+      "any.required": "Date of birth is required",
+    }),
+    gender: Joi.string().valid("male", "female", "other"),
     address: Joi.string().min(5).max(100),
     photoURL: Joi.string().uri(),
   }),

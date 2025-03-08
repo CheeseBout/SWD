@@ -9,10 +9,8 @@ export const authService = {
       });
       console.log("Login API response:", response.data);
 
-      // Store the token
       localStorage.setItem("accessToken", response.data.token);
 
-      // Return the full response data
       return response.data;
     } catch (error) {
       console.error("Login error:", error);

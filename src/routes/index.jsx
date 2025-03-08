@@ -24,6 +24,8 @@ const ForgotPasswordPage = lazy(() => import("../pages/Forgot-password"));
 const TherapistDetail = lazy(() =>
   import("../pages/Therapist/TherapistDetail")
 );
+const BlogsPage = lazy(() => import("../pages/Blogs"));
+const BlogDetailPage = lazy(() => import("../pages/Blogs/BlogDetail"));
 
 const LazyLoad = ({ children }) => (
   <Suspense fallback={<div></div>}>{children}</Suspense>
@@ -173,6 +175,24 @@ export function AppRoutes() {
             </LazyLoad>
           }
         />
+        <Route path="blogs">
+          <Route
+            index
+            element={
+              <LazyLoad>
+                <BlogsPage />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path=":slug"
+            element={
+              <LazyLoad>
+                <BlogDetailPage />
+              </LazyLoad>
+            }
+          />
+        </Route>
         <Route
           path="therapist/:id"
           element={

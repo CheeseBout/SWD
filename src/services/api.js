@@ -4,6 +4,7 @@ import { therapistService } from './therapist/therapistService';
 import { userService } from './user/userService';
 import { topicService } from './topic/topicService';
 import { quizService } from './quiz/quizService';
+import { blogService } from './blog/blogService';
 
 export {
   api,
@@ -11,5 +12,6 @@ export {
   therapistService,
   userService,
   topicService,
-  quizService
+  quizService,
+  blogService,
 };

@@ -4,10 +4,8 @@ import { AuthContext } from "../../contexts/AuthContextObject";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { userService } from "../../services/api";
-import {
-  ProfileHeader,
-  ProfileInfoCard,
-} from "../../components/profile";
+import { ProfileHeader, ProfileInfoCard } from "../../components/profile";
+import SideBar from "../../components/SideBar";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -87,12 +85,21 @@ export default function ProfilePage() {
   const user = profileData || authUser;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
-        <ProfileHeader user={user} />
-        <div className="p-6">
-          <div>
-            <ProfileInfoCard user={user} formatDate={formatDate} />
+    <div className="min-h-screen bg-gray-50">
+      <div className="flex flex-col md:flex-row">
+        <div className="md:sticky md:top-16 md:h-screen">
+          <SideBar />
+        </div>
+        
+        <div className="flex-1 p-4 md:p-8">
+          <div className="max-w-4xl mx-auto">
+            <h1 className="text-2xl font-bold text-gray-800 mb-6">My Profile</h1>
+            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+              <ProfileHeader user={user} />
+              <div className="p-6">
+                <ProfileInfoCard user={user} formatDate={formatDate} />
+              </div>
+            </div>
           </div>
         </div>
       </div>

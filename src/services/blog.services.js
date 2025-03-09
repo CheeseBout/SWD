@@ -32,6 +32,7 @@ const getAllBlogPosts = async () => {
             html
           }
           author {
+            userId
             name
             avatar {
               id
@@ -80,64 +81,65 @@ const getPostBySlug = async (slug) => {
   }
 };
 
-const getOrCreateAuthor = async (authorName) => {
+const getOrCreateAuthor = async (userId, user) => {
+  if (!userId || !user) {
+    throw new APIError(400, "User ID and user data are required");
+  }
+
   try {
     const { gql } = await import("graphql-request");
     const graphqlClient = await initializeClient();
 
+    // First try to find existing author by userId
     const findAuthorsQuery = gql`
-      query FindAuthors($name: String!) {
-        authors(where: { name: $name }) {
+      query FindAuthors($userId: String!) {
+        authors(where: { userId: $userId }) {
           id
+          name
+          userId
           stage
         }
       }
     `;
 
     const { authors } = await graphqlClient.request(findAuthorsQuery, {
-      name: authorName,
+      userId: userId.toString(),
     });
 
-    if (authors.length > 0) {
-      if (authors[0].stage !== "PUBLISHED") {
-        const publishAuthorMutation = gql`
-          mutation PublishAuthor($id: ID!) {
-            publishAuthor(where: { id: $id }, to: PUBLISHED) {
-              id
-              stage
-            }
-          }
-        `;
-
-        await graphqlClient.request(publishAuthorMutation, {
-          id: authors[0].id,
-        });
-      }
-      return authors[0].id;
+    // If author exists, return their ID
+    const existingAuthor = authors.find((author) => author.userId === userId);
+    if (existingAuthor) {
+      return existingAuthor.id;
     }
 
+    // Create new author using fullname
+    const authorName = user.fullname || user.name || "Anonymous User";
     const createAuthorMutation = gql`
-      mutation CreateAuthor($name: String!) {
+      mutation CreateNewAuthor($name: String!, $userId: String!) {
         createAuthor(
           data: {
             name: $name
+            userId: $userId
             avatar: { connect: { id: "cm7oeouvfbcvl07zt1jv1risk" } }
           }
         ) {
           id
+          name
+          userId
         }
       }
     `;
 
     const { createAuthor } = await graphqlClient.request(createAuthorMutation, {
       name: authorName,
+      userId: userId.toString(),
     });
 
+    // Publish the new author
     const publishAuthorMutation = gql`
       mutation PublishAuthor($id: ID!) {
         publishAuthor(where: { id: $id }, to: PUBLISHED) {
           id
-          stage
         }
       }
     `;
@@ -148,7 +150,11 @@ const getOrCreateAuthor = async (authorName) => {
 
     return createAuthor.id;
   } catch (error) {
-    throw new APIError(500, `Failed to create or find author "${authorName}"`);
+    console.error("Author creation error details:", error);
+    throw new APIError(
+      500,
+      `Failed to create or find author: ${error.message}`
+    );
   }
 };
 
@@ -173,75 +179,30 @@ const createSlug = (str) => {
 const createPost = async (
   title,
   content,
-  description,
   category,
-  authorName,
   coverPhotoUrl,
   postDate,
   req
 ) => {
-  if (req.user.role !== "admin" && req.user.role !== "couple_therapist") {
-    throw new APIError(
-      403,
-      "Only admin and couple therapist can create a post"
-    );
+  if (!req.user || !req.user.id) {
+    throw new APIError(401, "User not authenticated");
   }
+
   try {
     const { gql } = await import("graphql-request");
     const graphqlClient = await initializeClient();
-    const authorId = await getOrCreateAuthor(authorName);
-
-    let formattedContent;
-    if (typeof content === "string") {
-      try {
-        formattedContent = JSON.parse(content);
-      } catch (e) {
-        formattedContent = {
-          children: [
-            {
-              type: "paragraph",
-              children: [{ text: content }],
-            },
-          ],
-        };
-      }
-    } else if (content?.children) {
-      formattedContent = content;
-    } else if (content?.raw?.children) {
-      formattedContent = content.raw;
-    } else if (content?.type === "doc" && content?.content) {
-      formattedContent = {
-        children: content.content.map((item) => {
-          const transformNode = (node) => {
-            const newNode = { ...node };
-            if (newNode.content) {
-              newNode.children = newNode.content.map(transformNode);
-              delete newNode.content;
-            }
-            return newNode;
-          };
-          return transformNode(item);
-        }),
-      };
-    } else {
-      throw new APIError(
-        400,
-        "Invalid content format. Expected RichTextAST compatible format."
-      );
-    }
+    const authorId = await getOrCreateAuthor(req.user.id, req.user);
 
     const slug = createSlug(title);
+    const formattedPostDate = postDate
+      ? new Date(postDate).toISOString().split("T")[0]
+      : new Date().toISOString().split("T")[0];
 
-    let formattedPostDate =
-      postDate && !isNaN(Date.parse(postDate))
-        ? new Date(postDate).toISOString().split("T")[0]
-        : new Date().toISOString().split("T")[0];
-
-    const createAndPublishMutation = gql`
-      mutation CreateAndPublishPost(
+    // Simplified create mutation
+    const mutation = gql`
+      mutation CreatePost(
         $title: String!
         $slug: String!
-        $description: String!
         $category: String!
         $content: RichTextAST!
         $authorId: ID!
@@ -252,61 +213,66 @@ const createPost = async (
           data: {
             title: $title
             slug: $slug
-            description: $description
-            postDate: $postDate
             category: $category
             content: $content
             author: { connect: { id: $authorId } }
             coverPhoto: $coverPhoto
+            postDate: $postDate
           }
         ) {
           id
-          title
-          description
-          postDate
           slug
-          category
-          content {
-            html
-          }
-          author {
-            name
-            avatar {
-              id
-            }
-          }
-          coverPhoto
-          stage
-        }
-
-        publishPost(where: { slug: $slug }, to: PUBLISHED) {
-          id
-          stage
         }
       }
     `;
 
-    const variables = {
+    // Create the post
+    const { createPost: newPost } = await graphqlClient.request(mutation, {
       title,
       slug,
-      description,
       category,
-      content: formattedContent,
+      content,
       authorId,
       coverPhoto: coverPhotoUrl || DEFAULT_COVER_PHOTO_URL,
       postDate: formattedPostDate,
-    };
+    });
 
-    const response = await graphqlClient.request(
-      createAndPublishMutation,
-      variables
-    );
-    return response;
+    // Separate publish mutation
+    if (newPost?.id) {
+      const publishMutation = gql`
+        mutation PublishPost($id: ID!) {
+          publishPost(where: { id: $id }, to: PUBLISHED) {
+            id
+            title
+            postDate
+            slug
+            category
+            content {
+              html
+            }
+            author {
+              userId
+              name
+              avatar {
+                id
+              }
+            }
+            coverPhoto
+          }
+        }
+      `;
+
+      const { publishPost } = await graphqlClient.request(publishMutation, {
+        id: newPost.id,
+      });
+
+      return { createPost: publishPost };
+    }
+
+    throw new Error("Failed to create post");
   } catch (error) {
-    throw new APIError(
-      500,
-      "Error creating post: " + (error.message || "Unknown error")
-    );
+    console.error("Create post error:", error);
+    throw new APIError(500, `Error creating post: ${error.message}`);
   }
 };
 

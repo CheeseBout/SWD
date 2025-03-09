@@ -33,10 +33,11 @@ class CoupleTherapistController {
   });
 
   getAvailabilityById = catchAsync(async (req, res) => {
+    const { id } = req.params;
     return OK(
       res,
       "Success",
-      coupleTherapistServices.getAvailabilityById(req.params.id)
+      await coupleTherapistServices.getAvailabilityById(id)
     );
   });
 

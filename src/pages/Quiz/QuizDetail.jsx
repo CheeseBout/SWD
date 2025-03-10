@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { quizService } from '../../services/api';
 import QuizHeader from '../../components/Quiz/QuizHeader';
@@ -7,6 +7,7 @@ import WarningMessage from '../../components/Quiz/WarningMessage';
 import QuizResults from '../../components/Quiz/QuizResults';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ErrorMessage from '../../components/common/ErrorMessage';
+import { AuthContext } from '../../contexts/AuthContextObject';
 
 export default function QuizDetail() {
   const [quiz, setQuiz] = useState(null);
@@ -18,6 +19,7 @@ export default function QuizDetail() {
   const [showWarning, setShowWarning] = useState(false);
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isAuthenticated } = useContext(AuthContext);
 
   useEffect(() => {
     const fetchQuiz = async () => {
@@ -82,6 +84,17 @@ export default function QuizDetail() {
     setTotalScore(`${score}/${totalPossibleScore}`);
     setSubmitted(true);
     setShowWarning(false);
+
+    // Scroll to top so modal is visible
+    window.scrollTo(0, 0);
+    // Disable body scroll when modal is shown
+    document.body.style.overflow = 'hidden';
+  };
+
+  const handleCloseResults = () => {
+    setSubmitted(false);
+    // Re-enable body scroll
+    document.body.style.overflow = 'auto';
   };
 
   const isFormComplete = () => {
@@ -139,7 +152,13 @@ export default function QuizDetail() {
           </div>
         )}
 
-        {submitted && <QuizResults score={totalScore} />}
+        {submitted && (
+          <QuizResults 
+            score={totalScore} 
+            isAuthenticated={isAuthenticated} 
+            onClose={handleCloseResults}
+          />
+        )}
       </div>
     </div>
   );

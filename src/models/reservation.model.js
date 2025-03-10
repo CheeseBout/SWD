@@ -42,11 +42,13 @@ const reservationSchema = new mongoose.Schema(
     },
     totalPrice: {
       type: Number,
-      required: true,
+      default: 0,
+      // required: true,
     },
     meetingURL: {
       type: String,
-      required: true,
+      default: "",
+      // required: true,
       trim: true,
     },
   },

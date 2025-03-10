@@ -1,5 +1,6 @@
 const APIError = require("../utils/ApiError");
 const reservationsRepo = require("../repositories/reservations.repo");
+const mongoose = require("mongoose");
 
 class ReservationService {
   async getAllReservations(filter) {
@@ -12,10 +13,24 @@ class ReservationService {
     return reservation;
   }
 
-  async createReservation(data) {
+  async createReservation(req) {
+    const data = req.body;
     if (req.user.role !== "member") {
       throw new APIError(403, "Permission denied");
     }
+
+    // Validate and convert IDs to ObjectId
+    if (!mongoose.Types.ObjectId.isValid(data.userID)) {
+      throw new APIError(400, "Invalid userId");
+    }
+    if (!mongoose.Types.ObjectId.isValid(data.coupleTherapistID)) {
+      throw new APIError(400, "Invalid coupleTherapistID");
+    }
+    data.userID = new mongoose.Types.ObjectId(data.userID);
+    data.coupleTherapistID = new mongoose.Types.ObjectId(
+      data.coupleTherapistID
+    );
+
     const isDuplicate = await reservationsRepo.checkDuplicate(
       data.coupleTherapistID,
       data.startTime,
@@ -29,40 +44,53 @@ class ReservationService {
       data.endTime
     );
     if (!isOccupied) {
-      return await reservationsRepo.create(data);
+      return await reservationsRepo.createReservation(data);
     }
     throw new APIError(400, "Therapist is not available");
   }
 
-  async updateReservation(id, data) {
+  async updateReservation(req) {
+    const { reservationID } = req.params;
+    const data = req.body;
     if (req.user.role !== "member") {
       throw new APIError(403, "Permission denied");
     }
-    const reservation = await this.getReservationById(id);
+
+    // Validate and convert IDs to ObjectId
+    if (!mongoose.Types.ObjectId.isValid(data.coupleTherapistID)) {
+      throw new APIError(400, "Invalid coupleTherapistID");
+    }
+    data.coupleTherapistID = new mongoose.Types.ObjectId(
+      data.coupleTherapistID
+    );
+
+    const reservation = await this.getReservationById(reservationID);
     if (!reservation) throw new APIError(404, "Reservation not found");
 
     const isDuplicate = await reservationsRepo.checkDuplicate(
       data.coupleTherapistID,
       data.startTime,
       data.endTime,
-      id
+      reservationID
     );
     if (isDuplicate) throw new APIError(400, "Duplicate reservation");
 
-    return await reservationsRepo.update(id, data);
+    return await reservationsRepo.updateReservation(reservationID, data);
   }
 
-  async cancelReservation(reservationID) {
-    if (req.user.role !== "member") {
+  async cancelReservation(reservationID, user) {
+    if (user.role !== "member") {
       throw new APIError(403, "Permission denied");
     }
-    const canceledReservation = await reservationsRepo.cancel(reservationID);
+    const canceledReservation = await reservationsRepo.deleteReservation(
+      reservationID
+    );
     if (!canceledReservation) throw new APIError(404, "Reservation not found");
     return canceledReservation;
   }
 
-  async approveReservation(reservationID) {
-    if (req.user.role !== "couple_therapist") {
+  async approveReservation(reservationID, user) {
+    if (user.role !== "couple_therapist") {
       throw new APIError(403, "Permission denied");
     }
     const reservation = await reservationsRepo.approveReservation(
@@ -72,8 +100,8 @@ class ReservationService {
     return reservation;
   }
 
-  async denyReservation(reservationID, reason) {
-    if (req.user.role !== "couple_therapist") {
+  async denyReservation(reservationID, reason, user) {
+    if (user.role !== "couple_therapist") {
       throw new APIError(403, "Permission denied");
     }
     if (!reason) throw new APIError(400, "Reason is required");

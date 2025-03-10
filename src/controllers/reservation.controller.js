@@ -2,35 +2,18 @@ const reservationService = require("../services/reservation.service");
 const catchAsync = require("../utils/catchAsync");
 const { OK } = require("../utils/response");
 
-class ResevationController {
+class ReservationController {
   createReservation = catchAsync(async (req, res) => {
-    const {
-      userID,
-      coupleTherapistID,
-      title,
-      content,
-      packageID,
-      startTime,
-      endTime,
-      totalPrice,
-      meetingURL,
-    } = req.body;
-    const result = await reservationService.createReservation({
-      userID,
-      coupleTherapistID,
-      title,
-      content,
-      packageID,
-      startTime,
-      endTime,
-      totalPrice,
-      meetingURL,
-    });
+    const result = await reservationService.createReservation(req);
     return OK(res, "Success", result);
   });
 
   getAllReservation = catchAsync(async (req, res) => {
-    return OK(res, "Success", await reservationService.getAllReservation());
+    return OK(
+      res,
+      "Success",
+      await reservationService.getAllReservations(req.query)
+    );
   });
 
   getReservationById = catchAsync(async (req, res) => {
@@ -42,21 +25,17 @@ class ResevationController {
   });
 
   updateReservation = catchAsync(async (req, res) => {
-    return OK(
-      res,
-      "Success",
-      await reservationService.updateReservation(
-        req.params.reservationID,
-        req.body
-      )
-    );
+    return OK(res, "Success", await reservationService.updateReservation(req));
   });
 
   deleteReservation = catchAsync(async (req, res) => {
     return OK(
       res,
       "Success",
-      await reservationService.deleteReservation(req.params.reservationID)
+      await reservationService.cancelReservation(
+        req.params.reservationID,
+        req.user
+      )
     );
   });
 
@@ -64,7 +43,10 @@ class ResevationController {
     return OK(
       res,
       "Success",
-      await reservationService.approveReservation(req.params.reservationID)
+      await reservationService.approveReservation(
+        req.params.reservationID,
+        req.user
+      )
     );
   });
 
@@ -74,9 +56,11 @@ class ResevationController {
       "Success",
       await reservationService.denyReservation(
         req.params.reservationID,
-        req.body.reason
+        req.body.reason,
+        req.user
       )
     );
   });
 }
-module.exports = new ResevationController();
+
+module.exports = new ReservationController();

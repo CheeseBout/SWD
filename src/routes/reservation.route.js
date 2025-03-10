@@ -25,6 +25,12 @@ const { auth } = require("../middlewares/auth.middleware");
  *         coupleTherapistID:
  *           type: string
  *           description: ID of the therapist
+ *         title:
+ *           type: string
+ *           description: Title of the reservation
+ *         content:
+ *           type: string
+ *           description: Content of the reservation
  *         startTime:
  *           type: string
  *           format: date-time
@@ -40,6 +46,11 @@ const { auth } = require("../middlewares/auth.middleware");
  *         createdAt:
  *           type: string
  *           format: date-time
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
  */
 
 /**
@@ -48,6 +59,8 @@ const { auth } = require("../middlewares/auth.middleware");
  *   post:
  *     summary: Create a new reservation
  *     tags: [Reservations]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -57,6 +70,8 @@ const { auth } = require("../middlewares/auth.middleware");
  *             required:
  *               - userId
  *               - coupleTherapistID
+ *               - title
+ *               - content
  *               - startTime
  *               - endTime
  *             properties:
@@ -66,6 +81,12 @@ const { auth } = require("../middlewares/auth.middleware");
  *               coupleTherapistID:
  *                 type: string
  *                 example: "65f2d6789abcdef01234568"
+ *               title:
+ *                 type: string
+ *                 example: "Session Title"
+ *               content:
+ *                 type: string
+ *                 example: "Session Content"
  *               startTime:
  *                 type: string
  *                 format: date-time
@@ -145,6 +166,8 @@ const { auth } = require("../middlewares/auth.middleware");
  *   put:
  *     summary: Update a reservation
  *     tags: [Reservations]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: reservationID
@@ -166,6 +189,10 @@ const { auth } = require("../middlewares/auth.middleware");
  *                 format: date-time
  *               coupleTherapistID:
  *                 type: string
+ *               title:
+ *                 type: string
+ *               content:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Reservation updated successfully
@@ -181,6 +208,8 @@ const { auth } = require("../middlewares/auth.middleware");
  *   put:
  *     summary: Approve a reservation
  *     tags: [Reservations]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: reservationID
@@ -200,6 +229,8 @@ const { auth } = require("../middlewares/auth.middleware");
  *   put:
  *     summary: Deny a reservation
  *     tags: [Reservations]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: reservationID
@@ -233,6 +264,8 @@ const { auth } = require("../middlewares/auth.middleware");
  *   put:
  *     summary: Cancel a reservation
  *     tags: [Reservations]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: reservationID
@@ -246,7 +279,11 @@ const { auth } = require("../middlewares/auth.middleware");
  *         description: Reservation not found
  */
 
-router.post("/create-reservation", auth, reservationController.createReservation);
+router.post(
+  "/create-reservation",
+  auth,
+  reservationController.createReservation
+);
 router.get("/get-all-reservation", reservationController.getAllReservation);
 router.get(
   "/get-reservation/:reservationID",

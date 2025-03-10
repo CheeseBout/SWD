@@ -25,14 +25,31 @@ class ReservationRepo {
     return await RESERVATION.findByIdAndDelete(id);
   }
 
-  async findExistingReservation(userID, therapistID, startTime, endTime) {
-    return await RESERVATION.findOne({
-      userID,
-      coupleTherapistID: therapistID,
+  async checkDuplicate(
+    coupleTherapistID,
+    startTime,
+    endTime,
+    reservationID = null
+  ) {
+    const query = {
+      coupleTherapistID,
       startTime,
       endTime,
+    };
+    if (reservationID) {
+      query._id = { $ne: reservationID };
+    }
+    return await RESERVATION.findOne(query);
+  }
+
+  async checkOccupied(coupleTherapistID, startTime, endTime) {
+    return await RESERVATION.findOne({
+      coupleTherapistID,
+      startTime: { $lt: endTime },
+      endTime: { $gt: startTime },
     });
   }
+
   async approveReservation(reservationID) {
     return await RESERVATION.findByIdAndUpdate(
       reservationID,
@@ -40,6 +57,7 @@ class ReservationRepo {
       { new: true }
     );
   }
+
   async denyReservation(reservationID, reason) {
     return await RESERVATION.findByIdAndUpdate(
       reservationID,

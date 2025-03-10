@@ -59,39 +59,6 @@ const PaymentController = require("../controllers/payment.controller");
 
 /**
  * @swagger
- * /payment/create-payment:
- *   post:
- *     summary: Create a new payment for a reservation
- *     tags: [Payments]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - reservationID
- *               - totalAmount
- *             properties:
- *               reservationID:
- *                 type: string
- *                 example: "65f2d6789abcdef01234567"
- *               totalAmount:
- *                 type: number
- *                 example: 1000000
- *     responses:
- *       201:
- *         description: Payment created successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Payment'
- *       400:
- *         description: Invalid reservation ID or amount
- */
-
-/**
- * @swagger
  * /payment/create-payment-url:
  *   post:
  *     summary: Create VNPay payment URL
@@ -113,6 +80,9 @@ const PaymentController = require("../controllers/payment.controller");
  *                 type: string
  *                 enum: [DEPOSIT, FINAL]
  *                 example: "DEPOSIT"
+ *               totalPrice:
+ *                 type: number
+ *                 example: 1000000
  *     responses:
  *       200:
  *         description: Payment URL created successfully
@@ -239,13 +209,18 @@ const PaymentController = require("../controllers/payment.controller");
  */
 
 // Tạo thanh toán cho một Reservation
-router.post("/create-payment", PaymentController.createPayment);
 
 // Tạo URL thanh toán (Deposit / Final Payment)
 router.post("/create-payment-url", PaymentController.createPaymentUrl);
 
-// Xử lý phản hồi từ VNPay (IPN)
-router.get("/verify-payment", PaymentController.verifyPayment);
+// Xử lý IPN từ VNPay
+router.get("/vnpay-ipn", PaymentController.verifyIPN);
+
+// Xử lý redirect từ VNPay sau khi thanh toán
+router.get("/vnpay-return", PaymentController.verifyReturnUrl);
+
+// Kiểm tra và cập nhật trạng thái giao dịch
+router.post("/check-payment-status", PaymentController.checkPaymentStatus);
 
 // Lấy tất cả Payment
 router.get("/all", PaymentController.getAllPayments);
@@ -255,5 +230,13 @@ router.get(
   "/:paymentID/transactions",
   PaymentController.getTransactionsByPayment
 );
+
+// Debug route to test if route is accessible
+router.get("/test", (req, res) => {
+  res.status(200).json({
+    message: "Payment routes are working",
+    timestamp: new Date(),
+  });
+});
 
 module.exports = router;

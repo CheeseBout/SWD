@@ -8,22 +8,39 @@ const TransactionSchema = new mongoose.Schema({
   },
   phase: {
     type: String,
-    enum: ["DEPOSIT", "FINAL", "REFUND"],
+    enum: ["DEPOSIT", "FINAL"],
     required: true,
   },
-  amount: { type: Number, required: true }, // Số tiền của transaction
+  amount: {
+    type: Number,
+    required: true,
+  },
   method: {
     type: String,
-    enum: ["VNPAY", "PAYPAL", "CASH"], // Hỗ trợ nhiều phương thức thanh toán
-    required: true,
+    enum: ["VNPAY"],
+    default: "VNPAY",
   },
-  transactionCode: { type: String, unique: true, required: true }, // Mã giao dịch từ VNPay hoặc hệ thống khác
+  transactionCode: {
+    type: String,
+    required: true,
+    unique: true,
+  },
   status: {
     type: String,
-    enum: ["PENDING", "PAID", "FAILED"],
+    enum: ["PENDING", "PAID", "CANCELLED"],
     default: "PENDING",
   },
+  platform: {
+    type: String,
+    enum: ["web", "mobile", "other"],
+    default: "web",
+  },
+  paymentMessage: {
+    type: String,
+    default: "",
+  },
   createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
 });
 
 // Middleware cập nhật `Payment.totalPaid` sau mỗi Transaction thành công
@@ -34,6 +51,12 @@ TransactionSchema.post("save", async function (transaction, next) {
       $inc: { totalPaid: transaction.amount },
     });
   }
+  next();
+});
+
+// Middleware cập nhật `updatedAt` khi có thay đổi
+TransactionSchema.pre("save", function (next) {
+  this.updatedAt = new Date();
   next();
 });
 

@@ -1,202 +1,324 @@
-const crypto = require("crypto");
-const moment = require("moment");
-const querystring = require("qs");
+const {
+  IpnSuccess,
+  IpnFailChecksum,
+  IpnUnknownError,
+  VNPay,
+  ProductCode,
+  VnpLocale,
+  IpnInvalidAmount,
+  InpOrderAlreadyConfirmed,
+  IpnOrderNotFound,
+  dateFormat,
+} = require("vnpay");
 const config = require("../configs/app.config");
 const mongoose = require("mongoose");
 const PAYMENT = require("../models/payment.model");
 const TRANSACTION = require("../models/transaction.model");
-const { VNPay } = require("vnpay");
+const moment = require("moment");
 
 const vnpay = new VNPay({
-  tmnCode: config.VNPay.tmnCode,
-  secureSecret: config.VNPay.secureSecret,
+  tmnCode: config.VNPay.vnp_TmnCode,
+  secureSecret: config.VNPay.vnp_HashSecret,
   vnpayHost: "https://sandbox.vnpayment.vn",
   testMode: true,
 });
 
 class PaymentService {
-  async createPayment(reservationID, totalAmount) {
+  successResCode = "00";
+  failResCode = "02";
+  cancelResCode = "24"; // Thêm mã hủy thanh toán
+
+  async createPaymentUrl(reservationID, phase, totalPrice, platform = "web") {
     try {
+      // Validate inputs
       if (!mongoose.Types.ObjectId.isValid(reservationID)) {
         throw new Error("Invalid reservation ID format");
       }
 
+      // Find or create payment record
       let payment = await PAYMENT.findOne({ reservation: reservationID });
-
       if (!payment) {
         payment = new PAYMENT({
-          reservation: new mongoose.Types.ObjectId(reservationID), // ✅ Chuyển sang ObjectId
-          totalAmount,
+          reservation: new mongoose.Types.ObjectId(reservationID),
+          totalPrice,
           totalPaid: 0,
           status: "PENDING",
         });
-
         await payment.save();
       }
 
-      return payment;
-    } catch (error) {
-      throw new Error("Error creating payment: " + error.message);
-    }
-  }
+      // Calculate payment amount - sửa lỗi hiển thị số tiền
+      // Đảm bảo amount là số nguyên và không nhân thêm 100 ở đây
+      const amount =
+        phase === "DEPOSIT"
+          ? Math.round(payment.totalPrice * 0.5)
+          : Math.round(payment.totalPrice * 0.5);
 
-  async createPaymentUrl(reservationID, phase) {
-    try {
-      // Kiểm tra reservationID có hợp lệ không
-      if (!mongoose.Types.ObjectId.isValid(reservationID)) {
-        throw new Error("Invalid reservation ID format");
-      }
+      console.log("Amount to pay:", amount, "VND"); // Log để debug
 
-      console.log("reservationID", reservationID);
-      // Chuyển reservationID sang ObjectId
-      const objectId = new mongoose.Types.ObjectId(reservationID);
+      // Generate transaction code với platform để phân biệt
+      const timestamp = moment().format("HHmmss");
+      const transactionCode = `${platform}_${timestamp}`;
 
-      // Tìm Payment theo reservation
-      const payment = await PAYMENT.findOne({ reservation: objectId });
-      if (!payment) throw new Error("Payment record not found");
+      // Create expiration date (5 minutes from now)
+      const expDate = new Date();
+      expDate.setMinutes(expDate.getMinutes() + 5);
 
-      // Xác định số tiền cần thanh toán
-      let amount;
-      if (phase === "DEPOSIT") {
-        amount = payment.totalAmount * 0.5; // Thanh toán 50% lần đầu
-      } else if (phase === "FINAL") {
-        amount = payment.totalAmount * 0.5; // Thanh toán 50% lần cuối
-      } else {
-        throw new Error("Invalid payment phase");
-      }
+      // Build payment URL using vnpay library
+      // vnp_Amount đã được nhân với 100 bởi thư viện VNPay, không cần nhân lại
+      const paymentUrl = vnpay.buildPaymentUrl({
+        vnp_Amount: amount, // Truyền đúng số tiền, thư viện sẽ tự nhân với 100
+        vnp_IpAddr: "52.151.214.177", // Azure host IP (instead of 127.0.0.1)
+        vnp_TxnRef: transactionCode,
+        vnp_OrderInfo: "Thanh toan don hang: " + transactionCode,
+        vnp_OrderType: ProductCode.Other,
+        vnp_ReturnUrl: config.VNPay.vnp_ReturnUrl, //localhost:8080'}/api/payment/vnpay-return`,
+        vnp_Locale: VnpLocale.VN,
+        vnp_BankCode: "VNBANK",
+        vnp_ExpireDate: dateFormat(expDate),
+      });
 
-      // Kiểm tra nếu đã thanh toán đủ
-      if (payment.totalPaid + amount > payment.totalAmount) {
-        throw new Error("Payment exceeds total reservation amount");
-      }
-
-      // Tạo mã giao dịch
-      const date = new Date();
-      const createDate = moment(date).format("YYYYMMDDHHmmss");
-      const transId = `${moment(date).format(
-        "HHmmss"
-      )}_${reservationID}_${phase}`;
-
-      let vnpParams = {
-        vnp_Version: "2.1.0",
-        vnp_Command: "pay",
-        vnp_TmnCode: config.VNPay.tmnCode,
-        vnp_Amount: Math.round(amount * 100),
-        vnp_CreateDate: createDate,
-        vnp_CurrCode: "VND",
-        vnp_IpAddr: "192.168.1.1",
-        vnp_Locale: "vn",
-        vnp_OrderInfo: `Thanh toán ${phase} cho đơn ${reservationID}`,
-        vnp_OrderType: "250000",
-        vnp_ReturnUrl: config.VNPay.returnUrl,
-        vnp_TxnRef: transId,
-      };
-
-      // Sắp xếp tham số
-      vnpParams = sortObject(vnpParams);
-
-      // Tạo chữ ký SHA512
-      const signData = querystring.stringify(vnpParams, { encode: false });
-      const hmac = crypto.createHmac("sha512", config.VNPay.hashSecret);
-      const signed = hmac.update(signData).digest("hex");
-      vnpParams["vnp_SecureHash"] = signed;
-
-      // Tạo URL thanh toán
-      const paymentUrl = `${config.VNPay.vnp_Url}?${querystring.stringify(
-        vnpParams,
-        { encode: true }
-      )}`;
-
-      // Tạo transaction mới
-      const transaction = new Transaction({
+      // Create transaction record
+      const transaction = new TRANSACTION({
         payment: payment._id,
         phase,
-        amount,
+        amount, // Lưu đúng số tiền vào DB
         method: "VNPAY",
-        transactionCode: transId,
+        transactionCode: transactionCode,
         status: "PENDING",
+        platform, // Thêm thông tin platform
       });
 
       await transaction.save();
 
       return { paymentUrl, transaction };
     } catch (error) {
-      throw new Error("Error creating payment URL: " + error.message);
+      throw new Error("Error processing payment: " + error.message);
     }
   }
 
-  /**
-   * Xác thực phản hồi từ VNPay và cập nhật trạng thái thanh toán
-   */
-  async validatePaymentReturn(vnpParams) {
-    const secureHash = vnpParams["vnp_SecureHash"];
-    delete vnpParams["vnp_SecureHash"];
-    delete vnpParams["vnp_SecureHashType"];
+  async verifyIPN(query) {
+    try {
+      const verify = vnpay.verifyIpnCall(query);
+      if (!verify.isVerified) {
+        return IpnFailChecksum;
+      }
 
-    // Sắp xếp lại tham số
-    vnpParams = this.sortObject(vnpParams);
-    const signData = querystring.stringify(vnpParams, { encode: false });
+      const transaction = await TRANSACTION.findOne({
+        transactionCode: verify.vnp_TxnRef,
+      });
 
-    // Kiểm tra chữ ký hợp lệ
-    const hmac = crypto.createHmac("sha512", config.VNPay.hashSecret);
-    const signed = hmac.update(signData).digest("hex");
+      if (!transaction) {
+        return IpnOrderNotFound;
+      }
 
-    if (secureHash !== signed) {
-      return { isSuccess: false, message: "Invalid signature" };
+      // Kiểm tra trạng thái giao dịch
+      if (
+        verify.vnp_TransactionStatus === this.failResCode ||
+        query.vnp_ResponseCode === this.cancelResCode
+      ) {
+        if (transaction.status !== "CANCELLED") {
+          transaction.status = "CANCELLED";
+          transaction.paymentMessage =
+            verify.message || "Payment cancelled by user";
+          await transaction.save();
+        }
+
+        return InpOrderAlreadyConfirmed;
+      }
+
+      // Sửa lại so sánh số tiền
+      // Lấy số tiền từ VNPay (đã bao gồm việc nhân với 100)
+      const vnpAmount = parseInt(verify.vnp_Amount);
+      // Số tiền trong DB (chưa nhân với 100)
+      const dbAmount = transaction.amount;
+
+      // So sánh số tiền (cần nhân dbAmount với 100 để so sánh)
+      if (vnpAmount !== dbAmount) {
+        console.log("Amount mismatch:", vnpAmount, "vs", dbAmount);
+        return IpnInvalidAmount;
+      }
+
+      if (transaction.status !== "PENDING") {
+        return InpOrderAlreadyConfirmed;
+      }
+
+      if (verify.vnp_ResponseCode === this.successResCode) {
+        // Update transaction status
+        transaction.status = "PAID";
+        await transaction.save();
+
+        // Update payment
+        const payment = await PAYMENT.findById(transaction.payment);
+        payment.totalPaid += transaction.amount;
+        payment.status =
+          payment.totalPaid >= payment.totalPrice ? "COMPLETED" : "IN_PROGRESS";
+        await payment.save();
+      }
+
+      return IpnSuccess;
+    } catch (error) {
+      console.error(error);
+      return IpnUnknownError;
     }
+  }
 
-    // Lấy thông tin transaction từ DB
-    const transaction = await Transaction.findOne({
-      transactionCode: vnpParams["vnp_TxnRef"],
-    });
-    if (!transaction) {
-      return { isSuccess: false, message: "Transaction not found" };
+  // Tìm transaction theo mã
+  async findTransactionByCode(transactionCode) {
+    try {
+      return await TRANSACTION.findOne({ transactionCode });
+    } catch (error) {
+      console.error("Error finding transaction:", error);
+      return null;
     }
+  }
 
-    // Kiểm tra trạng thái giao dịch
-    if (transaction.status !== "PENDING") {
-      return { isSuccess: false, message: "Transaction already processed" };
+  // Cập nhật trạng thái transaction
+  async updateTransactionStatus(transactionId, status) {
+    try {
+      await TRANSACTION.findByIdAndUpdate(
+        transactionId,
+        { status, updatedAt: new Date() },
+        { new: true }
+      );
+      console.log(`Transaction ${transactionId} updated to status ${status}`);
+      return true;
+    } catch (error) {
+      console.error("Error updating transaction status:", error);
+      return false;
     }
+  }
 
-    // Kiểm tra số tiền hợp lệ
-    if (parseInt(vnpParams["vnp_Amount"]) / 100 !== transaction.amount) {
-      return { isSuccess: false, message: "Invalid amount" };
-    }
+  // Cập nhật payment sau khi thanh toán thành công
+  async updatePaymentAfterSuccessfulTransaction(transaction) {
+    try {
+      const payment = await PAYMENT.findById(transaction.payment);
+      if (!payment) {
+        console.error(`Payment not found for transaction ${transaction._id}`);
+        return false;
+      }
 
-    // Nếu thanh toán thành công
-    if (vnpParams["vnp_ResponseCode"] === "00") {
-      transaction.status = "PAID";
-      await transaction.save();
-
-      // Cập nhật Payment tổng số tiền đã thanh toán
-      const payment = await Payment.findById(transaction.payment);
+      // Cập nhật tổng số tiền đã thanh toán
       payment.totalPaid += transaction.amount;
 
-      // Nếu thanh toán đủ thì đánh dấu Payment là COMPLETED
-      if (payment.totalPaid >= payment.totalAmount) {
+      // Xác định trạng thái mới của payment
+      if (payment.totalPaid >= payment.totalPrice) {
         payment.status = "COMPLETED";
-      } else {
-        payment.status = "IN_PROGRESS";
       }
 
       await payment.save();
-
-      return { isSuccess: true, message: "Payment successful" };
+      console.log(
+        `Payment ${payment._id} updated. New status: ${payment.status}`
+      );
+      return true;
+    } catch (error) {
+      console.error("Error updating payment:", error);
+      return false;
     }
-
-    return { isSuccess: false, message: "Payment failed" };
   }
 
-  /**
-   * Sắp xếp object theo key
-   */
-  sortObject(obj) {
-    return Object.keys(obj)
-      .sort()
-      .reduce((result, key) => {
-        if (obj[key]) result[key] = obj[key];
-        return result;
-      }, {});
+  async validatePaymentReturn(query) {
+    try {
+      console.log("Received VNPay return query:", query); // Debug log
+
+      const verify = vnpay.verifyReturnUrl(query);
+      console.log("VNPay verification result:", verify); // Debug log
+
+      // Tìm transaction dựa vào mã giao dịch
+      const transaction = await TRANSACTION.findOne({
+        transactionCode: query.vnp_TxnRef,
+      });
+
+      let redirectUrl = new URL("/payment/result", config.CLIENT_URL);
+
+      if (!verify.isVerified) {
+        redirectUrl.searchParams.append("status", "failed");
+        redirectUrl.searchParams.append("message", "Invalid signature");
+        return redirectUrl.toString();
+      }
+
+      if (!transaction) {
+        redirectUrl.searchParams.append("status", "failed");
+        redirectUrl.searchParams.append("message", "Transaction not found");
+        return redirectUrl.toString();
+      }
+
+      // Kiểm tra nếu là hủy thanh toán hoặc thanh toán thất bại
+      if (query.vnp_ResponseCode !== "00") {
+        // Đánh dấu giao dịch là đã hủy
+        if (transaction) {
+          transaction.status = "CANCELLED";
+          transaction.paymentMessage =
+            query.vnp_ResponseCode === "24"
+              ? "Payment cancelled by user"
+              : "Payment failed";
+          await transaction.save();
+        }
+
+        redirectUrl.searchParams.append("status", "failed");
+        redirectUrl.searchParams.append(
+          "message",
+          query.vnp_ResponseCode === "24"
+            ? "Payment was cancelled"
+            : "Payment failed"
+        );
+        return redirectUrl.toString();
+      }
+
+      // Nếu thanh toán thành công
+      if (query.vnp_ResponseCode === "00") {
+        // Cập nhật trạng thái transaction
+        transaction.status = "PAID";
+        await transaction.save();
+
+        // Cập nhật payment
+        const payment = await PAYMENT.findById(transaction.payment);
+        payment.totalPaid += transaction.amount;
+
+        // Nếu đã thanh toán đủ => COMPLETED
+        if (payment.totalPaid >= payment.totalPrice) {
+          payment.status = "COMPLETED";
+        }
+
+        await payment.save();
+
+        redirectUrl.searchParams.append("status", "success");
+        redirectUrl.searchParams.append("message", "Payment successful");
+      } else {
+        redirectUrl.searchParams.append("status", "failed");
+        redirectUrl.searchParams.append("message", "Payment failed");
+      }
+
+      return redirectUrl.toString();
+    } catch (error) {
+      console.error("Payment validation error:", error);
+      const redirectUrl = new URL("/payment/result", config.CLIENT_URL);
+      redirectUrl.searchParams.append("status", "error");
+      redirectUrl.searchParams.append("message", "Internal server error");
+      return redirectUrl.toString();
+    }
+  }
+
+  async checkPaymentStatusWithVnPay(transactionCode) {
+    try {
+      // Trong môi trường thật, bạn sẽ gọi API của VNPay để kiểm tra
+      // Đối với sandbox, chúng ta giả lập kết quả
+      const transaction = await this.findTransactionByCode(transactionCode);
+
+      if (!transaction) {
+        return { isSuccess: false, message: "Transaction not found" };
+      }
+
+      // Nếu transaction có paymentUrl, coi như đã thanh toán thành công
+      if (transaction.status === "PAID") {
+        return { isSuccess: true, message: "Payment completed" };
+      }
+
+      return { isSuccess: false, message: "Payment pending or failed" };
+    } catch (error) {
+      console.error("Error checking payment status:", error);
+      return { isSuccess: false, message: "Error checking payment status" };
+    }
   }
 }
 

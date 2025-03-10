@@ -43,9 +43,10 @@ module.exports = {
     IOS_ID: process.env.GOOGLE_IOS_CLIENT_ID,
   },
   VNPay: {
-    vnp_TmnCode: process.env.VNP_TMN_CODE,
-    vnp_HashSecret: process.env.VNP_HASH_SECRET,
-    vnp_Url: process.env.VNP_URL,
+    vnp_TmnCode: process.env.VNPAY_TMN_CODE,
+    vnp_HashSecret: process.env.VNPAY_SECURE_SECRET,
+    vnp_Url: process.env.VNPAY_URL,
+    vnp_ReturnUrl: process.env.VNPAY_RETURN_URL,
   },
   HYGRAPH: {
     HYGRAPH_ENDPOINT: process.env.HYGRAPH_ENDPOINT,

@@ -78,6 +78,12 @@ export const therapistService = {
     });
     return response.data;
   },
+  getAvailability: async (id) => {
+    const response = await api.get(
+      `api/v1/coupletherapist/get-availability/${id}`
+    );
+    return response.data;
+  },
 };
 
 export const userService = {

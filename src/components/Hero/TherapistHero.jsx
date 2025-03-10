@@ -75,7 +75,6 @@ export function TherapistHero() {
             Connect with licensed therapists who understand your unique needs
           </p>
 
-          {/* 🔎 Input tìm kiếm */}
           <div ref={searchRef} className="relative max-w-xl mx-auto">
             <input
               type="text"
@@ -104,7 +103,7 @@ export function TherapistHero() {
               </svg>
             </button>
 
-            {/* 📌 Danh sách gợi ý */}
+            {/* Suggest list */}
             {showSuggestions && suggestions.length > 0 && (
               <div className="absolute w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-2 max-h-60 overflow-y-auto z-50">
                 {suggestions.map((therapist) => (

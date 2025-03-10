@@ -24,7 +24,7 @@ const ForgotPasswordPage = lazy(() => import("../pages/Forgot-password"));
 const TherapistDetail = lazy(() =>
   import("../pages/Therapist/TherapistDetail")
 );
-
+const BookReservation = lazy(() => import("../pages/BookReservation"));
 const LazyLoad = ({ children }) => (
   <Suspense fallback={<div></div>}>{children}</Suspense>
 );
@@ -174,10 +174,18 @@ export function AppRoutes() {
           }
         />
         <Route
-          path="therapist/:id"
+          path="therapist/:therapistId"
           element={
             <LazyLoad>
               <TherapistDetail />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="bookReservation/:therapistId"
+          element={
+            <LazyLoad>
+              <BookReservation />
             </LazyLoad>
           }
         />

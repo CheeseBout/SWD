@@ -31,19 +31,22 @@ export default function LoginPage() {
       const response = await authService.login(data.email, data.password);
       const { accessToken, refreshToken } = response.data.tokens;
 
-      // Use the AuthContext login function instead
-      login(accessToken);
+      await login(accessToken);
 
       if (remember) {
         localStorage.setItem("refreshToken", refreshToken);
       }
-      navigate("/");
+      
+      setTimeout(() => {
+        navigate("/");
+      }, 100);
     } catch (err) {
       setError(
         err.response?.data?.message || "Login failed. Please try again."
       );
     }
   };
+
   const handleResetPassword = async () => {
     if (!resetEmail) {
       return;

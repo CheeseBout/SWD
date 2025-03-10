@@ -167,6 +167,24 @@ const NavBar = () => {
                       >
                         Your Profile
                       </Link>
+                      {user?.role === "admin" && (
+                        <Link
+                          to="/dashboard"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          Dashboard
+                        </Link>
+                      )}
+                      {(user?.role === "member" || user?.role === "couple-therapist") && (
+                        <Link
+                          to="/reservation"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          Reservations
+                        </Link>
+                      )}
                       <button
                         className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         onClick={() => {

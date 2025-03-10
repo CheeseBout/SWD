@@ -40,4 +40,34 @@ export const blogService = {
       }
     }
   },
+
+  createBlog: async (blogData) => {
+    try {
+      const response = await api.post(`${BASE_URL}/api/v1/blog/create-blog`, blogData);
+      return response.data;
+    } catch (error) {
+      console.error("Error creating blog:", error);
+      return null;
+    }
+  },
+
+  updateBlog: async (blogData, id) => {
+    try {
+      const response = await api.put(`${BASE_URL}/api/v1/blog/${id}`, blogData);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating blog:", error);
+      return null;
+    }
+  },
+
+  deleteBlog: async (id) => {
+    try {
+      const response = await api.delete(`${BASE_URL}/api/v1/blog/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error deleting blog:", error);
+      return null;
+    }
+  },
 };

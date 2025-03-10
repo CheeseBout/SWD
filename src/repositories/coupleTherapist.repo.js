@@ -32,7 +32,20 @@ class TherapistRepo {
 
     if (category) {
       conditions.push({
-        "certificates.category": { $regex: category, $options: "i" },
+        $or: [
+          {
+            certificates: {
+              $elemMatch: {
+                category: { $regex: category, $options: "i" },
+                status: "approved",
+                isCertificateVerified: true,
+              },
+            },
+          },
+          {
+            category: { $regex: category, $options: "i" },
+          },
+        ],
       });
     }
 
@@ -51,7 +64,6 @@ class TherapistRepo {
 
     return await COUPLETHERAPIST.aggregate(pipeline);
   }
-
   async updateTherapistCertificate(certificateID, userId) {
     await CERTIFICATE.findOneAndUpdate(
       { _id: certificateID },

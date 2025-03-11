@@ -29,15 +29,7 @@ class ReservationController {
     const { userID } = req.params;
     const { status, page, limit } = req.query;
 
-    // Check if the requesting user has permission to view these reservations
-    if (
-      req.user.role !== "admin" &&
-      req.user.role !== "couple_therapist" &&
-      req.user._id.toString() !== userID
-    ) {
-      throw new APIError(403, "Permission denied");
-    }
-
+    // Remove permission check from here and pass the user object to the service
     return OK(
       res,
       "Success",
@@ -45,6 +37,7 @@ class ReservationController {
         status,
         page,
         limit,
+        user: req.user, // Pass the user object to the service
       })
     );
   });

@@ -16,6 +16,14 @@ class ReservationService {
   }
 
   async getReservationsByUser(userID, options = {}) {
+    // Extract the user from options
+    const { user, status, page, limit } = options;
+
+    // Check if the requesting user has permission to view these reservations
+    if (user.role !== "member") {
+      throw new APIError(403, "Permission denied");
+    }
+
     // Validate the userID
     if (!mongoose.Types.ObjectId.isValid(userID)) {
       throw new APIError(400, "Invalid user ID");
@@ -31,11 +39,10 @@ class ReservationService {
     const filter = { userID: new mongoose.Types.ObjectId(userID) };
 
     // Add status filter if provided
-    if (options.status) {
-      filter.status = options.status;
+    if (status) {
+      filter.status = status;
     }
 
-    const { page, limit } = options;
     return await reservationsRepo.getAll(filter, { page, limit });
   }
 
@@ -212,164 +219,51 @@ class ReservationService {
         const startTime = new Date(existingReservation.startTime);
         const endTime = new Date(existingReservation.endTime);
 
-        // We'll add the payment URL to the email after we generate it
-        let paymentUrl = "";
-
-        // Try to generate payment URL
-        try {
-          const paymentService = require("./payment.services");
-          console.log(
-            `Generating payment URL for reservation: ${reservationID} with price: ${price}`
-          );
-
-          // Create payment URL for DEPOSIT phase (50% of total price)
-          const paymentResult = await paymentService.createPaymentUrl(
-            reservationID,
-            "DEPOSIT",
-            price,
-            "web" // Default platform
-          );
-
-          paymentUrl = paymentResult.paymentUrl;
-          console.log("Payment URL generated:", paymentUrl);
-
-          // Now we can include the payment URL in the email
-          const sentMailHTML = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
-              <h2 style="color: #28a745; text-align: center;">Reservation Confirmed</h2>
-              <div style="margin: 20px 0; padding: 15px; background-color: #d4edda; border-radius: 4px;">
-                <p style="margin: 10px 0;">Your counseling session reservation has been confirmed by the therapist.</p>
-                <p style="margin: 10px 0;"><strong>Start Time:</strong> ${startTime.toLocaleString(
-                  "vi-VN"
-                )}</p>
-                <p style="margin: 10px 0;"><strong>End Time:</strong> ${endTime.toLocaleString(
-                  "vi-VN"
-                )}</p>
-                <p style="margin: 10px 0;"><strong>Price:</strong> ${
-                  price
-                    ? price.toLocaleString("vi-VN") + " VND"
-                    : "To be determined"
-                }</p>
-                <p style="margin: 20px 0;">Please proceed to payment to secure your reservation:</p>
-                <p style="text-align: center;">
-                  <a href="${paymentUrl}" style="display: inline-block; background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">Pay Now</a>
-                </p>
-                <p style="margin: 10px 0; font-size: 12px; color: #666;">Payment link expires in 5 minutes. If you need help, please contact our support team.</p>
-              </div>
-              <p style="color: #666; font-size: 14px; text-align: center;">Please be available at the scheduled time. We look forward to helping you.</p>
+        // Simplified email without payment link
+        const sentMailHTML = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+            <h2 style="color: #28a745; text-align: center;">Reservation Confirmed</h2>
+            <div style="margin: 20px 0; padding: 15px; background-color: #d4edda; border-radius: 4px;">
+              <p style="margin: 10px 0;">Your counseling session reservation has been confirmed by the therapist.</p>
+              <p style="margin: 10px 0;"><strong>Start Time:</strong> ${startTime.toLocaleString(
+                "vi-VN"
+              )}</p>
+              <p style="margin: 10px 0;"><strong>End Time:</strong> ${endTime.toLocaleString(
+                "vi-VN"
+              )}</p>
+              <p style="margin: 10px 0;"><strong>Price:</strong> ${
+                price
+                  ? price.toLocaleString("vi-VN") + " VND"
+                  : "To be determined"
+              }</p>
             </div>
-          `;
+            <p style="color: #666; font-size: 14px; text-align: center;">Please be available at the scheduled time. We look forward to helping you.</p>
+          </div>
+        `;
 
-          await emailService.sendEmail(
-            userInfo.email,
-            "Reservation Confirmed - Marriage Counseling Session",
-            `Your reservation for ${startTime.toLocaleString(
-              "vi-VN"
-            )} has been confirmed. Price: ${
-              price
-                ? price.toLocaleString("vi-VN") + " VND"
-                : "To be determined"
-            }. Please pay here: ${paymentUrl}`,
-            sentMailHTML
-          );
+        await emailService.sendEmail(
+          userInfo.email,
+          "Reservation Confirmed - Marriage Counseling Session",
+          `Your reservation for ${startTime.toLocaleString(
+            "vi-VN"
+          )} has been confirmed. Price: ${
+            price ? price.toLocaleString("vi-VN") + " VND" : "To be determined"
+          }`,
+          sentMailHTML
+        );
 
-          console.log(
-            `Confirmation notification email sent to ${userInfo.email}`
-          );
-
-          // Return the payment information instead of the reservation
-          return paymentResult;
-        } catch (error) {
-          console.error("Failed to generate payment URL:", error);
-
-          // If payment URL generation fails, send email without payment link
-          const sentMailHTML = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
-              <h2 style="color: #28a745; text-align: center;">Reservation Confirmed</h2>
-              <div style="margin: 20px 0; padding: 15px; background-color: #d4edda; border-radius: 4px;">
-                <p style="margin: 10px 0;">Your counseling session reservation has been confirmed by the therapist.</p>
-                <p style="margin: 10px 0;"><strong>Start Time:</strong> ${startTime.toLocaleString(
-                  "vi-VN"
-                )}</p>
-                <p style="margin: 10px 0;"><strong>End Time:</strong> ${endTime.toLocaleString(
-                  "vi-VN"
-                )}</p>
-                <p style="margin: 10px 0;"><strong>Price:</strong> ${
-                  price
-                    ? price.toLocaleString("vi-VN") + " VND"
-                    : "To be determined"
-                }</p>
-                <p style="margin: 20px 0;">Your payment link will be sent separately. Please check your email later.</p>
-              </div>
-              <p style="color: #666; font-size: 14px; text-align: center;">Please be available at the scheduled time. We look forward to helping you.</p>
-            </div>
-          `;
-
-          await emailService.sendEmail(
-            userInfo.email,
-            "Reservation Confirmed - Marriage Counseling Session",
-            `Your reservation for ${startTime.toLocaleString(
-              "vi-VN"
-            )} has been confirmed. Price: ${
-              price
-                ? price.toLocaleString("vi-VN") + " VND"
-                : "To be determined"
-            }. A payment link will be sent separately.`,
-            sentMailHTML
-          );
-
-          console.log(
-            `Confirmation notification email sent to ${userInfo.email} without payment link`
-          );
-
-          // Return just the reservation if payment URL generation fails
-          return {
-            reservation,
-            error: "Could not generate payment URL. Please try again later.",
-          };
-        }
+        console.log(
+          `Confirmation notification email sent to ${userInfo.email}`
+        );
       } else {
         console.warn("Could not find user email for sending notification");
-
-        // Try to generate payment URL anyway even though we couldn't send email
-        try {
-          const paymentService = require("./payment.services");
-          const paymentResult = await paymentService.createPaymentUrl(
-            reservationID,
-            "DEPOSIT",
-            price,
-            "web"
-          );
-          return paymentResult;
-        } catch (error) {
-          console.error("Failed to generate payment URL:", error);
-          return {
-            reservation,
-            error: "Could not generate payment URL. Please try again later.",
-          };
-        }
       }
     } catch (error) {
       console.error("Failed to send email notification:", error);
-
-      // Try to generate payment URL even though email sending failed
-      try {
-        const paymentService = require("./payment.services");
-        const paymentResult = await paymentService.createPaymentUrl(
-          reservationID,
-          "DEPOSIT",
-          price,
-          "web"
-        );
-        return paymentResult;
-      } catch (paymentError) {
-        console.error("Also failed to generate payment URL:", paymentError);
-        return {
-          reservation,
-          error: "Could not generate payment URL. Please try again later.",
-        };
-      }
     }
+
+    // Just return the reservation without payment information
+    return reservation;
   }
 
   async denyReservation(reservationID, reason, user) {

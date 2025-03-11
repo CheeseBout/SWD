@@ -418,11 +418,20 @@ const { auth } = require("../middlewares/auth.middleware");
  *                 description: Price in VND
  *     responses:
  *       200:
- *         description: Reservation approved with payment URL
+ *         description: Reservation approved successfully
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/PaymentResponse'
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "success"
+ *                 message:
+ *                   type: string
+ *                   example: "Reservation approved successfully"
+ *                 data:
+ *                   $ref: '#/components/schemas/Reservation'
  *       401:
  *         description: Unauthorized - Missing or invalid token
  *       403:

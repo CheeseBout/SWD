@@ -262,6 +262,11 @@ class ReservationRepo {
 
     return foundMatch;
   }
+
+  async checkUserExists(userID) {
+    const user = await USER.findById(userID);
+    return !!user; // Returns true if user exists, false otherwise
+  }
 }
 
 module.exports = new ReservationRepo();

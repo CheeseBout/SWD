@@ -15,6 +15,30 @@ class ReservationService {
     return reservation;
   }
 
+  async getReservationsByUser(userID, options = {}) {
+    // Validate the userID
+    if (!mongoose.Types.ObjectId.isValid(userID)) {
+      throw new APIError(400, "Invalid user ID");
+    }
+
+    // Check if the user exists
+    const userExists = await reservationsRepo.checkUserExists(userID);
+    if (!userExists) {
+      throw new APIError(404, "User not found");
+    }
+
+    // Create filter object
+    const filter = { userID: new mongoose.Types.ObjectId(userID) };
+
+    // Add status filter if provided
+    if (options.status) {
+      filter.status = options.status;
+    }
+
+    const { page, limit } = options;
+    return await reservationsRepo.getAll(filter, { page, limit });
+  }
+
   async createReservation(req) {
     const data = req.body;
     if (req.user.role !== "member") {

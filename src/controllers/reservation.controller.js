@@ -25,6 +25,30 @@ class ReservationController {
     );
   });
 
+  getReservationsByUser = catchAsync(async (req, res) => {
+    const { userID } = req.params;
+    const { status, page, limit } = req.query;
+
+    // Check if the requesting user has permission to view these reservations
+    if (
+      req.user.role !== "admin" &&
+      req.user.role !== "couple_therapist" &&
+      req.user._id.toString() !== userID
+    ) {
+      throw new APIError(403, "Permission denied");
+    }
+
+    return OK(
+      res,
+      "Success",
+      await reservationService.getReservationsByUser(userID, {
+        status,
+        page,
+        limit,
+      })
+    );
+  });
+
   updateReservation = catchAsync(async (req, res) => {
     return OK(res, "Success", await reservationService.updateReservation(req));
   });

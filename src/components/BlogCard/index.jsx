@@ -5,6 +5,7 @@ import { useState } from 'react';
 export function BlogCard({ blog }) {
   const { title, category, author, coverPhoto, slug } = blog;
   const [imageError, setImageError] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
   
   const defaultAvatar = "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
   const defaultCoverPhoto = "https://www.beautylabinternational.com/wp-content/uploads/2020/03/Hero-Banner-Placeholder-Light-1024x480-1.png";
@@ -16,7 +17,7 @@ export function BlogCard({ blog }) {
           <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 via-transparent to-transparent z-10"></div>
           
           <img 
-            src={coverPhoto || defaultCoverPhoto} 
+            src={coverPhoto.url || defaultCoverPhoto} 
             alt={title}
             className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
             onError={(e) => {
@@ -46,7 +47,10 @@ export function BlogCard({ blog }) {
               src={author?.avatar?.url || defaultAvatar}
               alt={author?.name || "Author"}
               className="w-9 h-9 rounded-full border-2 border-white shadow-sm object-cover"
-              onError={(e) => {e.target.src = defaultAvatar}}
+              onError={(e) => {
+                setAvatarError(true);
+                e.target.src = defaultAvatar;
+              }}
             />
             <div className="ml-3">
               <span className="block text-sm font-medium text-gray-800">

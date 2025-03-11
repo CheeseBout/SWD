@@ -7,7 +7,7 @@ import {
   ChartSquareBarIcon,
 } from "@heroicons/react/outline";
 
-const SideBar = () => {
+const AdminSideBar = () => {
   const { user, isAuthenticated } = useContext(AuthContext);
   const location = useLocation();
 
@@ -53,22 +53,13 @@ const SideBar = () => {
       <h2 className="text-xl font-bold px-4 mb-6 text-gray-800">My Account</h2>
 
       <nav className="space-y-2">
-        <NavItem
-          to="/profile"
-          icon={ChartSquareBarIcon}
-          label="Profile"
-        />
         {user?.role === "admin" && (
           <>
             <NavItem
-              to="/manage/blogs"
-              icon={ClipboardCheckIcon}
-              label="Blog Management"
+              to="/admin/dashboard"
+              icon={ChartSquareBarIcon}
+              label="Dashboard"
             />
-          </>
-        )}
-        {user?.role === "couple_therapist" && (
-          <>
             <NavItem
               to="/manage/blogs"
               icon={ClipboardCheckIcon}
@@ -93,4 +84,4 @@ const SideBar = () => {
   );
 };
 
-export default SideBar;
+export default AdminSideBar;

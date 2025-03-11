@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { jwtDecode } from 'jwt-decode';
 import { userService } from '../services/api';
 
-// Create the context directly in this file (remove the import)
 export const AuthContext = createContext({
   user: null,
   isAuthenticated: false,
@@ -34,38 +33,30 @@ export function AuthProvider({ children }) {
         console.log("Decoded token contents:", decodedToken);
         
         if (decodedToken.exp * 1000 < Date.now()) {
-          // Token is expired, handle logout
           localStorage.removeItem('accessToken');
           setIsAuthenticated(false);
           setUser(null);
         } else {
-          // Set authenticated from token first
           setIsAuthenticated(true);
           
-          // Check for userId in different possible fields
           const userId = decodedToken.userId || decodedToken._id || decodedToken.id || decodedToken.sub;
           
           if (userId) {
             console.log("Found user ID:", userId);
             try {
-              // Add the userId to the token data
               const userData = { ...decodedToken, _id: userId };
               
-              // Try to fetch more user data
               const response = await userService.getUserById(userId);
               if (response?.data?.user) {
                 setUser(response.data.user);
               } else {
-                // If API call doesn't return user data, use token data
                 setUser(userData);
               }
             } catch (fetchError) {
               console.error("Error fetching user data:", fetchError);
-              // Fallback to using token data with the ID added
               setUser({ ...decodedToken, _id: userId });
             }
           } else {
-            // If no ID in token, just use token data
             console.log("No user ID found in token, using token data", decodedToken);
             setUser(decodedToken);
           }
@@ -89,12 +80,27 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
-  const login = (token) => {
+  const login = async (token) => {
     localStorage.setItem('accessToken', token);
     try {
       const decodedToken = jwtDecode(token);
       setUser(decodedToken);
       setIsAuthenticated(true);
+      
+      if (decodedToken.userId || decodedToken._id || decodedToken.id || decodedToken.sub) {
+        const userId = decodedToken.userId || decodedToken._id || decodedToken.id || decodedToken.sub;
+        try {
+          const response = await userService.getUserById(userId);
+          if (response?.data?.user) {
+            setUser(prevUser => ({
+              ...prevUser,
+              ...response.data.user
+            }));
+          }
+        } catch (error) {
+          console.error('Error fetching user details after login:', error);
+        }
+      }
     } catch (error) {
       console.error('Error decoding login token:', error);
       logout();

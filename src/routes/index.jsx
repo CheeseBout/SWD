@@ -26,6 +26,11 @@ const TherapistDetail = lazy(() =>
 );
 const BlogsPage = lazy(() => import("../pages/Blogs"));
 const BlogDetailPage = lazy(() => import("../pages/Blogs/BlogDetail"));
+const AdminBlogs = lazy(() => import("../pages/Admin/Blogs"));
+const AdminDashboard = lazy(() => import("../pages/Admin/Dashboard"));
+const BlogCreate = lazy(() => import("../pages/Admin/BlogCreate"));
+const BlogEdit = lazy(() => import("../pages/Admin/BlogEdit"));
+
 const Therapist = lazy(() => import("../pages/Therapist/Therapist"));
 const BookReservation = lazy(() => import("../pages/BookReservation"));
 const YourReservation = lazy(() => import("../pages/Reservation"));
@@ -203,6 +208,42 @@ export function AppRoutes() {
             </LazyLoad>
           }
         />
+        <Route path="manage">
+          <Route
+            path="blogs"
+            element={
+              <LazyLoad>
+                <AdminBlogs />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="blogs/create"
+            element={
+              <LazyLoad>
+                <BlogCreate />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="blogs/edit/:slug"
+            element={
+              <LazyLoad>
+                <BlogEdit />
+              </LazyLoad>
+            }
+          />
+        </Route>
+        <Route path="admin">
+          <Route
+            path="dashboard"
+            element={
+              <LazyLoad>
+                <AdminDashboard />
+              </LazyLoad>
+            }
+          />
+        </Route>
         <Route
           path="find-therapist"
           element={

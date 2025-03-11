@@ -33,7 +33,6 @@ export const HomeScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <Text style={styles.welcomeText}>
@@ -50,18 +49,8 @@ export const HomeScreen = ({ navigation }) => {
             }}
           />
         </View>
-
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#fff" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search for services..."
-            placeholderTextColor="rgba(255,255,255,0.7)"
-          />
-        </View>
       </View>
 
-      {/* Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.sectionTitle}>Upcoming Events</Text>
 
@@ -84,33 +73,27 @@ export const HomeScreen = ({ navigation }) => {
         </View>
 
         <Text style={styles.sectionTitle}>Services</Text>
-
-        <View style={styles.cardContainer}>
+        <View style={styles.mainServices}>
           <TouchableOpacity
-            style={styles.card}
+            style={styles.mainServiceCard}
             onPress={() => navigation.navigate("SearchTherapist")}
           >
-            <View style={styles.cardImage} />
-            <Text style={styles.cardTitle}>Counseling</Text>
-            <Text style={styles.cardDescription}>Expert marriage advice</Text>
+            <Ionicons name="people" size={40} color="#4a6ee0" />
+            <Text style={styles.mainServiceTitle}>Counseling Service</Text>
+            <Text style={styles.mainServiceDescription}>
+              Connect with expert marriage counselors
+            </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.card}>
-            <View style={styles.cardImage} />
-            <Text style={styles.cardTitle}>Planning</Text>
-            <Text style={styles.cardDescription}>Plan your big day</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.card}>
-            <View style={styles.cardImage} />
-            <Text style={styles.cardTitle}>Venues</Text>
-            <Text style={styles.cardDescription}>Find perfect venues</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.card}>
-            <View style={styles.cardImage} />
-            <Text style={styles.cardTitle}>Legal Help</Text>
-            <Text style={styles.cardDescription}>Marriage documents</Text>
+          <TouchableOpacity
+            style={styles.mainServiceCard}
+            onPress={() => navigation.navigate("QuizList")}
+          >
+            <Ionicons name="clipboard" size={40} color="#4a6ee0" />
+            <Text style={styles.mainServiceTitle}>Take Compatibility Quiz</Text>
+            <Text style={styles.mainServiceDescription}>
+              Assess your relationship compatibility
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

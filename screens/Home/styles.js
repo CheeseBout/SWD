@@ -51,6 +51,37 @@ export const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
+  mainServices: {
+    marginTop: 20,
+    gap: 20,
+  },
+  mainServiceCard: {
+    backgroundColor: "#fff",
+    borderRadius: 15,
+    padding: 25,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  mainServiceTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginTop: 15,
+    marginBottom: 8,
+    color: "#333",
+    textAlign: "center",
+  },
+  mainServiceDescription: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",

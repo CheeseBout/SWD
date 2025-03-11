@@ -20,6 +20,8 @@ import { ProfileDetailScreen } from "./screens/ProfileDetail/ProfileDetail";
 import { ChangePasswordScreen } from "./screens/ChangePassword/ChangePassword";
 import BlogList from "./screens/BlogList/BlogList";
 import BlogDetail from "./screens/BlogDetail/BlogDetail";
+import QuizList from "./screens/QuizList/QuizList";
+import QuizDetail from "./screens/QuizDetail/QuizDetail";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -120,6 +122,16 @@ const NavigationScreens = () => {
           <Stack.Screen
             name="BlogDetail"
             component={BlogDetail}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="QuizList"
+            component={QuizList}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="QuizDetails"
+            component={QuizDetail}
             options={{ headerShown: false }}
           />
         </>

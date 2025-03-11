@@ -49,6 +49,10 @@ class ReservationRepo {
     });
   }
 
+  async findReservationByCode(reservationID) {
+    return await RESERVATION.findOne({ _id: reservationID });
+  }
+
   async approveReservation(reservationID, price) {
     return await RESERVATION.findByIdAndUpdate(
       reservationID,

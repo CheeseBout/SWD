@@ -37,8 +37,10 @@ class PaymentService {
         throw new Error("Invalid reservation ID format");
       }
 
-      const existingReservation =
-        await reservationsRepo.findExistingReservation(reservationID);
+      const existingReservation = await reservationsRepo.findReservationByCode(
+        reservationID
+      );
+
       if (!existingReservation) {
         throw new Error("Reservation not found");
       }

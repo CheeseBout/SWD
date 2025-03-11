@@ -60,7 +60,7 @@ class UserService {
     const imageFile = req.file;
     const userID = req.user?._id;
     if (!userID) {
-      throw new APIError(401, "User not fou");
+      throw new APIError(401, "User not found");
     }
     if (!imageFile) {
       throw new APIError(400, "Image file is required");

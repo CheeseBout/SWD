@@ -24,7 +24,11 @@ const ForgotPasswordPage = lazy(() => import("../pages/Forgot-password"));
 const TherapistDetail = lazy(() =>
   import("../pages/Therapist/TherapistDetail")
 );
+const BlogsPage = lazy(() => import("../pages/Blogs"));
+const BlogDetailPage = lazy(() => import("../pages/Blogs/BlogDetail"));
+const Therapist = lazy(() => import("../pages/Therapist/Therapist"));
 const BookReservation = lazy(() => import("../pages/BookReservation"));
+const YourReservation = lazy(() => import("../pages/Reservation"));
 const LazyLoad = ({ children }) => (
   <Suspense fallback={<div></div>}>{children}</Suspense>
 );
@@ -173,6 +177,24 @@ export function AppRoutes() {
             </LazyLoad>
           }
         />
+        <Route path="blogs">
+          <Route
+            index
+            element={
+              <LazyLoad>
+                <BlogsPage />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path=":slug"
+            element={
+              <LazyLoad>
+                <BlogDetailPage />
+              </LazyLoad>
+            }
+          />
+        </Route>
         <Route
           path="therapist/:therapistId"
           element={
@@ -182,10 +204,34 @@ export function AppRoutes() {
           }
         />
         <Route
+          path="find-therapist"
+          element={
+            <LazyLoad>
+              <Therapist />
+            </LazyLoad>
+          }
+        />
+        <Route
           path="bookReservation/:therapistId"
           element={
             <LazyLoad>
               <BookReservation />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="your-reservations"
+          element={
+            <LazyLoad>
+              <YourReservation />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="payment/result"
+          element={
+            <LazyLoad>
+              <YourReservation />
             </LazyLoad>
           }
         />

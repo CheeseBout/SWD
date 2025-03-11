@@ -6,19 +6,57 @@ class ReservationRepo {
   async getAll(filter, options) {
     const { page = 1, limit = 10 } = options;
     const skip = (page - 1) * limit;
+
+    // First get the reservations
     const reservations = await RESERVATION.find(filter)
       .skip(skip)
       .limit(limit)
-      .populate("userID", "fullname")
-      .populate("coupleTherapistID", "fullname")
+      .populate("userID", "fullname photoURL")
+      .populate({
+        path: "coupleTherapistID",
+        select: "userID", // Get the userID from the coupleTherapist model
+        populate: {
+          path: "userID", // Then populate that userID
+          select: "fullname photoURL", // And get the fullname and photoURL from the user model
+        },
+      })
       .populate("packageID", "name price");
+
+    // Transform the data to have the therapist's user info at the coupleTherapistID level
+    const transformedReservations = reservations.map((reservation) => {
+      const reservationObj = reservation.toObject();
+
+      // If coupleTherapistID has a populated userID with data
+      if (
+        reservationObj.coupleTherapistID &&
+        reservationObj.coupleTherapistID.userID
+      ) {
+        // Restructure to move user properties up to coupleTherapistID level
+        reservationObj.coupleTherapistID = {
+          _id: reservationObj.coupleTherapistID._id,
+          fullname: reservationObj.coupleTherapistID.userID.fullname,
+          photoURL: reservationObj.coupleTherapistID.userID.photoURL,
+        };
+      }
+
+      return reservationObj;
+    });
+
     const total = await RESERVATION.countDocuments(filter);
+
     return {
-      reservations,
+      reservations: transformedReservations,
       total,
       page,
       pages: Math.ceil(total / limit),
     };
+  }
+
+  async getReservationById(id) {
+    return await RESERVATION.findById(id)
+      .populate("userID", "fullname photoURL")
+      .populate("coupleTherapistID", "fullname photoURL")
+      .populate("packageID", "name price");
   }
 
   async createReservation(reservationData) {
@@ -55,7 +93,7 @@ class ReservationRepo {
   }
 
   async findReservationByCode(reservationID) {
-    return await RESERVATION.findOne({ _id: reservationID });
+    return await RESERVATION.findById(reservationID);
   }
 
   async approveReservation(reservationID, price) {
@@ -261,6 +299,11 @@ class ReservationRepo {
     }
 
     return foundMatch;
+  }
+
+  async checkUserExists(userID) {
+    const user = await USER.findById(userID);
+    return !!user; // Returns true if user exists, false otherwise
   }
 }
 

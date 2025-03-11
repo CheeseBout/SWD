@@ -15,6 +15,37 @@ class ReservationService {
     return reservation;
   }
 
+  async getReservationsByUser(userID, options = {}) {
+    // Extract the user from options
+    const { user, status, page, limit } = options;
+
+    // Check if the requesting user has permission to view these reservations
+    if (user.role !== "member") {
+      throw new APIError(403, "Permission denied");
+    }
+
+    // Validate the userID
+    if (!mongoose.Types.ObjectId.isValid(userID)) {
+      throw new APIError(400, "Invalid user ID");
+    }
+
+    // Check if the user exists
+    const userExists = await reservationsRepo.checkUserExists(userID);
+    if (!userExists) {
+      throw new APIError(404, "User not found");
+    }
+
+    // Create filter object
+    const filter = { userID: new mongoose.Types.ObjectId(userID) };
+
+    // Add status filter if provided
+    if (status) {
+      filter.status = status;
+    }
+
+    return await reservationsRepo.getAll(filter, { page, limit });
+  }
+
   async createReservation(req) {
     const data = req.body;
     if (req.user.role !== "member") {
@@ -188,6 +219,7 @@ class ReservationService {
         const startTime = new Date(existingReservation.startTime);
         const endTime = new Date(existingReservation.endTime);
 
+        // Simplified email without payment link
         const sentMailHTML = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
             <h2 style="color: #28a745; text-align: center;">Reservation Confirmed</h2>
@@ -210,8 +242,7 @@ class ReservationService {
         `;
 
         await emailService.sendEmail(
-          // userInfo.email,
-          "tribao5556@gmail.com", // Using the same test email as in the deny function
+          userInfo.email,
           "Reservation Confirmed - Marriage Counseling Session",
           `Your reservation for ${startTime.toLocaleString(
             "vi-VN"
@@ -229,9 +260,9 @@ class ReservationService {
       }
     } catch (error) {
       console.error("Failed to send email notification:", error);
-      // Don't throw error here since the reservation was successfully approved
     }
 
+    // Just return the reservation without payment information
     return reservation;
   }
 

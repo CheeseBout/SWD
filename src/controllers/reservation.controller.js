@@ -25,6 +25,23 @@ class ReservationController {
     );
   });
 
+  getReservationsByUser = catchAsync(async (req, res) => {
+    const { userID } = req.params;
+    const { status, page, limit } = req.query;
+
+    // Remove permission check from here and pass the user object to the service
+    return OK(
+      res,
+      "Success",
+      await reservationService.getReservationsByUser(userID, {
+        status,
+        page,
+        limit,
+        user: req.user, // Pass the user object to the service
+      })
+    );
+  });
+
   updateReservation = catchAsync(async (req, res) => {
     return OK(res, "Success", await reservationService.updateReservation(req));
   });

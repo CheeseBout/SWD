@@ -1,5 +1,6 @@
 const COUPLETHERAPIST_AVAILABILITY = require("../models/coupleTherapistAvailability.model");
 const RESERVATION = require("../models/reservation.model");
+const USER = require("../models/user.model");
 
 class ReservationRepo {
   async getAll(filter, options) {
@@ -37,7 +38,11 @@ class ReservationRepo {
   }
 
   async deleteReservation(id) {
-    return await RESERVATION.findByIdAndDelete(id);
+    return await RESERVATION.findByIdAndUpdate(
+      id,
+      { status: "canceled" },
+      { new: true }
+    );
   }
 
   async findExistingReservation(userID, therapistID, startTime, endTime) {
@@ -177,6 +182,81 @@ class ReservationRepo {
 
     await availability.save();
     console.log("Availability updated successfully");
+  }
+
+  async findUserEmail(userID) {
+    return await USER.findById(userID).select("email");
+  }
+
+  async revertAvailability(therapistID, startTime, endTime) {
+    const availability = await COUPLETHERAPIST_AVAILABILITY.findOne({
+      coupleTherapistID: therapistID,
+    });
+
+    if (!availability) {
+      console.log("Therapist availability not found for:", therapistID);
+      throw new Error("Therapist availability not found");
+    }
+
+    // Convert startTime and endTime to Date objects
+    startTime = new Date(startTime);
+    endTime = new Date(endTime);
+
+    console.log(
+      "Reverting availability for therapist:",
+      therapistID,
+      "start:",
+      startTime,
+      "end:",
+      endTime
+    );
+
+    let foundMatch = false;
+    // Find by matching start and end times exactly
+    for (const available of availability.timeAvailable) {
+      const startTimeMatches =
+        startTime.getTime() === available.startHour.getTime();
+      const endTimeMatches = endTime.getTime() === available.endHour.getTime();
+
+      console.log(
+        "Checking slot:",
+        available,
+        "startMatches:",
+        startTimeMatches,
+        "endMatches:",
+        endTimeMatches
+      );
+
+      if (startTimeMatches && endTimeMatches) {
+        console.log("Found matching slot to revert:", available);
+        available.isOccupied = false;
+        foundMatch = true;
+        break;
+      }
+    }
+
+    if (!foundMatch) {
+      console.log("No exact matching time slot found. Trying partial match...");
+
+      // If no exact match, try to find a slot that contains the time range
+      for (const available of availability.timeAvailable) {
+        if (startTime >= available.startHour && endTime <= available.endHour) {
+          console.log("Found containing slot to revert:", available);
+          available.isOccupied = false;
+          foundMatch = true;
+          break;
+        }
+      }
+    }
+
+    if (!foundMatch) {
+      console.log("No matching time slot found for reverting availability");
+    } else {
+      await availability.save();
+      console.log("Availability reverted successfully");
+    }
+
+    return foundMatch;
   }
 }
 

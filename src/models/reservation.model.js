@@ -9,7 +9,7 @@ const reservationSchema = new mongoose.Schema(
     },
     coupleTherapistID: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "CoupleTherapists",
+      ref: "CoupleTherapist",
       required: true,
     },
     title: {

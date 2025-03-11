@@ -9,10 +9,11 @@ class ReservationController {
   });
 
   getAllReservation = catchAsync(async (req, res) => {
+    const { page, limit, ...filter } = req.query;
     return OK(
       res,
       "Success",
-      await reservationService.getAllReservations(req.query)
+      await reservationService.getAllReservations(filter, { page, limit })
     );
   });
 
@@ -40,11 +41,14 @@ class ReservationController {
   });
 
   approveReservation = catchAsync(async (req, res) => {
+    const { reservationID } = req.params;
+    const { price } = req.body;
     return OK(
       res,
       "Success",
       await reservationService.approveReservation(
-        req.params.reservationID,
+        reservationID,
+        price,
         req.user
       )
     );

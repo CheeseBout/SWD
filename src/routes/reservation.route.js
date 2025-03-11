@@ -216,6 +216,16 @@ const { auth } = require("../middlewares/auth.middleware");
  *         required: true
  *         schema:
  *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               price:
+ *                 type: number
+ *                 example: 100
  *     responses:
  *       200:
  *         description: Reservation approved successfully

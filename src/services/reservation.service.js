@@ -8,7 +8,9 @@ class ReservationService {
   }
 
   async getReservationById(reservationID) {
-    const reservation = await reservationsRepo.getById(reservationID);
+    const reservation = await reservationsRepo.getReservationById(
+      reservationID
+    );
     if (!reservation) throw new APIError(404, "Reservation not found");
     return reservation;
   }
@@ -38,15 +40,40 @@ class ReservationService {
     );
     if (isDuplicate) throw new APIError(400, "Duplicate reservation");
 
-    const isOccupied = await reservationsRepo.checkOccupied(
+    // Check if the time slot is available
+    const availabilityCheck = await reservationsRepo.checkOccupied(
       data.coupleTherapistID,
       data.startTime,
       data.endTime
     );
-    if (!isOccupied) {
-      return await reservationsRepo.createReservation(data);
+
+    console.log("Availability check result:", availabilityCheck);
+
+    if (availabilityCheck.isOccupied) {
+      throw new APIError(
+        400,
+        "Therapist is not available at the requested time"
+      );
     }
-    throw new APIError(400, "Therapist is not available");
+
+    try {
+      // Create the reservation
+      const reservation = await reservationsRepo.createReservation(data);
+      console.log("Reservation created successfully:", reservation);
+
+      // Update availability status to occupied
+      await reservationsRepo.updateAvailability(
+        data.coupleTherapistID,
+        data.startTime,
+        data.endTime,
+        availabilityCheck.availableSlot
+      );
+
+      return reservation;
+    } catch (error) {
+      console.error("Error creating reservation:", error);
+      throw new APIError(500, `Error creating reservation: ${error.message}`);
+    }
   }
 
   async updateReservation(req) {
@@ -89,12 +116,13 @@ class ReservationService {
     return canceledReservation;
   }
 
-  async approveReservation(reservationID, user) {
+  async approveReservation(reservationID, price, user) {
     if (user.role !== "couple_therapist") {
       throw new APIError(403, "Permission denied");
     }
     const reservation = await reservationsRepo.approveReservation(
-      reservationID
+      reservationID,
+      price
     );
     if (!reservation) throw new APIError(404, "Reservation not found");
     return reservation;

@@ -4,7 +4,6 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { LoginScreen } from "./screens/Login/Login";
 import { HomeScreen } from "./screens/Home/Home";
 import { RegisterScreen } from "./screens/Register/Register";
-import { ChatScreen } from "./screens/Chat/Chat";
 import { ProfileScreen } from "./screens/Profile/Profile";
 import SettingScreen from "./screens/Setting/Setting";
 import { CalendarScreen } from "./screens/Calendar/Calendar";
@@ -19,6 +18,8 @@ import Toast from "react-native-toast-message";
 import TherapistDetailScreen from "./screens/TherapistDetail/TherapistDetail";
 import { ProfileDetailScreen } from "./screens/ProfileDetail/ProfileDetail";
 import { ChangePasswordScreen } from "./screens/ChangePassword/ChangePassword";
+import BlogList from "./screens/BlogList/BlogList";
+import BlogDetail from "./screens/BlogDetail/BlogDetail";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -34,8 +35,10 @@ const TabItems = () => {
             focused ? (iconName = "home") : (iconName = "home-outline");
           } else if (route.name === "Calendar") {
             focused ? (iconName = "calendar") : (iconName = "calendar-outline");
-          } else if (route.name === "Chat") {
-            focused ? (iconName = "chatbox") : (iconName = "chatbox-outline");
+          } else if (route.name === "Blog") {
+            focused
+              ? (iconName = "newspaper")
+              : (iconName = "newspaper-outline");
           } else if (route.name === "Profile") {
             focused ? (iconName = "person") : (iconName = "person-outline");
           }
@@ -45,7 +48,7 @@ const TabItems = () => {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Calendar" component={CalendarScreen} />
-      <Tab.Screen name="Chat" component={ChatScreen} />
+      <Tab.Screen name="Blog" component={BlogList} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
@@ -112,6 +115,11 @@ const NavigationScreens = () => {
           <Stack.Screen
             name="ChangePassword"
             component={ChangePasswordScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="BlogDetail"
+            component={BlogDetail}
             options={{ headerShown: false }}
           />
         </>

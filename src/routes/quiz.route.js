@@ -61,26 +61,21 @@ router.get("/", quizController.getAllQuizzes);
 
 /**
  * @swagger
- * /quiz/get-quiz:
+ * /quiz/get-quiz/{quizId}:
  *   get:
  *     summary: Get quiz by ID
  *     tags: [Quiz]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - quizId
- *             properties:
- *               quizId:
- *                 type: string
+ *     parameters:
+ *       - in: path
+ *         name: quizId
+ *         required: true
+ *         schema:
+ *           type: string
  *     responses:
  *       200:
  *         description: Quiz details
  */
-router.get("/get-quiz", quizController.getQuizById);
+router.get("/get-quiz/:quizId", quizController.getQuizById);
 
 /**
  * @swagger

@@ -8,7 +8,8 @@ class QuizController {
   });
 
   getQuizById = catchAsync(async (req, res) => {
-    return OK(res, "Success", await quizServices.getQuizById(req));
+    const { quizId } = req.params;
+    return OK(res, "Success", await quizServices.getQuizById(quizId));
   });
 
   createQuiz = catchAsync(async (req, res) => {

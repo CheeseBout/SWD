@@ -16,13 +16,15 @@ class BlogController {
   });
 
   createPost = catchAsync(async (req, res) => {
-    const { title, content, category, coverPhotoUrl, postDate } = req.body;
+    const { title, content, category, coverPhoto, postDate } = req.body;
+
+    console.log("Cover photo url ne: ", coverPhoto);
 
     const result = await blogServices.createPost(
       title,
       content,
       category,
-      coverPhotoUrl,
+      coverPhoto,
       postDate,
       req
     );

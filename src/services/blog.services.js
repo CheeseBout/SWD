@@ -39,6 +39,7 @@ const getAllBlogPosts = async () => {
             }
           }
           coverPhoto
+          stage
         }
       }
     `;
@@ -180,7 +181,7 @@ const createPost = async (
   title,
   content,
   category,
-  coverPhotoUrl,
+  coverPhoto,
   postDate,
   req
 ) => {
@@ -198,7 +199,12 @@ const createPost = async (
       ? new Date(postDate).toISOString().split("T")[0]
       : new Date().toISOString().split("T")[0];
 
-    // Simplified create mutation
+    // Process content according to what Hygraph expects
+    const processedContent = content?.html
+      ? createRichTextFromHtml(content.html)
+      : formatContent(content);
+
+    // Always use RichTextAST for Hygraph
     const mutation = gql`
       mutation CreatePost(
         $title: String!
@@ -226,14 +232,20 @@ const createPost = async (
       }
     `;
 
+    // For debugging
+    console.log(
+      "Content being sent to Hygraph:",
+      JSON.stringify(processedContent).substring(0, 100) + "..."
+    );
+
     // Create the post
     const { createPost: newPost } = await graphqlClient.request(mutation, {
       title,
       slug,
       category,
-      content,
+      content: processedContent,
       authorId,
-      coverPhoto: coverPhotoUrl || DEFAULT_COVER_PHOTO_URL,
+      coverPhoto,
       postDate: formattedPostDate,
     });
 
@@ -271,8 +283,203 @@ const createPost = async (
 
     throw new Error("Failed to create post");
   } catch (error) {
-    console.error("Create post error:", error);
-    throw new APIError(500, `Error creating post: ${error.message}`);
+    console.error("Create post error details:", error);
+
+    // Extract GraphQL error details if available
+    const graphqlError = error.response?.errors?.[0]?.message || error.message;
+    throw new APIError(500, `Error creating post: ${graphqlError}`);
+  }
+};
+
+// Updated function to convert HTML to RichTextAST format with multiple image support
+const createRichTextFromHtml = (htmlContent) => {
+  if (!htmlContent)
+    return { children: [{ type: "paragraph", children: [{ text: "" }] }] };
+
+  // Clean up HTML
+  const cleanHtml = htmlContent.replace(/&nbsp;/g, " ");
+
+  // Create AST nodes array
+  const nodes = [];
+
+  try {
+    // Function to extract all image sources
+    const extractAllImages = (html) => {
+      const imgRegex = /<img[^>]+src="([^"]+)"[^>]*>/g;
+      let match;
+      const images = [];
+
+      while ((match = imgRegex.exec(html)) !== null) {
+        images.push({
+          fullTag: match[0],
+          src: match[1],
+        });
+      }
+
+      return images;
+    };
+
+    // Split content into paragraphs and other elements
+    const paragraphs = cleanHtml
+      .split(/<\/p>\s*<p>|<\/p>|<p>/)
+      .filter((p) => p.trim());
+
+    if (paragraphs.length > 0) {
+      // Process each paragraph or text segment
+      for (let p of paragraphs) {
+        if (!p.trim()) continue;
+
+        // Check if this segment contains images
+        if (p.includes("<img")) {
+          // Get all images in this segment
+          const images = extractAllImages(p);
+
+          // Split text by images
+          let remainingText = p;
+          let lastIndex = 0;
+
+          for (const img of images) {
+            // Get text before this image
+            const imgIndex = remainingText.indexOf(img.fullTag, lastIndex);
+            if (imgIndex > lastIndex) {
+              const textBefore = remainingText
+                .substring(lastIndex, imgIndex)
+                .trim();
+              if (textBefore) {
+                nodes.push({
+                  type: "paragraph",
+                  children: [{ text: textBefore.replace(/<[^>]*>/g, "") }],
+                });
+              }
+            }
+
+            // Add the image
+            nodes.push({
+              type: "image",
+              src: img.src,
+              alt: "Image",
+              title: "Image",
+              children: [{ text: "" }],
+            });
+
+            // Update for next iteration
+            lastIndex = imgIndex + img.fullTag.length;
+          }
+
+          // Get any remaining text after the last image
+          if (lastIndex < remainingText.length) {
+            const textAfter = remainingText.substring(lastIndex).trim();
+            if (textAfter) {
+              nodes.push({
+                type: "paragraph",
+                children: [{ text: textAfter.replace(/<[^>]*>/g, "") }],
+              });
+            }
+          }
+        } else {
+          // Regular paragraph without images
+          nodes.push({
+            type: "paragraph",
+            children: [{ text: p.replace(/<[^>]*>/g, "").trim() }],
+          });
+        }
+      }
+    } else {
+      // Handle case where there are no proper paragraphs
+      const images = extractAllImages(cleanHtml);
+
+      if (images.length > 0) {
+        // Split text by images for non-paragraph content
+        let remainingText = cleanHtml;
+        let lastIndex = 0;
+
+        for (const img of images) {
+          // Get text before this image
+          const imgIndex = remainingText.indexOf(img.fullTag, lastIndex);
+          if (imgIndex > lastIndex) {
+            const textBefore = remainingText
+              .substring(lastIndex, imgIndex)
+              .trim();
+            if (textBefore) {
+              nodes.push({
+                type: "paragraph",
+                children: [{ text: textBefore.replace(/<[^>]*>/g, "") }],
+              });
+            }
+          }
+
+          // Add the image
+          nodes.push({
+            type: "image",
+            src: img.src,
+            alt: "Image",
+            title: "Image",
+            children: [{ text: "" }],
+          });
+
+          // Update for next iteration
+          lastIndex = imgIndex + img.fullTag.length;
+        }
+
+        // Get any remaining text after the last image
+        if (lastIndex < remainingText.length) {
+          const textAfter = remainingText.substring(lastIndex).trim();
+          if (textAfter) {
+            nodes.push({
+              type: "paragraph",
+              children: [{ text: textAfter.replace(/<[^>]*>/g, "") }],
+            });
+          }
+        }
+      } else {
+        // Plain text content without images
+        nodes.push({
+          type: "paragraph",
+          children: [{ text: cleanHtml.replace(/<[^>]*>/g, "").trim() }],
+        });
+      }
+    }
+
+    // Handle if we couldn't parse anything
+    if (nodes.length === 0) {
+      nodes.push({
+        type: "paragraph",
+        children: [
+          {
+            text:
+              cleanHtml.replace(/<[^>]*>/g, "").trim() ||
+              "Content could not be processed",
+          },
+        ],
+      });
+    }
+
+    // Log for debugging
+    console.log(
+      `Processed ${
+        nodes.filter((n) => n.type === "image").length
+      } images from HTML`
+    );
+
+    return {
+      children: nodes,
+    };
+  } catch (error) {
+    console.error("Error processing HTML content:", error);
+
+    // Return fallback content on error
+    return {
+      children: [
+        {
+          type: "paragraph",
+          children: [
+            {
+              text: "There was an error processing the content with images.",
+            },
+          ],
+        },
+      ],
+    };
   }
 };
 
@@ -284,11 +491,6 @@ const updatePost = async (postId, updateData, req) => {
   try {
     const { gql } = await import("graphql-request");
     const graphqlClient = await initializeClient();
-
-    // Format content if it exists in updateData
-    if (updateData.content) {
-      updateData.content = formatContent(updateData.content);
-    }
 
     // Create new slug if title is updated
     if (updateData.title) {
@@ -302,6 +504,22 @@ const updatePost = async (postId, updateData, req) => {
         .split("T")[0];
     }
 
+    // Process content for update - handle HTML content properly
+    if (updateData.content) {
+      // Check if we're dealing with HTML content from frontend
+      if (updateData.content.html) {
+        updateData.content = createRichTextFromHtml(updateData.content.html);
+        console.log(
+          "Processed HTML content for update:",
+          JSON.stringify(updateData.content).substring(0, 100) + "..."
+        );
+      } else {
+        // Use formatContent for other content types
+        updateData.content = formatContent(updateData.content);
+      }
+    }
+
+    // Always use RichTextAST for consistency
     const updatePostMutation = gql`
       mutation UpdatePost(
         $postId: ID!
@@ -351,10 +569,9 @@ const updatePost = async (postId, updateData, req) => {
 
     return response;
   } catch (error) {
-    throw new APIError(
-      500,
-      "Error updating post: " + (error.message || "Unknown error")
-    );
+    console.error("Update post error details:", error);
+    const graphqlError = error.response?.errors?.[0]?.message || error.message;
+    throw new APIError(500, `Error updating post: ${graphqlError}`);
   }
 };
 
@@ -400,12 +617,27 @@ const deletePost = async (postId, req) => {
   }
 };
 
-// Add helper function to format content
+// Updated helper function to format content
 const formatContent = (content) => {
-  if (typeof content === "string") {
+  // Handle HTML content format
+  if (content?.html) {
+    return createRichTextFromHtml(content.html);
+  } else if (typeof content === "string") {
     try {
       return JSON.parse(content);
     } catch (e) {
+      // If it looks like HTML, create a simple text node
+      if (content.includes("<") && content.includes(">")) {
+        return {
+          children: [
+            {
+              type: "paragraph",
+              children: [{ text: content.replace(/<[^>]*>/g, "") }],
+            },
+          ],
+        };
+      }
+
       return {
         children: [
           {

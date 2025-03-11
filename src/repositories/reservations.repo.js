@@ -55,7 +55,7 @@ class ReservationRepo {
   }
 
   async findReservationByCode(reservationID) {
-    return await RESERVATION.findOne({ _id: reservationID });
+    return await RESERVATION.findById(reservationID);
   }
 
   async approveReservation(reservationID, price) {

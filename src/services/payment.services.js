@@ -15,6 +15,8 @@ const mongoose = require("mongoose");
 const PAYMENT = require("../models/payment.model");
 const TRANSACTION = require("../models/transaction.model");
 const moment = require("moment");
+const reservationsRepo = require("../repositories/reservations.repo");
+const APIError = require("../utils/ApiError");
 
 const vnpay = new VNPay({
   tmnCode: config.VNPay.vnp_TmnCode,
@@ -33,6 +35,19 @@ class PaymentService {
       // Validate inputs
       if (!mongoose.Types.ObjectId.isValid(reservationID)) {
         throw new Error("Invalid reservation ID format");
+      }
+
+      const existingReservation =
+        await reservationsRepo.findExistingReservation(reservationID);
+      if (!existingReservation) {
+        throw new Error("Reservation not found");
+      }
+
+      if (existingReservation.status === "PENDING") {
+        throw new APIError(
+          400,
+          "Reservation is not confirmed by couple therapist yet"
+        );
       }
 
       // Find or create payment record

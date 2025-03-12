@@ -64,6 +64,14 @@ class ReservationService {
       data.coupleTherapistID
     );
 
+    // Format date strings consistently to avoid issues
+    try {
+      data.startTime = new Date(data.startTime).toISOString();
+      data.endTime = new Date(data.endTime).toISOString();
+    } catch (error) {
+      throw new APIError(400, "Invalid date format: " + error.message);
+    }
+
     const isDuplicate = await reservationsRepo.checkDuplicate(
       data.coupleTherapistID,
       data.startTime,
@@ -92,12 +100,13 @@ class ReservationService {
       const reservation = await reservationsRepo.createReservation(data);
       console.log("Reservation created successfully:", reservation);
 
-      // Update availability status to occupied
+      // Update availability status to occupied - pass both slot and record
       await reservationsRepo.updateAvailability(
         data.coupleTherapistID,
         data.startTime,
         data.endTime,
-        availabilityCheck.availableSlot
+        availabilityCheck.availableSlot,
+        availabilityCheck.availabilityRecord
       );
 
       return reservation;

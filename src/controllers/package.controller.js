@@ -28,9 +28,10 @@ class PackageController {
     return OK(res, "Packages retrieved successfully", result);
   });
 
-  getPackageByID = catchAsync(async (req, res) => {
-    const result = await packageService.getPackageByID(req.params.packageID);
-    return OK(res, "Package retrieved successfully", result);
+  getPackageByTherapist = catchAsync(async (req, res) => {
+    const { therapistID } = req.params;
+    const result = await packageService.getPackagesByTherapist(therapistID);
+    return OK(res, "Therapist packages retrieved successfully", result);
   });
 
   updatePackage = catchAsync(async (req, res) => {
@@ -50,7 +51,6 @@ class PackageController {
     return OK(res, "Package deleted successfully", result);
   });
 
-  // Admin only route for testing
   hardDeletePackage = catchAsync(async (req, res) => {
     const result = await packageService.hardDeletePackage(
       req.params.packageID,

@@ -122,11 +122,12 @@ class ReservationRepo {
   }
 
   async checkOccupied(therapistID, startTime, endTime) {
-    const availability = await COUPLETHERAPIST_AVAILABILITY.findOne({
+    // Instead of finding just one availability record, get all records for this therapist
+    const availabilityRecords = await COUPLETHERAPIST_AVAILABILITY.find({
       coupleTherapistID: therapistID,
     });
 
-    if (!availability) {
+    if (!availabilityRecords || availabilityRecords.length === 0) {
       throw new Error("Therapist availability not found");
     }
 
@@ -134,53 +135,59 @@ class ReservationRepo {
     startTime = new Date(startTime);
     endTime = new Date(endTime);
 
-    console.log("Availability", availability);
+    console.log(
+      `Found ${availabilityRecords.length} availability records for therapist ${therapistID}`
+    );
     console.log("Input start time:", startTime);
     console.log("Input end time:", endTime);
 
-    // Check if the time exactly matches any of the timeAvailable slots and is not occupied
-    let isAvailable = false;
-    let availableSlot = null;
+    // Loop through all availability records to find a matching slot
+    for (const availability of availabilityRecords) {
+      console.log(`Checking availability record: ${availability._id}`);
 
-    for (const available of availability.timeAvailable) {
-      console.log("Checking available slot:", available);
-      console.log("Available start hour:", available.startHour);
-      console.log("Available end hour:", available.endHour);
+      for (const available of availability.timeAvailable) {
+        console.log("Checking available slot:", available);
+        console.log("Available start hour:", available.startHour);
+        console.log("Available end hour:", available.endHour);
 
-      // Check if startTime and endTime exactly match the timeAvailable slot
-      const startTimeMatches =
-        startTime.getTime() === available.startHour.getTime();
-      const endTimeMatches = endTime.getTime() === available.endHour.getTime();
+        // Check if startTime and endTime exactly match the timeAvailable slot
+        const startTimeMatches =
+          startTime.getTime() === available.startHour.getTime();
+        const endTimeMatches =
+          endTime.getTime() === available.endHour.getTime();
 
-      console.log("Start time matches:", startTimeMatches);
-      console.log("End time matches:", endTimeMatches);
+        console.log("Start time matches:", startTimeMatches);
+        console.log("End time matches:", endTimeMatches);
 
-      if (startTimeMatches && endTimeMatches && !available.isOccupied) {
-        console.log("Found exact match and slot is not occupied!");
-        isAvailable = true;
-        availableSlot = available;
-        break;
+        if (startTimeMatches && endTimeMatches && !available.isOccupied) {
+          console.log("Found exact match and slot is not occupied!");
+          return {
+            isOccupied: false,
+            availableSlot: available,
+            availabilityRecord: availability, // Return the parent record too
+          };
+        }
       }
     }
 
-    if (isAvailable) {
-      console.log("Time slot is available and matches exactly");
-      return { isOccupied: false, availableSlot };
-    } else {
-      console.log("Time slot is not available or doesn't match exactly");
-      return { isOccupied: true, availableSlot: null };
-    }
+    // No matching available slot found
+    console.log("No matching available time slot found across all records");
+    return { isOccupied: true, availableSlot: null };
   }
 
   async updateAvailability(
     therapistID,
     startTime,
     endTime,
-    availableSlot = null
+    availableSlot = null,
+    availabilityRecord = null
   ) {
-    const availability = await COUPLETHERAPIST_AVAILABILITY.findOne({
-      coupleTherapistID: therapistID,
-    });
+    // If an availability record was provided, use that directly
+    const availability =
+      availabilityRecord ||
+      (await COUPLETHERAPIST_AVAILABILITY.findOne({
+        coupleTherapistID: therapistID,
+      }));
 
     if (!availability) {
       throw new Error("Therapist availability not found");
@@ -194,7 +201,9 @@ class ReservationRepo {
       "Updating availability for slot with start:",
       startTime,
       "end:",
-      endTime
+      endTime,
+      "in record:",
+      availability._id
     );
 
     if (availableSlot) {

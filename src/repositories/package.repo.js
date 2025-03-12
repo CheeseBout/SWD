@@ -17,7 +17,6 @@ class PackageRepository {
           select: "fullname photoURL email",
         },
       });
-      // Removed .sort({ createdAt: -1 }) that was causing the error
     } catch (error) {
       console.error("Error in findAll:", error);
       throw error;
@@ -49,12 +48,16 @@ class PackageRepository {
     }
   }
 
-  async findByTherapist(therapistId) {
+  async findByTherapist(therapistId, includeInactive = false) {
     try {
-      return await PACKAGE.find({
-        coupleTherapistID: therapistId,
-        isActive: true,
-      }).populate({
+      const filter = { coupleTherapistID: therapistId };
+
+      // Only include active packages unless specifically requested to include inactive ones
+      if (!includeInactive) {
+        filter.isActive = true;
+      }
+
+      return await PACKAGE.find(filter).populate({
         path: "coupleTherapistID",
         select: "userID description",
         populate: {
@@ -62,7 +65,6 @@ class PackageRepository {
           select: "fullname photoURL email",
         },
       });
-      // Removed .sort({ createdAt: -1 }) that was causing the error
     } catch (error) {
       console.error("Error in findByTherapist:", error);
       throw error;

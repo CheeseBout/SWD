@@ -7,7 +7,7 @@ const { auth } = require("../middlewares/auth.middleware");
  * @swagger
  * tags:
  *   name: Packages
- *   description: Counseling package management
+ *   description: Counseling package management (admin only for modifications)
  */
 
 /**
@@ -96,7 +96,7 @@ const { auth } = require("../middlewares/auth.middleware");
  * /package/create-package:
  *   post:
  *     summary: Create a new package
- *     description: Create a new package (admin or couple therapist)
+ *     description: Create a new package (admin only)
  *     tags: [Packages]
  *     security:
  *       - bearerAuth: []
@@ -157,7 +157,7 @@ const { auth } = require("../middlewares/auth.middleware");
  *       401:
  *         description: Unauthorized - Missing or invalid token
  *       403:
- *         description: Forbidden - User doesn't have permission
+ *         description: Forbidden - Only admin can create packages
  */
 
 /**
@@ -165,7 +165,7 @@ const { auth } = require("../middlewares/auth.middleware");
  * /package/get-all-package:
  *   get:
  *     summary: Get all packages
- *     description: Retrieve a list of all available packages or filter by therapist
+ *     description: Retrieve a list of all available packages or filter by therapist (accessible to all users)
  *     tags: [Packages]
  *     parameters:
  *       - in: query
@@ -200,21 +200,21 @@ const { auth } = require("../middlewares/auth.middleware");
 
 /**
  * @swagger
- * /package/get-package/{packageID}:
+ * /package/get-package/{therapistID}:
  *   get:
- *     summary: Get package by ID
- *     description: Retrieve detailed information for a specific package
+ *     summary: Get all packages for a therapist
+ *     description: Retrieve all packages associated with a specific couple therapist (accessible to all users)
  *     tags: [Packages]
  *     parameters:
  *       - in: path
- *         name: packageID
+ *         name: therapistID
  *         required: true
  *         schema:
  *           type: string
- *         description: Package ID
+ *         description: Couple Therapist ID
  *     responses:
  *       200:
- *         description: Package details
+ *         description: List of therapist's packages
  *         content:
  *           application/json:
  *             schema:
@@ -225,13 +225,15 @@ const { auth } = require("../middlewares/auth.middleware");
  *                   example: success
  *                 message:
  *                   type: string
- *                   example: Package retrieved successfully
+ *                   example: Therapist packages retrieved successfully
  *                 data:
- *                   $ref: '#/components/schemas/Package'
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Package'
  *       400:
- *         description: Invalid package ID
+ *         description: Invalid therapist ID
  *       404:
- *         description: Package not found
+ *         description: Therapist not found or has no packages
  */
 
 /**
@@ -239,7 +241,7 @@ const { auth } = require("../middlewares/auth.middleware");
  * /package/update-package/{packageID}:
  *   put:
  *     summary: Update a package
- *     description: Update details for an existing package (admin or owning therapist)
+ *     description: Update details for an existing package (admin only)
  *     tags: [Packages]
  *     security:
  *       - bearerAuth: []
@@ -303,7 +305,7 @@ const { auth } = require("../middlewares/auth.middleware");
  *       401:
  *         description: Unauthorized - Missing or invalid token
  *       403:
- *         description: Forbidden - User doesn't have permission
+ *         description: Forbidden - Only admin can update packages
  *       404:
  *         description: Package not found
  */
@@ -313,7 +315,7 @@ const { auth } = require("../middlewares/auth.middleware");
  * /package/delete-package/{packageID}:
  *   put:
  *     summary: Soft delete a package
- *     description: Mark a package as inactive (admin or owning therapist)
+ *     description: Mark a package as inactive (admin only)
  *     tags: [Packages]
  *     security:
  *       - bearerAuth: []
@@ -345,7 +347,7 @@ const { auth } = require("../middlewares/auth.middleware");
  *       401:
  *         description: Unauthorized - Missing or invalid token
  *       403:
- *         description: Forbidden - User doesn't have permission
+ *         description: Forbidden - Only admin can delete packages
  *       404:
  *         description: Package not found
  */
@@ -397,17 +399,47 @@ const { auth } = require("../middlewares/auth.middleware");
  *         description: Package not found
  */
 
+// Admin middleware for protected routes
+const adminOnly = (req, res, next) => {
+  if (!req.user || req.user.role !== "admin") {
+    return res.status(403).json({
+      status: "error",
+      message: "Access denied - admin only",
+    });
+  }
+  next();
+};
+
 // Standard CRUD routes
-router.post("/create-package", auth, packageController.createPackage);
+router.post(
+  "/create-package",
+  auth,
+  adminOnly,
+  packageController.createPackage
+);
 router.get("/get-all-package", packageController.getAllPackage);
-router.get("/get-package/:packageID", packageController.getPackageByID);
-router.put("/update-package/:packageID", auth, packageController.updatePackage);
-router.put("/delete-package/:packageID", auth, packageController.deletePackage);
+router.get(
+  "/get-package/:therapistID",
+  packageController.getPackageByTherapist
+);
+router.put(
+  "/update-package/:packageID",
+  auth,
+  adminOnly,
+  packageController.updatePackage
+);
+router.put(
+  "/delete-package/:packageID",
+  auth,
+  adminOnly,
+  packageController.deletePackage
+);
 
 // Admin-only route
 router.delete(
   "/hard-delete-package/:packageID",
   auth,
+  adminOnly,
   packageController.hardDeletePackage
 );
 

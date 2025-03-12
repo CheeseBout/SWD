@@ -1,4 +1,3 @@
-const COUPLETHERAPIST = require("../models/coupleTherapist.model");
 const PACKAGE = require("../models/package.model");
 const packageRepo = require("../repositories/package.repo");
 const APIError = require("../utils/ApiError");
@@ -6,22 +5,12 @@ const mongoose = require("mongoose");
 
 class PackageServices {
   async createPackage(data, user) {
-    // Check user role permission
-    if (user.role !== "admin" && user.role !== "couple_therapist") {
-      throw new APIError(403, "Permission denied");
-    }
-
-    const therapist = await COUPLETHERAPIST.findOne({ userID: user._id });
-
-    // For couple_therapist, ensure they're creating a package for themselves
-    if (user.role === "couple_therapist") {
-      if (!data.coupleTherapistID) {
-        data.coupleTherapistID = user.coupleTherapistID;
-      } else if (
-        data.coupleTherapistID.toString() !== therapist._id.toString()
-      ) {
-        throw new APIError(403, "You can only create packages for yourself");
-      }
+    // Check user role permission - ONLY ADMIN
+    if (user.role !== "admin") {
+      throw new APIError(
+        403,
+        "Permission denied - only admin can create packages"
+      );
     }
 
     // Validate required fields
@@ -30,7 +19,9 @@ class PackageServices {
       !data.description ||
       !data.price ||
       !data.times ||
-      !data.discount
+      !data.discount ||
+      !data.coupleTherapistID ||
+      !data.comissionFee
     ) {
       throw new APIError(400, "Missing required fields");
     }
@@ -52,10 +43,22 @@ class PackageServices {
   async getPackagesByTherapist(therapistId) {
     // Validate the therapistId
     if (!mongoose.Types.ObjectId.isValid(therapistId)) {
-      throw new APIError(400, "Invalid therapist ID");
+      throw new APIError(400, "Invalid therapist ID format");
     }
 
-    return await packageRepo.findByTherapist(therapistId);
+    // Check if therapist exists
+    const therapist = await mongoose
+      .model("CoupleTherapist")
+      .findById(therapistId);
+    if (!therapist) {
+      throw new APIError(404, "Therapist not found");
+    }
+
+    // Get all packages for this therapist
+    const packages = await packageRepo.findByTherapist(therapistId);
+
+    // Return even if empty array (no error for empty results)
+    return packages;
   }
 
   async getPackageByID(packageID) {
@@ -71,9 +74,12 @@ class PackageServices {
   }
 
   async updatePackage(packageID, data, user) {
-    // Check user role permission
-    if (user.role !== "admin" && user.role !== "couple_therapist") {
-      throw new APIError(403, "Permission denied");
+    // Check user role permission - ONLY ADMIN
+    if (user.role !== "admin") {
+      throw new APIError(
+        403,
+        "Permission denied - only admin can update packages"
+      );
     }
 
     // Validate packageID
@@ -85,17 +91,6 @@ class PackageServices {
     const existingPackage = await packageRepo.findById(packageID);
     if (!existingPackage) {
       throw new APIError(404, "Package not found");
-    }
-
-    const therapist = await COUPLETHERAPIST.findOne({ userID: user._id });
-
-    // For couple_therapist, ensure they're updating their own package
-    if (
-      user.role === "couple_therapist" &&
-      existingPackage.coupleTherapistID._id.toString() !==
-        therapist._id.toString()
-    ) {
-      throw new APIError(403, "You can only update your own packages");
     }
 
     // If name is changed, check for duplicates
@@ -111,9 +106,12 @@ class PackageServices {
   }
 
   async deletePackage(packageID, user) {
-    // Check user role permission
-    if (user.role !== "admin" && user.role !== "couple_therapist") {
-      throw new APIError(403, "Permission denied");
+    // Check user role permission - ONLY ADMIN
+    if (user.role !== "admin") {
+      throw new APIError(
+        403,
+        "Permission denied - only admin can delete packages"
+      );
     }
 
     // Validate packageID
@@ -125,17 +123,6 @@ class PackageServices {
     const existingPackage = await packageRepo.findById(packageID);
     if (!existingPackage) {
       throw new APIError(404, "Package not found");
-    }
-
-    const therapist = await COUPLETHERAPIST.findOne({ userID: user._id });
-
-    // For couple_therapist, ensure they're deleting their own package
-    if (
-      user.role === "couple_therapist" &&
-      existingPackage.coupleTherapistID._id.toString() !==
-        therapist._id.toString()
-    ) {
-      throw new APIError(403, "You can only delete your own packages");
     }
 
     // Soft delete the package

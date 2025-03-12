@@ -34,10 +34,20 @@ class CoupleTherapistController {
 
   getAvailabilityById = catchAsync(async (req, res) => {
     const { id } = req.params;
+
+    // Validate the therapist ID
+    if (!id || !id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid therapist ID format",
+      });
+    }
+
+    const availability = await coupleTherapistServices.getAvailabilityById(id);
     return OK(
       res,
-      "Success",
-      await coupleTherapistServices.getAvailabilityById(id)
+      "Therapist availability retrieved successfully",
+      availability
     );
   });
 

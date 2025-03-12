@@ -33,10 +33,33 @@ class CoupleTherapistServices {
     return data;
   }
 
-  async getAvailabilityById(id) {
-    return await COUPLETHERAPIST_AVAILABILITY.findOne({
-      coupleTherapistID: id,
-    }).select("coupleTherapistID timeAvailable notTimeAvailable");
+  async getAvailabilityById(therapistId) {
+    const availability = await therapistRepo.getAvailabilityById(therapistId);
+
+    if (!availability || availability.length === 0) {
+      throw new APIError(404, "No availability found for this therapist");
+    }
+
+    // Get therapist details to include in response
+    const therapist = await COUPLETHERAPIST.findById(therapistId).populate(
+      "userID",
+      "fullname photoURL email"
+    );
+
+    if (!therapist) {
+      throw new APIError(404, "Therapist not found");
+    }
+
+    // Format the response with therapist details and availability
+    return {
+      therapist: {
+        _id: therapist._id,
+        userInfo: therapist.userID,
+        description: therapist.description,
+        specialization: therapist.specialization,
+      },
+      availability: availability,
+    };
   }
 
   async createAvailability(coupleTherapistId, timeAvailable, notTimeAvailable) {

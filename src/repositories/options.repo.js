@@ -101,6 +101,10 @@ class OptionsRepository {
       }
     );
   }
+
+  async findOptionsByQuestionId(questionId) {
+    return await OPTIONS.findOne({ questionID: questionId });
+  }
 }
 
 module.exports = new OptionsRepository();

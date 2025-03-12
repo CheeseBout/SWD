@@ -87,10 +87,13 @@ class TherapistRepo {
     );
   }
 
-  async getAvailabilityById(id) {
-    return await COUPLETHERAPIST_AVAILABILITY.findOne({
-      coupleTherapistID: id,
-    }).select("coupleTherapistID timeAvailable notTimeAvailable");
+  async getAvailabilityById(therapistId) {
+    // Modified to find all availability records for a therapist
+    return await COUPLETHERAPIST_AVAILABILITY.find({
+      coupleTherapistID: therapistId,
+    }).select(
+      "coupleTherapistID timeAvailable notTimeAvailable createdAt updatedAt"
+    );
   }
 
   async createAvailability(coupleTherapistId, timeAvailable, notTimeAvailable) {

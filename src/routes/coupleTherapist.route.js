@@ -170,7 +170,7 @@ router.post(
  * @swagger
  * /coupletherapist/get-availability/{id}:
  *   get:
- *     summary: Get therapist availability by ID
+ *     summary: Get all availability slots for a therapist
  *     tags: [Couple Therapist]
  *     parameters:
  *       - in: path
@@ -178,15 +178,85 @@ router.post(
  *         required: true
  *         schema:
  *           type: string
+ *         description: Couple therapist ID
  *     responses:
  *       200:
  *         description: Therapist availability details
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Availability'
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 message:
+ *                   type: string
+ *                   example: "Therapist availability retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     therapist:
+ *                       type: object
+ *                       properties:
+ *                         _id:
+ *                           type: string
+ *                         userInfo:
+ *                           type: object
+ *                           properties:
+ *                             _id:
+ *                               type: string
+ *                             fullname:
+ *                               type: string
+ *                             photoURL:
+ *                               type: string
+ *                             email:
+ *                               type: string
+ *                         description:
+ *                           type: string
+ *                         specialization:
+ *                           type: string
+ *                     availability:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           _id:
+ *                             type: string
+ *                           coupleTherapistID:
+ *                             type: string
+ *                           timeAvailable:
+ *                             type: array
+ *                             items:
+ *                               type: object
+ *                               properties:
+ *                                 startHour:
+ *                                   type: string
+ *                                   format: date-time
+ *                                 endHour:
+ *                                   type: string
+ *                                   format: date-time
+ *                           notTimeAvailable:
+ *                             type: array
+ *                             items:
+ *                               type: object
+ *                               properties:
+ *                                 startHour:
+ *                                   type: string
+ *                                   format: date-time
+ *                                 endHour:
+ *                                   type: string
+ *                                   format: date-time
+ *                           createdAt:
+ *                             type: string
+ *                             format: date-time
+ *                           updatedAt:
+ *                             type: string
+ *                             format: date-time
+ *       400:
+ *         description: Invalid therapist ID format
  *       404:
- *         description: Availability not found
+ *         description: No availability found or therapist not found
  */
 router.get(
   "/get-availability/:id",

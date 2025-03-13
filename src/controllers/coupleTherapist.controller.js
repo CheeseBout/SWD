@@ -20,6 +20,15 @@ class CoupleTherapistController {
     );
   });
 
+  getCoupleTherapistIdByUserId = catchAsync(async (req, res) => {
+    const { userId } = req.params;
+    return OK(
+      res,
+      "Success",
+      await coupleTherapistServices.getCoupleTherapistIdByUserId(userId)
+    );
+  });
+
   createAvailability = catchAsync(async (req, res) => {
     const { coupleTherapistId, timeAvailable, notTimeAvailable } = req.body;
 

@@ -140,6 +140,10 @@ class TherapistRepo {
       "certificates.certificateID": certificateId,
     });
   }
+
+  async getCoupleTherapistIdByUserId(userId) {
+    return await COUPLETHERAPIST.findOne({ userID: userId });
+  }
 }
 
 module.exports = new TherapistRepo();

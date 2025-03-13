@@ -24,6 +24,18 @@ class CoupleTherapistServices {
     }
   }
 
+  async getCoupleTherapistIdByUserId(userId) {
+    const coupleTherapist = await therapistRepo.getCoupleTherapistIdByUserId(
+      userId
+    );
+
+    if (!coupleTherapist) {
+      throw new APIError(404, "Couple therapist not found");
+    }
+
+    return coupleTherapist;
+  }
+
   async getCoupleTherapistById(coupleTherapistId) {
     const data = await COUPLETHERAPIST.findOne({ _id: coupleTherapistId });
 

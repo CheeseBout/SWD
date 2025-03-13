@@ -372,6 +372,12 @@ class AuthService {
       throw new APIError(400, "User not found");
     }
 
+    //check if new password is the same as old password
+    const isSamePassword = await user.matchPassword(newPassword);
+    if (isSamePassword) {
+      throw new APIError(400, "New password is the same as the old password");
+    }
+
     const isPasswordMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isPasswordMatch) {
       throw new APIError(400, "Old password is incorrect");

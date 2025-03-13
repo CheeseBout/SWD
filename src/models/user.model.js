@@ -79,6 +79,20 @@ const userSchema = new mongoose.Schema(
   }
 );
 
+userSchema.methods.matchPassword = async function (enteredPassword) {
+  try {
+    // Thêm logging để debug
+    console.log("Entered password:", enteredPassword);
+    console.log("Stored hashed password:", this.password);
+
+    // So sánh trực tiếp với bcrypt
+    return await bcrypt.compare(enteredPassword, this.password);
+  } catch (error) {
+    console.error("Password comparison error:", error);
+    return false;
+  }
+};
+
 // Hash password before saving
 userSchema.pre("save", async function (next) {
   // Nếu password không thay đổi hoặc là Google user, bỏ qua validation
@@ -91,6 +105,7 @@ userSchema.pre("save", async function (next) {
   }
   next();
 });
+
 
 const USER = mongoose.model("Users", userSchema);
 module.exports = USER;

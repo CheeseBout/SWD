@@ -21,12 +21,11 @@ class CoupleTherapistController {
   });
 
   createAvailability = catchAsync(async (req, res) => {
-    const { coupleTherapistId, timeAvailable, notTimeAvailable } = req.body;
+    const { coupleTherapistId, timeAvailable } = req.body;
 
     const result = await coupleTherapistServices.createAvailability(
       coupleTherapistId,
-      timeAvailable,
-      notTimeAvailable
+      timeAvailable
     );
 
     return OK(res, "Availability created successfully", result);
@@ -52,14 +51,13 @@ class CoupleTherapistController {
   });
 
   updateAvailability = catchAsync(async (req, res) => {
-    const { userID, timeAvailable, notTimeAvailable } = req.body;
+    const { userID, timeAvailable } = req.body;
     const { availabilityID } = req.params;
 
     const result = await coupleTherapistServices.updateAvailability(
       availabilityID,
       userID,
-      timeAvailable,
-      notTimeAvailable
+      timeAvailable
     );
 
     return OK(res, "Success", result);

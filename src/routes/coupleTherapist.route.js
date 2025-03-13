@@ -134,30 +134,50 @@ router.get(
  *           schema:
  *             type: object
  *             required:
- *               - date
- *               - timeSlots
+ *               - coupleTherapistId
+ *               - timeAvailable
  *             properties:
- *               date:
+ *               coupleTherapistId:
  *                 type: string
- *                 format: date
- *               timeSlots:
+ *                 description: ID of the couple therapist
+ *               timeAvailable:
  *                 type: array
  *                 items:
  *                   type: object
  *                   properties:
- *                     startTime:
+ *                     startHour:
  *                       type: string
- *                       format: time
- *                     endTime:
+ *                       format: date-time
+ *                       example: "2025-03-15T09:00:00.000Z"
+ *                     endHour:
  *                       type: string
- *                       format: time
+ *                       format: date-time
+ *                       example: "2025-03-15T10:00:00.000Z"
+ *                     isOccupied:
+ *                       type: boolean
+ *                       default: false
  *     responses:
- *       201:
- *         description: Availability created
+ *       200:
+ *         description: Availability created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 message:
+ *                   type: string
+ *                   example: Availability created successfully
+ *                 data:
+ *                   type: object
  *       401:
  *         description: Unauthorized
  *       403:
  *         description: Not a certified therapist
+ *       400:
+ *         description: Invalid input or duplicate availability
  */
 router.post(
   "/create-availability",
@@ -236,17 +256,9 @@ router.post(
  *                                 endHour:
  *                                   type: string
  *                                   format: date-time
- *                           notTimeAvailable:
- *                             type: array
- *                             items:
- *                               type: object
- *                               properties:
- *                                 startHour:
- *                                   type: string
- *                                   format: date-time
- *                                 endHour:
- *                                   type: string
- *                                   format: date-time
+ *                                 isOccupied:
+ *                                   type: boolean
+ *                                   default: false
  *                           createdAt:
  *                             type: string
  *                             format: date-time
@@ -282,7 +294,26 @@ router.get(
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/Availability'
+ *             type: object
+ *             required:
+ *               - coupleTherapistId
+ *               - timeAvailable
+ *             properties:
+ *               coupleTherapistId:
+ *                 type: string
+ *               timeAvailable:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     startHour:
+ *                       type: string
+ *                       format: date-time
+ *                     endHour:
+ *                       type: string
+ *                       format: date-time
+ *                     isOccupied:
+ *                       type: boolean
  *     responses:
  *       200:
  *         description: Availability updated
@@ -290,6 +321,8 @@ router.get(
  *         description: Unauthorized
  *       403:
  *         description: Not a certified therapist
+ *       404:
+ *         description: Availability record not found
  */
 router.put(
   "/update-availability/:availabilityID",

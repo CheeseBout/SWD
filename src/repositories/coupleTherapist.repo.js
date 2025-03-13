@@ -88,34 +88,27 @@ class TherapistRepo {
   }
 
   async getAvailabilityById(therapistId) {
-    // Modified to find all availability records for a therapist
+    // Modified to find all availability records for a therapist and remove notTimeAvailable
     return await COUPLETHERAPIST_AVAILABILITY.find({
       coupleTherapistID: therapistId,
-    }).select(
-      "coupleTherapistID timeAvailable notTimeAvailable createdAt updatedAt"
-    );
+    }).select("coupleTherapistID timeAvailable createdAt updatedAt");
   }
 
-  async createAvailability(coupleTherapistId, timeAvailable, notTimeAvailable) {
+  async createAvailability(coupleTherapistId, timeAvailable) {
+    // Remove notTimeAvailable parameter
     const availability = await COUPLETHERAPIST_AVAILABILITY.create({
       coupleTherapistID: coupleTherapistId,
       timeAvailable,
-      notTimeAvailable,
     });
     return await availability.save();
   }
 
-  async findExistingAvailability(
-    coupleTherapistId,
-    timeAvailable,
-    notTimeAvailable
-  ) {
+  async findExistingAvailability(coupleTherapistId, timeAvailable) {
+    // Remove notTimeAvailable checks
     return await COUPLETHERAPIST_AVAILABILITY.findOne({
       coupleTherapistID: coupleTherapistId,
       "timeAvailable.startHour": timeAvailable[0].startHour,
       "timeAvailable.endHour": timeAvailable[0].endHour,
-      "notTimeAvailable.startHour": notTimeAvailable[0].startHour,
-      "notTimeAvailable.endHour": notTimeAvailable[0].endHour,
     });
   }
 

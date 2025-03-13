@@ -62,15 +62,14 @@ class CoupleTherapistServices {
     };
   }
 
-  async createAvailability(coupleTherapistId, timeAvailable, notTimeAvailable) {
+  async createAvailability(coupleTherapistId, timeAvailable) {
     // Validate time slots
-    this.validateTimeSlots(timeAvailable, notTimeAvailable);
+    this.validateTimeSlots(timeAvailable);
 
     // Check for existing availability
     const isDuplicate = await therapistRepo.findExistingAvailability(
       coupleTherapistId,
-      timeAvailable,
-      notTimeAvailable
+      timeAvailable
     );
 
     if (isDuplicate) {
@@ -82,17 +81,12 @@ class CoupleTherapistServices {
 
     return await therapistRepo.createAvailability(
       coupleTherapistId,
-      timeAvailable,
-      notTimeAvailable
+      timeAvailable
     );
   }
 
-  async updateAvailability(
-    availabilityID,
-    coupleTherapistId,
-    timeAvailable,
-    notTimeAvailable
-  ) {
+  async updateAvailability(availabilityID, coupleTherapistId, timeAvailable) {
+    // Remove notTimeAvailable
     const availability = await therapistRepo.getAvailabilityById(
       availabilityID
     );
@@ -100,12 +94,11 @@ class CoupleTherapistServices {
       throw new APIError(404, "Availability record not found");
     }
 
-    // Validate time slots
-    this.validateTimeSlots(timeAvailable, notTimeAvailable);
+    // Validate time slots without notTimeAvailable
+    this.validateTimeSlots(timeAvailable);
 
     const updateData = {
       timeAvailable,
-      notTimeAvailable,
     };
 
     return await therapistRepo.updateAvailability(availabilityID, updateData);
@@ -118,8 +111,8 @@ class CoupleTherapistServices {
     }
   }
 
-  validateTimeSlots(timeAvailable, notTimeAvailable) {
-    // Validate time slots logic
+  validateTimeSlots(timeAvailable) {
+    // Validate time slots logic - remove notTimeAvailable checks
     for (let i = 0; i < timeAvailable.length; i++) {
       if (
         new Date(timeAvailable[i].endHour) <=
@@ -132,35 +125,22 @@ class CoupleTherapistServices {
       }
     }
 
-    for (let i = 0; i < notTimeAvailable.length; i++) {
-      if (
-        new Date(notTimeAvailable[i].endHour) <=
-        new Date(notTimeAvailable[i].startHour)
-      ) {
-        throw new APIError(
-          400,
-          `End hour of notTimeAvailable at index ${i} cannot be before start hour.`
-        );
-      }
-    }
-
-    // Check for overlapping times
+    // Check for overlapping timeAvailable slots
     for (let i = 0; i < timeAvailable.length; i++) {
-      for (let j = 0; j < notTimeAvailable.length; j++) {
+      for (let j = i + 1; j < timeAvailable.length; j++) {
         if (
           new Date(timeAvailable[i].startHour) <
-            new Date(notTimeAvailable[j].endHour) &&
+            new Date(timeAvailable[j].endHour) &&
           new Date(timeAvailable[i].endHour) >
-            new Date(notTimeAvailable[j].startHour)
+            new Date(timeAvailable[j].startHour)
         ) {
           throw new APIError(
             400,
-            `Overlapping time detected between timeAvailable[${i}] and notTimeAvailable[${j}].`
+            `Overlapping time detected between timeAvailable[${i}] and timeAvailable[${j}].`
           );
         }
       }
     }
   }
 }
-
 module.exports = new CoupleTherapistServices();

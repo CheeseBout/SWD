@@ -31,7 +31,6 @@ const AdminDashboard = lazy(() => import("../pages/Admin/Dashboard"));
 const BlogCreate = lazy(() => import("../pages/Admin/BlogCreate"));
 const BlogEdit = lazy(() => import("../pages/Admin/BlogEdit"));
 const TherapistDashboard = lazy(() => import("../pages/Therapist/Dashboard"));
-
 const Therapist = lazy(() => import("../pages/Therapist/Therapist"));
 const BookReservation = lazy(() => import("../pages/BookReservation"));
 const YourReservation = lazy(() => import("../pages/Reservation"));

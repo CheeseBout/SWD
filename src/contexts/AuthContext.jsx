@@ -1,4 +1,7 @@
-import { createContext } from 'react';
+import { useState, useEffect, createContext } from "react";
+import PropTypes from "prop-types";
+import { jwtDecode } from "jwt-decode";
+import { userService } from "../services/api";
 
 export const AuthContext = createContext({
   user: null,
@@ -6,7 +9,173 @@ export const AuthContext = createContext({
   isLoading: false,
   login: () => {},
   logout: () => {},
-  refreshUser: () => {}
+  refreshUser: () => {},
+  updateUser: () => {}, // Add updateUser to the context default value
 });
 
-export default AuthContext;
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        setIsAuthenticated(false);
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const decodedToken = jwtDecode(token);
+        console.log("Decoded token contents:", decodedToken);
+
+        if (decodedToken.exp * 1000 < Date.now()) {
+          localStorage.removeItem("accessToken");
+          setIsAuthenticated(false);
+          setUser(null);
+        } else {
+          setIsAuthenticated(true);
+
+          const userId =
+            decodedToken.userId ||
+            decodedToken._id ||
+            decodedToken.id ||
+            decodedToken.sub;
+
+          if (userId) {
+            console.log("Found user ID:", userId);
+            try {
+              const userData = { ...decodedToken, _id: userId };
+
+              const response = await userService.getUserById(userId);
+              if (response?.data?.user) {
+                setUser(response.data.user);
+              } else {
+                setUser(userData);
+              }
+            } catch (fetchError) {
+              console.error("Error fetching user data:", fetchError);
+              setUser({ ...decodedToken, _id: userId });
+            }
+          } else {
+            console.log(
+              "No user ID found in token, using token data",
+              decodedToken
+            );
+            setUser(decodedToken);
+          }
+        }
+      } catch (error) {
+        console.error("Error decoding token:", error);
+        localStorage.removeItem("accessToken");
+        setIsAuthenticated(false);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuthStatus();
+  }, []);
+
+  const logout = () => {
+    localStorage.removeItem("accessToken");
+    setIsAuthenticated(false);
+    setUser(null);
+  };
+
+  const login = async (token) => {
+    localStorage.setItem("accessToken", token);
+    try {
+      const decodedToken = jwtDecode(token);
+      setUser(decodedToken);
+      setIsAuthenticated(true);
+
+      if (
+        decodedToken.userId ||
+        decodedToken._id ||
+        decodedToken.id ||
+        decodedToken.sub
+      ) {
+        const userId =
+          decodedToken.userId ||
+          decodedToken._id ||
+          decodedToken.id ||
+          decodedToken.sub;
+        try {
+          const response = await userService.getUserById(userId);
+          if (response?.data?.user) {
+            setUser((prevUser) => ({
+              ...prevUser,
+              ...response.data.user,
+            }));
+          }
+        } catch (error) {
+          console.error("Error fetching user details after login:", error);
+        }
+      }
+    } catch (error) {
+      console.error("Error decoding login token:", error);
+      logout();
+    }
+  };
+
+  const refreshUser = async () => {
+    if (!isAuthenticated || !user) return;
+
+    const userId = user._id || user.id || user.sub;
+    if (!userId) {
+      console.error("Cannot refresh user: No user ID available");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const response = await userService.getUserById(userId);
+      setUser(response.data.user);
+    } catch (error) {
+      console.error("Error refreshing user data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add the updateUser function
+  const updateUser = (updatedUserData) => {
+    if (!updatedUserData) return;
+
+    setUser((prevUser) => {
+      if (!prevUser) return updatedUserData;
+
+      const newUser = { ...prevUser, ...updatedUserData };
+
+      // If you want to persist these changes beyond the current session
+      // You might need to update the backend as well depending on your app's architecture
+      return newUser;
+    });
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated,
+        isLoading,
+        login,
+        logout,
+        refreshUser,
+        updateUser, // Add the updateUser function to the context value
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+AuthProvider.propTypes = {
+  children: PropTypes.node.isRequired,
+};

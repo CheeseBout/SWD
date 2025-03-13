@@ -49,33 +49,14 @@ const SideBar = () => {
   };
 
   return (
-    <div key={key} className="bg-white w-64 min-h-screen shadow-md py-8 px-4 flex flex-col">
+    <div
+      key={key}
+      className="bg-white w-64 min-h-screen shadow-md py-8 px-4 flex flex-col"
+    >
       <h2 className="text-xl font-bold px-4 mb-6 text-gray-800">My Account</h2>
 
       <nav className="space-y-2">
-        <NavItem
-          to="/profile"
-          icon={ChartSquareBarIcon}
-          label="Profile"
-        />
-        {user?.role === "admin" && (
-          <>
-            <NavItem
-              to="/manage/blogs"
-              icon={ClipboardCheckIcon}
-              label="Blog Management"
-            />
-          </>
-        )}
-        {user?.role === "couple_therapist" && (
-          <>
-            <NavItem
-              to="/manage/blogs"
-              icon={ClipboardCheckIcon}
-              label="Blog Management"
-            />
-          </>
-        )}
+        <NavItem to="/profile" icon={ChartSquareBarIcon} label="Profile" />
       </nav>
 
       <div className="mt-auto pt-8 px-4">

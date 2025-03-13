@@ -42,6 +42,22 @@ class ReservationController {
     );
   });
 
+  getReservationsByTherapist = catchAsync(async (req, res) => {
+    const { coupleTherapistID } = req.params;
+    const { status, page, limit } = req.query;
+
+    return OK(
+      res,
+      "Therapist reservations retrieved successfully",
+      await reservationService.getReservationsByTherapist(coupleTherapistID, {
+        status,
+        page,
+        limit,
+        user: req.user, // Pass the user object to the service
+      })
+    );
+  });
+
   updateReservation = catchAsync(async (req, res) => {
     return OK(res, "Success", await reservationService.updateReservation(req));
   });

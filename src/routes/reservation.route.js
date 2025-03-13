@@ -532,7 +532,78 @@ const { auth } = require("../middlewares/auth.middleware");
  *       404:
  *         description: Reservation not found
  */
-
+/**
+ * @swagger
+ * /reservation/get-all-reservation/{coupleTherapistID}:
+ *   get:
+ *     summary: Get all reservations for a specific therapist
+ *     tags: [Reservations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: coupleTherapistID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The couple therapist's ID
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, confirmed, completed, canceled, denied]
+ *         description: Filter by reservation status
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 10
+ *         description: Items per page
+ *     responses:
+ *       200:
+ *         description: List of therapist's reservations
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "success"
+ *                 message:
+ *                   type: string
+ *                   example: "Therapist reservations retrieved successfully"
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Reservation'
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                     page:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *                     pages:
+ *                       type: integer
+ *       401:
+ *         description: Unauthorized - Missing or invalid token
+ *       403:
+ *         description: Forbidden - You can only access your own therapist reservations
+ *       404:
+ *         description: Therapist not found
+ */
 router.post(
   "/create-reservation",
   auth,
@@ -542,6 +613,11 @@ router.get("/get-all-reservation", reservationController.getAllReservation);
 router.get(
   "/get-reservation/:reservationID",
   reservationController.getReservationById
+);
+router.get(
+  "/get-all-reservation/:coupleTherapistID",
+  auth,
+  reservationController.getReservationsByTherapist
 );
 router.get(
   "/get-all-reservation/:userID",

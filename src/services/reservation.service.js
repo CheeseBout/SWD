@@ -149,6 +149,50 @@ class ReservationService {
     return await reservationsRepo.updateReservation(reservationID, data);
   }
 
+  async getReservationsByTherapist(therapistID, options = {}) {
+    // Extract the user from options
+    const { user, status, page, limit } = options;
+
+    // Check if the requesting user has permission to view these reservations
+    // Allow admin or if the user is the therapist themselves
+    const isOwner =
+      user.therapistInfo &&
+      user.therapistInfo._id.toString() === therapistID.toString();
+
+    if (user.role !== "admin" && user.role !== "couple_therapist" && !isOwner) {
+      throw new APIError(
+        403,
+        "Permission denied - you can only view your own therapist reservations"
+      );
+    }
+
+    // Validate the therapistID
+    if (!mongoose.Types.ObjectId.isValid(therapistID)) {
+      throw new APIError(400, "Invalid therapist ID format");
+    }
+
+    // Check if the therapist exists
+    const therapistExists = await reservationsRepo.checkTherapistExists(
+      therapistID
+    );
+    if (!therapistExists) {
+      throw new APIError(404, "Therapist not found");
+    }
+
+    // Create filter object
+    const filter = {
+      coupleTherapistID: new mongoose.Types.ObjectId(therapistID),
+    };
+
+    // Add status filter if provided
+    if (status) {
+      filter.status = status;
+    }
+
+    const result = await reservationsRepo.getAll(filter, { page, limit });
+    return result;
+  }
+
   async cancelReservation(reservationID, user) {
     if (user.role !== "member") {
       throw new APIError(403, "Permission denied");

@@ -314,6 +314,12 @@ class ReservationRepo {
     const user = await USER.findById(userID);
     return !!user; // Returns true if user exists, false otherwise
   }
+
+  async checkTherapistExists(therapistID) {
+    const COUPLETHERAPIST = require("../models/coupleTherapist.model");
+    const therapist = await COUPLETHERAPIST.findById(therapistID);
+    return !!therapist; // Returns true if therapist exists, false otherwise
+  }
 }
 
 module.exports = new ReservationRepo();

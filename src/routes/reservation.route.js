@@ -221,7 +221,7 @@ const { auth } = require("../middlewares/auth.middleware");
 
 /**
  * @swagger
- * /reservation/get-all-reservation/{userID}:
+ * /reservation/get-all-reservation/user/{userID}:
  *   get:
  *     summary: Get all reservations for a specific user
  *     tags: [Reservations]
@@ -534,7 +534,7 @@ const { auth } = require("../middlewares/auth.middleware");
  */
 /**
  * @swagger
- * /reservation/get-all-reservation/{coupleTherapistID}:
+ * /reservation/get-all-reservation/therapist/{coupleTherapistID}:
  *   get:
  *     summary: Get all reservations for a specific therapist
  *     tags: [Reservations]
@@ -615,12 +615,12 @@ router.get(
   reservationController.getReservationById
 );
 router.get(
-  "/get-all-reservation/:coupleTherapistID",
+  "/get-all-reservation/therapist/:coupleTherapistID",
   auth,
   reservationController.getReservationsByTherapist
 );
 router.get(
-  "/get-all-reservation/:userID",
+  "/get-all-reservation/user/:userID",
   auth,
   reservationController.getReservationsByUser
 );

@@ -9,16 +9,22 @@ class QuizRepository {
 
   async findQuizById(quizId) {
     try {
-      const topic = await TOPIC.findOne({
-        "quiz._id": quizId,
+      const topic = await TOPIC.findOne({ "quiz._id": quizId }).populate({
+        path: "quiz.questions",
+        model: QUESTIONS,
+        select:
+          "questionText options correctAnswer explanation category difficulty",
       });
 
       if (!topic) {
         return null;
       }
 
-      return topic.quiz.id(quizId);
+      // Find the specific quiz in the topic's quiz array
+      const quiz = topic.quiz.find((q) => q._id.toString() === quizId);
+      return quiz;
     } catch (error) {
+      console.log("Error in findQuizById:", error);
       throw error;
     }
   }
@@ -28,7 +34,21 @@ class QuizRepository {
   }
 
   async populateQuizQuestions(quiz) {
-    return await quiz.populate("questions");
+    if (!quiz) return null;
+
+    const topic = await TOPIC.findOne({ "quiz._id": quiz._id }).populate({
+      path: "quiz.questions",
+      model: QUESTIONS, // Use the imported model directly
+      select:
+        "questionText options correctAnswer explanation category difficulty",
+    });
+
+    if (!topic) return quiz;
+
+    const populatedQuiz = topic.quiz.find(
+      (q) => q._id.toString() === quiz._id.toString()
+    );
+    return populatedQuiz || quiz;
   }
 
   async updateQuestionsWithQuizId(quizId, questionID) {

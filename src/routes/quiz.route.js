@@ -61,7 +61,7 @@ router.get("/", quizController.getAllQuizzes);
 
 /**
  * @swagger
- * /quiz/get-quiz/{quizId}:
+ * /quiz/{quizId}:
  *   get:
  *     summary: Get quiz by ID
  *     tags: [Quiz]
@@ -75,7 +75,7 @@ router.get("/", quizController.getAllQuizzes);
  *       200:
  *         description: Quiz details
  */
-router.get("/get-quiz/:quizId", quizController.getQuizById);
+router.get("/:quizId", quizController.getQuizById);
 
 /**
  * @swagger

@@ -79,21 +79,17 @@ router.get("/", topicController.getAllTopics);
 
 /**
  * @swagger
- * /topics/get-topic:
+ * /topics/{topicId}:
  *   get:
  *     summary: Get topic by ID
  *     tags: [Topics]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - topicId
- *             properties:
- *               topicId:
- *                 type: string
+ *     parameters:
+ *       - in: path
+ *         name: topicId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the topic to get
  *     responses:
  *       200:
  *         description: Topic details retrieved successfully
@@ -107,7 +103,7 @@ router.get("/", topicController.getAllTopics);
  *       404:
  *         description: Topic not found
  */
-router.get("/get-topic", topicController.getTopicById);
+router.get("/:topicId", topicController.getTopicById);
 
 /**
  * @swagger

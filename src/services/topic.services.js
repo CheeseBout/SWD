@@ -8,7 +8,7 @@ class TopicServices {
   }
 
   async getTopicById(req) {
-    const { topicId } = req.body;
+    const { topicId } = req.params;
     if (!topicId) {
       throw new APIError(400, "Topic ID is required");
     }

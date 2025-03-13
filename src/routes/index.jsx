@@ -30,6 +30,7 @@ const AdminBlogs = lazy(() => import("../pages/Admin/Blogs"));
 const AdminDashboard = lazy(() => import("../pages/Admin/Dashboard"));
 const BlogCreate = lazy(() => import("../pages/Admin/BlogCreate"));
 const BlogEdit = lazy(() => import("../pages/Admin/BlogEdit"));
+const TherapistDashboard = lazy(() => import("../pages/Therapist/Dashboard"));
 
 const Therapist = lazy(() => import("../pages/Therapist/Therapist"));
 const BookReservation = lazy(() => import("../pages/BookReservation"));
@@ -240,6 +241,16 @@ export function AppRoutes() {
             element={
               <LazyLoad>
                 <AdminDashboard />
+              </LazyLoad>
+            }
+          />
+        </Route>
+        <Route path="therapist">
+          <Route
+            path="dashboard"
+            element={
+              <LazyLoad>
+                <TherapistDashboard />
               </LazyLoad>
             }
           />

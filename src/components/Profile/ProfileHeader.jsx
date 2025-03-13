@@ -10,9 +10,9 @@ const ProfileHeader = ({ user }) => {
   return (
     <div className="bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-12">
       <div className="flex flex-col items-center">
-        {user?.profileImage ? (
+        {user?.imageUrl ? (
           <img
-            src={user.profileImage}
+            src={user.imageUrl}
             alt={user.fullname || user.username || "User"}
             className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
           />
@@ -38,7 +38,7 @@ ProfileHeader.propTypes = {
     fullname: PropTypes.string,
     username: PropTypes.string,
     email: PropTypes.string,
-    profileImage: PropTypes.string
+    imageUrl: PropTypes.string
   })
 };
 

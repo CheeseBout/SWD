@@ -1,11 +1,13 @@
 import { useState, useContext, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../../contexts/AuthContextObject";
 
 const NavBar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { user, isAuthenticated } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const dropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
@@ -40,6 +42,35 @@ const NavBar = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isMenuOpen]);
+
+  useEffect(() => {
+    setIsDropdownOpen(false);
+    setIsMenuOpen(false);
+  }, [location.pathname]);
+
+  const handleNavigation = (path) => {
+    setIsDropdownOpen(false);
+    setIsMenuOpen(false);
+    setTimeout(() => {
+      navigate(path);
+    }, 10);
+  };
+
+  const handleLogout = () => {
+    setIsDropdownOpen(false);
+    setIsMenuOpen(false);
+    localStorage.removeItem("accessToken");
+    window.location.href = "/login";
+  };
+
+  const getDashboardPath = () => {
+    if (user?.role === "admin") {
+      return "/admin/dashboard";
+    } else if (user?.role === "couple_therapist") {
+      return "/therapist/dashboard";
+    }
+    return "/dashboard";
+  };
 
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50 transition-all duration-300">
@@ -103,13 +134,13 @@ const NavBar = () => {
               "Courses",
               "About Us",
             ].map((item, index) => (
-              <Link
+              <button
                 key={index}
-                to={`/${item.toLowerCase().replace(/\s+/g, "-")}`}
+                onClick={() => handleNavigation(`/${item.toLowerCase().replace(/\s+/g, "-")}`)}
                 className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-all duration-200 hover:scale-105 relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-blue-600 after:transition-all hover:after:w-full"
               >
                 {item}
-              </Link>
+              </button>
             ))}
           </div>
 
@@ -125,10 +156,10 @@ const NavBar = () => {
                     aria-expanded={isDropdownOpen}
                   >
                     <span className="sr-only">Open user menu</span>
-                    {user?.profileImage ? (
+                    {user?.imageUrl ? (
                       <img
                         className="h-10 w-10 rounded-full object-cover border-2 border-blue-100 shadow-sm"
-                        src={user.profileImage}
+                        src={user.imageUrl}
                         alt="User profile"
                       />
                     ) : (
@@ -140,7 +171,7 @@ const NavBar = () => {
                 </div>
 
                 <div
-                  className="dropdown menu w-56 rounded-lg bg-white shadow-lg z-10 overflow-hidden border border-gray-100"
+                  className={`dropdown menu w-56 rounded-lg bg-white shadow-lg z-10 overflow-hidden border border-gray-100 ${!isDropdownOpen && 'hidden'}`}
                   popover="auto"
                   id="user-dropdown"
                   style={{ positionAnchor: "--user-dropdown-anchor" }}
@@ -152,22 +183,24 @@ const NavBar = () => {
                         {user?.fullname || user?.username || user?.email}
                       </p>
                     </div>
+                    <button
+                      className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
+                      onClick={() => handleNavigation("/profile")}
+                    >
+                      Your Profile
+                    </button>
                     {(user?.role === "admin" ||
                       user?.role === "couple_therapist") && (
                       <>
-                        <Link
-                          to="/dashboard"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
-                          onClick={() => setIsDropdownOpen(false)}
+                        <button
+                          className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
+                          onClick={() => handleNavigation(getDashboardPath())}
                         >
-                          Your Profile
-                        </Link>
+                          Dashboard
+                        </button>
                         <button
                           className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors duration-150"
-                          onClick={() => {
-                            localStorage.removeItem("accessToken");
-                            window.location.href = "/login";
-                          }}
+                          onClick={handleLogout}
                         >
                           Sign out
                         </button>
@@ -178,18 +211,18 @@ const NavBar = () => {
               </div>
             ) : (
               <div className="flex items-center space-x-3">
-                <Link
-                  to="/login"
+                <button
                   className="text-gray-700 hover:text-blue-600 px-4 py-2 text-sm font-medium border border-gray-200 hover:border-blue-300 rounded-md transition-colors duration-200 shadow-sm hover:shadow"
+                  onClick={() => handleNavigation("/login")}
                 >
                   Login
-                </Link>
-                <Link
-                  to="/register"
+                </button>
+                <button
                   className="bg-gradient-to-r from-blue-500 to-blue-700 text-white px-5 py-2 rounded-md text-sm font-medium hover:from-blue-600 hover:to-blue-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                  onClick={() => handleNavigation("/register")}
                 >
                   Sign Up
-                </Link>
+                </button>
               </div>
             )}
           </div>
@@ -203,23 +236,15 @@ const NavBar = () => {
         >
           {["Find a Therapist", "Quizzes", "Blogs", "Courses", "About Us"].map(
             (item, index) => (
-              <Link
+              <button
                 key={index}
-                to={`/${item.toLowerCase().replace(/\s+/g, "-")}`}
-                className="block px-3 py-2.5 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
-                onClick={() => setIsMenuOpen(false)}
+                onClick={() => handleNavigation(`/${item.toLowerCase().replace(/\s+/g, "-")}`)}
+                className="block w-full text-left px-3 py-2.5 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
               >
                 {item}
-              </Link>
+              </button>
             )
           )}
-          <div className="mt-5">
-            <input
-              type="text"
-              placeholder="Search..."
-              className="w-full px-4 py-3 text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            />
-          </div>
           <div className="mt-5 space-y-3 pt-4 border-t border-gray-100">
             {isAuthenticated ? (
               <>
@@ -241,47 +266,40 @@ const NavBar = () => {
                 </div>
                 {(user?.role === "admin" ||
                   user?.role === "couple_therapist") && (
-                  <Link
-                    to="/dashboard"
-                    className="block px-3 py-3 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
-                    onClick={() => setIsMenuOpen(false)}
+                  <button
+                    className="block w-full text-left px-3 py-3 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                    onClick={() => handleNavigation(getDashboardPath())}
                   >
                     Dashboard
-                  </Link>
+                  </button>
                 )}
-                <Link
-                  to="/profile"
-                  className="block px-3 py-3 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
-                  onClick={() => setIsMenuOpen(false)}
+                <button
+                  className="block w-full text-left px-3 py-3 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                  onClick={() => handleNavigation("/profile")}
                 >
                   Your Profile
-                </Link>
+                </button>
                 <button
                   className="w-full text-left block px-3 py-3 text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                  onClick={() => {
-                    localStorage.removeItem("accessToken");
-                    window.location.href = "/login";
-                  }}
+                  onClick={handleLogout}
                 >
                   Sign Out
                 </button>
               </>
             ) : (
               <>
-                <Link
-                  to="/login"
+                <button
                   className="block w-full text-center px-4 py-3 text-base font-medium text-gray-700 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors duration-200"
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={() => handleNavigation("/login")}
                 >
                   Login
-                </Link>
-                <Link
-                  to="/register"
+                </button>
+                <button
                   className="block w-full text-center px-4 py-3 text-base font-medium text-white bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 rounded-lg shadow-md transition-all duration-200"
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={() => handleNavigation("/register")}
                 >
                   Sign Up
-                </Link>
+                </button>
               </>
             )}
           </div>

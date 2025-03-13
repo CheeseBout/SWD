@@ -136,7 +136,11 @@ const NavBar = () => {
             ].map((item, index) => (
               <button
                 key={index}
-                onClick={() => handleNavigation(`/${item.toLowerCase().replace(/\s+/g, "-")}`)}
+                onClick={() =>
+                  handleNavigation(
+                    `/${item.toLowerCase().replace(/\s+/g, "-")}`
+                  )
+                }
                 className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-all duration-200 hover:scale-105 relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-blue-600 after:transition-all hover:after:w-full"
               >
                 {item}
@@ -171,7 +175,9 @@ const NavBar = () => {
                 </div>
 
                 <div
-                  className={`dropdown menu w-56 rounded-lg bg-white shadow-lg z-10 overflow-hidden border border-gray-100 ${!isDropdownOpen && 'hidden'}`}
+                  className={`dropdown menu w-56 rounded-lg bg-white shadow-lg z-10 overflow-hidden border border-gray-100 ${
+                    !isDropdownOpen && "hidden"
+                  }`}
                   popover="auto"
                   id="user-dropdown"
                   style={{ positionAnchor: "--user-dropdown-anchor" }}
@@ -198,14 +204,14 @@ const NavBar = () => {
                         >
                           Dashboard
                         </button>
-                        <button
-                          className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors duration-150"
-                          onClick={handleLogout}
-                        >
-                          Sign out
-                        </button>
                       </>
                     )}
+                    <button
+                      className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors duration-150"
+                      onClick={handleLogout}
+                    >
+                      Sign out
+                    </button>
                   </div>
                 </div>
               </div>
@@ -238,7 +244,11 @@ const NavBar = () => {
             (item, index) => (
               <button
                 key={index}
-                onClick={() => handleNavigation(`/${item.toLowerCase().replace(/\s+/g, "-")}`)}
+                onClick={() =>
+                  handleNavigation(
+                    `/${item.toLowerCase().replace(/\s+/g, "-")}`
+                  )
+                }
                 className="block w-full text-left px-3 py-2.5 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
               >
                 {item}

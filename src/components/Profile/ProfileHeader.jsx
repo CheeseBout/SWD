@@ -13,7 +13,7 @@ const ProfileHeader = ({ user, onUpdateUser }) => {
     user: authUser,
     isAuthenticated,
     isLoading: authLoading,
-    updateUser, // This should be the function exposed by your AuthContext to update user data
+    updateUser,
     refreshUser,
   } = useContext(AuthContext);
 
@@ -64,7 +64,6 @@ const ProfileHeader = ({ user, onUpdateUser }) => {
       return;
     }
 
-    // Show temporary preview immediately
     const previewURL = URL.createObjectURL(file);
     setLocalPhotoURL(previewURL);
 
@@ -76,7 +75,7 @@ const ProfileHeader = ({ user, onUpdateUser }) => {
 
       if (!token) {
         toast.error("Authentication required. Please log in again.");
-        setLocalPhotoURL(user?.photoURL); // Reset to original on error
+        setLocalPhotoURL(user?.photoURL);
         return;
       }
 
@@ -93,15 +92,12 @@ const ProfileHeader = ({ user, onUpdateUser }) => {
 
       console.log("Upload response:", response.data);
 
-      // Get the new avatar URL from response
       const newPhotoURL =
         response.data?.user?.photoURL || response.data?.photoURL;
 
       if (newPhotoURL) {
-        // Update local state
         setLocalPhotoURL(newPhotoURL);
 
-        // Update the parent component if needed
         if (onUpdateUser) {
           onUpdateUser({
             ...user,
@@ -109,16 +105,13 @@ const ProfileHeader = ({ user, onUpdateUser }) => {
           });
         }
 
-        // Update the AuthContext
         if (typeof updateUser === "function") {
-          // Update user in context
           updateUser({
             ...authUser,
             photoURL: newPhotoURL,
           });
           toast.success("Avatar updated successfully");
         } else {
-          // If updateUser function is not available, try to refresh data
           if (typeof fetchUserData === "function") {
             fetchUserData();
           }
@@ -130,7 +123,7 @@ const ProfileHeader = ({ user, onUpdateUser }) => {
     } catch (error) {
       console.error("Upload error:", error);
       toast.error(error.response?.data?.message || "Avatar update failed.");
-      setLocalPhotoURL(user?.photoURL); // Reset to original on error
+      setLocalPhotoURL(user?.photoURL); 
     }
   };
 

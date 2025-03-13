@@ -10,7 +10,7 @@ export const AuthContext = createContext({
   login: () => {},
   logout: () => {},
   refreshUser: () => {},
-  updateUser: () => {}, // Add updateUser to the context default value
+  updateUser: () => {},
 });
 
 export function AuthProvider({ children }) {
@@ -144,7 +144,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Add the updateUser function
   const updateUser = (updatedUserData) => {
     if (!updatedUserData) return;
 
@@ -152,9 +151,6 @@ export function AuthProvider({ children }) {
       if (!prevUser) return updatedUserData;
 
       const newUser = { ...prevUser, ...updatedUserData };
-
-      // If you want to persist these changes beyond the current session
-      // You might need to update the backend as well depending on your app's architecture
       return newUser;
     });
   };
@@ -168,7 +164,7 @@ export function AuthProvider({ children }) {
         login,
         logout,
         refreshUser,
-        updateUser, // Add the updateUser function to the context value
+        updateUser,
       }}
     >
       {children}

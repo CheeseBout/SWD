@@ -28,4 +28,14 @@ export const userService = {
       throw error;
     }
   },
+
+  updateUserProfile: async (data) => {
+    try {
+      const response = await api.put("/api/v1/users/update-profile", data);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      throw error;
+    }
+  },
 };

@@ -3,8 +3,9 @@ import { Link, useLocation } from "react-router-dom";
 import PropTypes from "prop-types";
 import { AuthContext } from "../../contexts/AuthContextObject";
 import {
-  ClipboardCheckIcon,
-  ChartSquareBarIcon,
+  UserIcon,
+  UserCircleIcon,
+  KeyIcon,
 } from "@heroicons/react/outline";
 
 const SideBar = () => {
@@ -22,10 +23,12 @@ const SideBar = () => {
   }
 
   const isActive = (path) => {
-    return (
-      location.pathname === path || location.pathname.startsWith(`${path}/`)
-    );
+    if (path === "/profile") {
+      return location.pathname === "/profile";
+    }
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
+  
   const NavItem = ({ to, icon: Icon, label }) => {
     return (
       <Link
@@ -56,7 +59,17 @@ const SideBar = () => {
       <h2 className="text-xl font-bold px-4 mb-6 text-gray-800">My Account</h2>
 
       <nav className="space-y-2">
-        <NavItem to="/profile" icon={ChartSquareBarIcon} label="Profile" />
+        <NavItem to="/profile" icon={UserCircleIcon} label="Profile" />
+        <NavItem
+          to="/profile/update-profile"
+          icon={UserIcon}
+          label="Update Profile"
+        />
+        <NavItem
+          to="/profile/change-password"
+          icon={KeyIcon}
+          label="Change Password"
+        />
       </nav>
 
       <div className="mt-auto pt-8 px-4">

@@ -16,6 +16,8 @@ const SearchTherapist = lazy(() =>
 );
 const FAQs = lazy(() => import("../pages/FAQs"));
 const ProfilePage = lazy(() => import("../pages/Profile"));
+const UpdateProfile = lazy(() => import("../pages/Profile/UpdateProfile"));
+const ChangePassword = lazy(() => import("../pages/Profile/ChangePassword"));
 const LoginPage = lazy(() => import("../pages/Login"));
 const RegisterPage = lazy(() => import("../pages/Register"));
 const CookiePolicy = lazy(() => import("../pages/Policy/CookiePolicy"));
@@ -71,15 +73,32 @@ export function AppRoutes() {
             </LazyLoad>
           }
         />
-        <Route
-          path="profile"
-          element={
-            <LazyLoad>
-              <ProfilePage />
-            </LazyLoad>
-          }
-        />
-        ;
+        <Route path="profile">
+          <Route
+            index
+            element={
+              <LazyLoad>
+                <ProfilePage />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="update-profile"
+            element={
+              <LazyLoad>
+                <UpdateProfile />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="change-password"
+            element={
+              <LazyLoad>
+                <ChangePassword />
+              </LazyLoad>
+            }
+          />
+        </Route>
         <Route path="quizzes">
           <Route
             index

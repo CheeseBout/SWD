@@ -31,6 +31,9 @@ const AdminDashboard = lazy(() => import("../pages/Admin/Dashboard"));
 const BlogCreate = lazy(() => import("../pages/Admin/BlogCreate"));
 const BlogEdit = lazy(() => import("../pages/Admin/BlogEdit"));
 
+const Therapist = lazy(() => import("../pages/Therapist/Therapist"));
+const BookReservation = lazy(() => import("../pages/BookReservation"));
+const YourReservation = lazy(() => import("../pages/Reservation"));
 const LazyLoad = ({ children }) => (
   <Suspense fallback={<div></div>}>{children}</Suspense>
 );
@@ -198,7 +201,7 @@ export function AppRoutes() {
           />
         </Route>
         <Route
-          path="therapist/:id"
+          path="therapist/:therapistId"
           element={
             <LazyLoad>
               <TherapistDetail />
@@ -241,6 +244,38 @@ export function AppRoutes() {
             }
           />
         </Route>
+        <Route
+          path="find-therapist"
+          element={
+            <LazyLoad>
+              <Therapist />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="bookReservation/:therapistId"
+          element={
+            <LazyLoad>
+              <BookReservation />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="your-reservations"
+          element={
+            <LazyLoad>
+              <YourReservation />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="payment/result"
+          element={
+            <LazyLoad>
+              <YourReservation />
+            </LazyLoad>
+          }
+        />
       </Route>
     </Routes>
   );

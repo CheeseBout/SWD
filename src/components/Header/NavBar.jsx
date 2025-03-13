@@ -152,31 +152,27 @@ const NavBar = () => {
                         {user?.fullname || user?.username || user?.email}
                       </p>
                     </div>
-                    {(user?.role === "admin" || user?.role === "couple_therapist") && (
-                      <Link
-                        to="/dashboard"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
-                        onClick={() => setIsDropdownOpen(false)}
-                      >
-                        Dashboard
-                      </Link>
+                    {(user?.role === "admin" ||
+                      user?.role === "couple_therapist") && (
+                      <>
+                        <Link
+                          to="/dashboard"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
+                          onClick={() => setIsDropdownOpen(false)}
+                        >
+                          Your Profile
+                        </Link>
+                        <button
+                          className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors duration-150"
+                          onClick={() => {
+                            localStorage.removeItem("accessToken");
+                            window.location.href = "/login";
+                          }}
+                        >
+                          Sign out
+                        </button>
+                      </>
                     )}
-                    <Link
-                      to="/profile"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
-                      onClick={() => setIsDropdownOpen(false)}
-                    >
-                      Your Profile
-                    </Link>
-                    <button
-                      className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors duration-150"
-                      onClick={() => {
-                        localStorage.removeItem("accessToken");
-                        window.location.href = "/login";
-                      }}
-                    >
-                      Sign out
-                    </button>
                   </div>
                 </div>
               </div>
@@ -243,7 +239,8 @@ const NavBar = () => {
                     {user?.fullname || user?.username || "User"}
                   </span>
                 </div>
-                {(user?.role === "admin" || user?.role === "couple_therapist") && (
+                {(user?.role === "admin" ||
+                  user?.role === "couple_therapist") && (
                   <Link
                     to="/dashboard"
                     className="block px-3 py-3 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"

@@ -7,8 +7,8 @@ import { useParams } from "react-router-dom";
 import dayjs from "dayjs";
 import { reservationService } from "../../services/reservation/reservationService";
 import { AuthContext } from "../../contexts/AuthContextObject";
+import { toast } from "react-toastify";
 
-// ✅ Schema dùng Yup để kiểm tra form
 const schema = yup.object().shape({
   title: yup.string().required("Vui lòng nhập tiêu đề."),
   content: yup.string().required("Vui lòng nhập nội dung."),
@@ -33,8 +33,9 @@ export default function BookReservation() {
     const fetchTherapistReservation = async () => {
       try {
         const response = await therapistService.getAvailability(therapistId);
-        const { timeAvailable, notTimeAvailable, therapist } = response.data;
-        setTherapistInfo(therapist);
+        const { availability, therapist } = response.data;
+
+        setTherapistInfo(therapist?.userInfo);
 
         const groupedData = {};
         const addSlotToGroup = (slot, type) => {
@@ -45,17 +46,19 @@ export default function BookReservation() {
           groupedData[dateKey][type].push(slot);
         };
 
-        timeAvailable.forEach((slot) => {
-          if (slot.isOccupied) {
-            addSlotToGroup(slot, "notAvailable"); // ✅ Nếu bị chiếm, đưa vào notAvailable
-          } else {
-            addSlotToGroup(slot, "available");
-          }
-        });
+        availability.forEach((day) => {
+          day.timeAvailable.forEach((slot) => {
+            if (slot.isOccupied) {
+              addSlotToGroup(slot, "notAvailable");
+            } else {
+              addSlotToGroup(slot, "available");
+            }
+          });
 
-        notTimeAvailable.forEach((slot) =>
-          addSlotToGroup(slot, "notAvailable")
-        );
+          day.notTimeAvailable.forEach((slot) => {
+            addSlotToGroup(slot, "notAvailable");
+          });
+        });
 
         setGroupedSlots(groupedData);
       } catch (error) {
@@ -92,13 +95,13 @@ export default function BookReservation() {
 
     try {
       await reservationService.createReservation(payload);
-      console.log(payload);
-
-      alert("Đặt lịch thành công!");
+      toast.success("Đặt lịch thành công!", { position: "top-right" });
       handleCloseModal();
     } catch (error) {
       console.error("Error booking reservation:", error);
-      console.log("Đã có lỗi xảy ra, vui lòng thử lại!");
+      toast.error("Đã có lỗi xảy ra, vui lòng thử lại!", {
+        position: "top-right",
+      });
     }
   };
 
@@ -183,11 +186,19 @@ export default function BookReservation() {
             <p className="text-red-500 text-sm">{errors.content?.message}</p>
 
             <div className="text-gray-600 text-sm mb-3">
-              <strong>Therapist:</strong> {therapistInfo?.name || "Unknown"}
-              <br />
-              <strong>Time:</strong>{" "}
-              {dayjs(selectedSlot?.startHour).format("HH:mm")} -{" "}
-              {dayjs(selectedSlot?.endHour).format("HH:mm")}
+              <div>
+                {" "}
+                <strong>Therapist:</strong>{" "}
+                {therapistInfo?.fullname || "Unknown"}
+              </div>
+              <div>
+                <strong>Email:</strong> {therapistInfo?.email || "Unknown"}
+              </div>
+              <div>
+                <strong>Time:</strong>{" "}
+                {dayjs(selectedSlot?.startHour).format("HH:mm")} -{" "}
+                {dayjs(selectedSlot?.endHour).format("HH:mm")}{" "}
+              </div>
             </div>
 
             <div className="modal-action">

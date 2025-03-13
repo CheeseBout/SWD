@@ -4,6 +4,8 @@ import { reservationService } from "../../services/reservation/reservationServic
 import dayjs from "dayjs";
 import paymentService from "../../services/payment";
 import { useLocation, useNavigate } from "react-router";
+import { toast } from "react-toastify";
+import { set } from "lodash";
 export default function YourReservation() {
   const { user: authUser } = useContext(AuthContext);
   const userID =
@@ -16,11 +18,12 @@ export default function YourReservation() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingList, setIsLoadingList] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const [toastMessage, setToastMessage] = useState("");
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReservationId, setCancelReservationId] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const handlePayment = async (reservation) => {
     setIsLoading(true);
     const paymentData = {
@@ -43,27 +46,30 @@ export default function YourReservation() {
       setIsLoading(false);
     }
   };
-  useEffect(() => {
-    console.log("URL Search Params:", location.search);
-  }, [location]);
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const isCancelled = params.get("cancelled");
     const errorMessage = params.get("message");
+    const isSuccessful = params.get("success");
 
-    if (isCancelled === "true") {
-      setToastMessage(errorMessage || "Payment cancelled");
-      console.log("Cancel", isCancelled, errorMessage);
-
+    if (isCancelled === "true" && isSuccessful === "false") {
+      toast.warning(errorMessage || "Payment cancelled");
       setTimeout(() => {
         navigate("/your-reservations", { replace: true });
-        setToastMessage("");
+      }, 3000);
+    }
+    if (isSuccessful === "true") {
+      toast.success("Payment successful");
+      setTimeout(() => {
+        navigate("/your-reservations", { replace: true });
       }, 3000);
     }
   }, [location, navigate]);
 
   useEffect(() => {
     const fetchReservations = async () => {
+      setIsLoadingList(true);
       const response = await reservationService.getMemberReservation(
         userID,
         filterStatus,
@@ -73,11 +79,10 @@ export default function YourReservation() {
 
       setReservations(response.reservations);
       setTotalPages(response.pages);
+      setIsLoadingList(false);
     };
     fetchReservations();
-  }, [userID, filterStatus, currentPage]);
-
-
+  }, [userID, filterStatus, currentPage, refreshKey]);
 
   const handleOpenPayment = (reservation) => {
     setSelectedReservation(reservation);
@@ -86,24 +91,23 @@ export default function YourReservation() {
   const handleCancel = (id) => {
     setCancelReservationId(id);
     setShowCancelModal(true);
+    setRefreshKey((prevKey) => prevKey + 1);
   };
 
-  const confirmCancel = () => {
-    console.log(`Cancel reservation: ${cancelReservationId}`);
-    reservationService.cancelReservation(cancelReservationId);
-    setShowCancelModal(false);
+  const confirmCancel = async () => {
+    try {
+      await reservationService.cancelReservation(cancelReservationId);
+      toast.success("Reservation cancelled successfully");
+      setRefreshKey((prevKey) => prevKey + 1);
+    } catch (error) {
+      toast.error("Failed to cancel reservation");
+    } finally {
+      setShowCancelModal(false);
+    }
   };
   return (
     <div className="max-w mx-auto p-4">
       <h2 className="text-2xl font-semibold mb-4">Reservation List</h2>
-      {toastMessage && (
-        <div className="toast toast-top toast-center mt-20">
-          <div className="alert alert-error text-white">
-            <span>{toastMessage}</span>
-          </div>
-        </div>
-      )}
-     
       <div className="mb-4">
         <label className="mr-2 font-medium">Filter by status:</label>
         <select
@@ -124,7 +128,7 @@ export default function YourReservation() {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto h-[600px]">
         <table className="table w-full ">
           <thead>
             <tr className="bg-gray-100 text-left">
@@ -196,7 +200,7 @@ export default function YourReservation() {
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="text-center p-4">
+                <td colSpan="8" className="text-center p-4 text-xl pt-20">
                   No reservations found
                 </td>
               </tr>
@@ -292,14 +296,25 @@ export default function YourReservation() {
           </div>
         </div>
       )}
-       {showCancelModal && (
+      {showCancelModal && (
         <div className="modal modal-open flex items-center justify-center">
           <div className="modal-box max-w-sm p-6 rounded-lg shadow-lg bg-white">
-            <h3 className="text-xl font-semibold text-center mb-4">Confirm Cancellation</h3>
-            <p className="text-center mb-4">Are you sure you want to cancel this reservation?</p>
+            <h3 className="text-xl font-semibold text-center mb-4">
+              Confirm Cancellation
+            </h3>
+            <p className="text-center mb-4">
+              Are you sure you want to cancel this reservation?
+            </p>
             <div className="modal-action flex justify-end gap-3">
-              <button className="btn btn-error" onClick={confirmCancel}>Yes, Cancel</button>
-              <button className="btn btn-outline" onClick={() => setShowCancelModal(false)}>No, Keep</button>
+              <button className="btn btn-error" onClick={confirmCancel}>
+                Yes, Cancel
+              </button>
+              <button
+                className="btn btn-outline"
+                onClick={() => setShowCancelModal(false)}
+              >
+                No, Keep
+              </button>
             </div>
           </div>
         </div>

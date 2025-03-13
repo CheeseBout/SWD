@@ -11,7 +11,7 @@ export const reservationService = {
   cancelReservation: async (id) => {
     try {
       const response = await api.put(
-        `/api/v1/reservation/cancel-reservation/${id}`
+        `/api/v1/reservation/delete-reservation/${id}`
       );
       return response.data;
     } catch (error) {

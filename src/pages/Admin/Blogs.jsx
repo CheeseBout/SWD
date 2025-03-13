@@ -10,10 +10,9 @@ export default function AdminBlogs() {
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [currentBlog, setCurrentBlog] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-
+  const [currentBlog, setCurrentBlog] = useState(null);
+  
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
@@ -39,7 +38,7 @@ export default function AdminBlogs() {
 
   const handleDelete = (blog) => {
     setCurrentBlog(blog);
-    setShowConfirmModal(true);
+    document.getElementById('delete_blog_modal').checked = true;
   };
 
   const confirmDelete = async () => {
@@ -53,7 +52,6 @@ export default function AdminBlogs() {
       toast.error("Failed to delete blog");
     } finally {
       setLoading(false);
-      setShowConfirmModal(false);
     }
   };
 
@@ -125,12 +123,16 @@ export default function AdminBlogs() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        blog.status === "published"
+                        blog.stage === "PUBLISHED"
                           ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
+                          : blog.stage === "DRAFT"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : blog.stage === "ARCHIVED"
+                          ? "bg-gray-100 text-gray-800"
+                          : "bg-blue-100 text-blue-800"
                       }`}
                     >
-                      {blog.status || "Draft"}
+                      {blog.stage || "DRAFT"}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -169,17 +171,14 @@ export default function AdminBlogs() {
         </table>
       </div>
 
-      {/* Confirmation Modal for Delete */}
-      {showConfirmModal && (
-        <ConfirmationModal
-          title="Delete Blog"
-          message={`Are you sure you want to delete "${currentBlog?.title}"? This action cannot be undone.`}
-          confirmText="Delete"
-          confirmButtonClass="bg-red-600 hover:bg-red-700"
-          onConfirm={confirmDelete}
-          onCancel={() => setShowConfirmModal(false)}
-        />
-      )}
+      <ConfirmationModal
+        id="delete_blog_modal"
+        title="Delete Blog"
+        message={currentBlog ? `Are you sure you want to delete "${currentBlog?.title}"? This action cannot be undone.` : ""}
+        confirmText="Delete"
+        confirmButtonClass="bg-red-600 hover:bg-red-700"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

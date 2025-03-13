@@ -40,7 +40,7 @@ export default function BlogEdit() {
     try {
       await blogService.updateBlog(blogData, blog.id || blog._id);
       toast.success("Blog updated successfully");
-      navigate("/admin/blogs");
+      navigate("/manage/blogs");
     } catch (error) {
       console.error("Error updating blog:", error);
       toast.error("Failed to update blog");
@@ -73,7 +73,7 @@ export default function BlogEdit() {
           isSubmitting={isSubmitting}
           onSubmit={handleSubmit}
           submitButtonText="Update Blog"
-          onCancel={() => navigate("/admin/blogs")}
+          onCancel={() => navigate("/manage/blogs")}
           autoGenerateSlug={false}
         />
       )}

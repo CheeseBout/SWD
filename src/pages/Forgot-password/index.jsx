@@ -3,24 +3,16 @@ import React from "react";
 export default function ForgotPasswordPage() {
   return (
     <>
-      <button
-        className="btn"
-        onClick={() => document.getElementById("my_modal_3").showModal()}
-      >
-        open modal
-      </button>
-      <dialog id="my_modal_3" className="modal">
+      <label htmlFor="forgot_password_modal" className="btn">open modal</label>
+
+      <input type="checkbox" id="forgot_password_modal" className="modal-toggle" />
+      <div className="modal" role="dialog">
         <div className="modal-box">
-          <form method="dialog">
-            {/* if there is a button in form, it will close the modal */}
-            <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">
-              ✕
-            </button>
-          </form>
           <h3 className="font-bold text-lg">Hello!</h3>
-          <p className="py-4">Press ESC key or click on ✕ button to close</p>
+          <p className="py-4">Press ESC key or click outside to close</p>
         </div>
-      </dialog>
+        <label className="modal-backdrop" htmlFor="forgot_password_modal">Close</label>
+      </div>
     </>
   );
 }

@@ -31,16 +31,12 @@ export default function ProfilePage() {
     const fetchUserData = async () => {
       try {
         setIsLoading(true);
-        console.log("Auth user data available:", authUser);
-
         const userId =
           authUser?.userId || authUser?._id || authUser?.id || authUser?.sub;
 
         if (userId) {
           try {
-            console.log("Attempting to fetch user with ID:", userId);
             const response = await userService.getUserById(userId);
-            console.log("User data response:", response);
             if (response?.data?.user) {
               setProfileData(response.data.user);
             } else {

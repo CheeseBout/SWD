@@ -1,7 +1,7 @@
-import { useState, useEffect, createContext } from 'react';
-import PropTypes from 'prop-types';
-import { jwtDecode } from 'jwt-decode';
-import { userService } from '../services/api';
+import { useState, useEffect, createContext } from "react";
+import PropTypes from "prop-types";
+import { jwtDecode } from "jwt-decode";
+import { userService } from "../services/api";
 
 export const AuthContext = createContext({
   user: null,
@@ -9,7 +9,7 @@ export const AuthContext = createContext({
   isLoading: false,
   login: () => {},
   logout: () => {},
-  refreshUser: () => {}
+  refreshUser: () => {},
 });
 
 export function AuthProvider({ children }) {
@@ -19,33 +19,35 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const checkAuthStatus = async () => {
-      const token = localStorage.getItem('accessToken');
-      
+      const token = localStorage.getItem("accessToken");
+
       if (!token) {
         setIsAuthenticated(false);
         setUser(null);
         setIsLoading(false);
         return;
       }
-      
+
       try {
         const decodedToken = jwtDecode(token);
-        console.log("Decoded token contents:", decodedToken);
-        
+
         if (decodedToken.exp * 1000 < Date.now()) {
-          localStorage.removeItem('accessToken');
+          localStorage.removeItem("accessToken");
           setIsAuthenticated(false);
           setUser(null);
         } else {
           setIsAuthenticated(true);
-          
-          const userId = decodedToken.userId || decodedToken._id || decodedToken.id || decodedToken.sub;
-          
+
+          const userId =
+            decodedToken.userId ||
+            decodedToken._id ||
+            decodedToken.id ||
+            decodedToken.sub;
+
           if (userId) {
-            console.log("Found user ID:", userId);
             try {
               const userData = { ...decodedToken, _id: userId };
-              
+
               const response = await userService.getUserById(userId);
               if (response?.data?.user) {
                 setUser(response.data.user);
@@ -57,90 +59,104 @@ export function AuthProvider({ children }) {
               setUser({ ...decodedToken, _id: userId });
             }
           } else {
-            console.log("No user ID found in token, using token data", decodedToken);
+            console.log(
+              "No user ID found in token, using token data",
+              decodedToken
+            );
             setUser(decodedToken);
           }
         }
       } catch (error) {
-        console.error('Error decoding token:', error);
-        localStorage.removeItem('accessToken');
+        console.error("Error decoding token:", error);
+        localStorage.removeItem("accessToken");
         setIsAuthenticated(false);
         setUser(null);
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     checkAuthStatus();
   }, []);
 
   const logout = () => {
-    localStorage.removeItem('accessToken');
+    localStorage.removeItem("accessToken");
     setIsAuthenticated(false);
     setUser(null);
   };
 
   const login = async (token) => {
-    localStorage.setItem('accessToken', token);
+    localStorage.setItem("accessToken", token);
     try {
       const decodedToken = jwtDecode(token);
       setUser(decodedToken);
       setIsAuthenticated(true);
-      
-      if (decodedToken.userId || decodedToken._id || decodedToken.id || decodedToken.sub) {
-        const userId = decodedToken.userId || decodedToken._id || decodedToken.id || decodedToken.sub;
+
+      if (
+        decodedToken.userId ||
+        decodedToken._id ||
+        decodedToken.id ||
+        decodedToken.sub
+      ) {
+        const userId =
+          decodedToken.userId ||
+          decodedToken._id ||
+          decodedToken.id ||
+          decodedToken.sub;
         try {
           const response = await userService.getUserById(userId);
           if (response?.data?.user) {
-            setUser(prevUser => ({
+            setUser((prevUser) => ({
               ...prevUser,
-              ...response.data.user
+              ...response.data.user,
             }));
           }
         } catch (error) {
-          console.error('Error fetching user details after login:', error);
+          console.error("Error fetching user details after login:", error);
         }
       }
     } catch (error) {
-      console.error('Error decoding login token:', error);
+      console.error("Error decoding login token:", error);
       logout();
     }
   };
 
   const refreshUser = async () => {
     if (!isAuthenticated || !user) return;
-    
+
     const userId = user._id || user.id || user.sub;
     if (!userId) {
-      console.error('Cannot refresh user: No user ID available');
+      console.error("Cannot refresh user: No user ID available");
       return;
     }
-    
+
     try {
       setIsLoading(true);
       const response = await userService.getUserById(userId);
       setUser(response.data.user);
     } catch (error) {
-      console.error('Error refreshing user data:', error);
+      console.error("Error refreshing user data:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated, 
-      isLoading, 
-      login, 
-      logout,
-      refreshUser 
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated,
+        isLoading,
+        login,
+        logout,
+        refreshUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
 AuthProvider.propTypes = {
-  children: PropTypes.node.isRequired
+  children: PropTypes.node.isRequired,
 };

@@ -17,6 +17,7 @@ export default function QuizDetail() {
   const [submitted, setSubmitted] = useState(false);
   const [totalScore, setTotalScore] = useState(0);
   const [showWarning, setShowWarning] = useState(false);
+  const [pendingSavedResult, setPendingSavedResult] = useState(null);
   const { id } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useContext(AuthContext);
@@ -45,7 +46,39 @@ export default function QuizDetail() {
     };
 
     fetchQuiz();
-  }, [id]);
+    
+    // Check for saved temporary results when component mounts
+    if (isAuthenticated && id) {
+      const tempResults = quizService.getTemporaryResults();
+      if (tempResults[id]) {
+        setPendingSavedResult(tempResults[id]);
+      }
+    }
+  }, [id, isAuthenticated]);
+  
+  // Effect to handle showing saved results when user logs in
+  useEffect(() => {
+    if (isAuthenticated && pendingSavedResult) {
+      // Set the saved score and mark as submitted to show results
+      setTotalScore(pendingSavedResult.score);
+      setSubmitted(true);
+      
+      // Remove the temporary result once it's displayed
+      quizService.clearTemporaryResult(id);
+      
+      // Optional: Submit the result to backend now that user is logged in
+      quizService.submitQuizResult(
+        pendingSavedResult.quizId, 
+        pendingSavedResult.score, 
+        pendingSavedResult.answers
+      ).catch(err => console.error("Error submitting saved result", err));
+      
+      // Show modal with delay to ensure component is ready
+      setTimeout(() => {
+        document.getElementById('quiz_results_modal').checked = true;
+      }, 100);
+    }
+  }, [isAuthenticated, pendingSavedResult, id]);
 
   const handleAnswerSelect = (questionId, optionId) => {
     setUserAnswers(prev => ({
@@ -81,20 +114,39 @@ export default function QuizDetail() {
       totalPossibleScore += maxScore;
     });
 
-    setTotalScore(`${score}/${totalPossibleScore}`);
+    const percentage = Math.round((score / totalPossibleScore) * 100);
+    const scoreText = `${percentage}%`;
+    setTotalScore(scoreText);
+    
+    // Save result differently based on authentication status
+    if (isAuthenticated) {
+      // If authenticated, try to submit to backend
+      quizService.submitQuizResult(id, scoreText, userAnswers)
+        .catch(err => console.error("Error submitting quiz result", err));
+    } else {
+      // If not authenticated, save to local storage
+      quizService.saveTemporaryResult(id, scoreText, userAnswers);
+    }
+    
     setSubmitted(true);
     setShowWarning(false);
 
-    // Scroll to top so modal is visible
     window.scrollTo(0, 0);
-    // Disable body scroll when modal is shown
     document.body.style.overflow = 'hidden';
+    
+    setTimeout(() => {
+      document.getElementById('quiz_results_modal').checked = true;
+    }, 0);
   };
 
   const handleCloseResults = () => {
-    setSubmitted(false);
-    // Re-enable body scroll
     document.body.style.overflow = 'auto';
+    
+    document.getElementById('quiz_results_modal').checked = false;
+    
+    setTimeout(() => {
+      setSubmitted(false);
+    }, 100);
   };
 
   const isFormComplete = () => {

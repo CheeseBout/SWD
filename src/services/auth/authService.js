@@ -7,7 +7,6 @@ export const authService = {
         email,
         password,
       });
-      console.log("Login API response:", response.data);
 
       localStorage.setItem("accessToken", response.data.token);
 

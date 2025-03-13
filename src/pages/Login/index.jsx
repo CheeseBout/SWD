@@ -1,6 +1,6 @@
-import { useState, useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { authService } from "../../services/api";
+import { useState, useContext, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { authService, quizService } from "../../services/api";
 import { AuthContext } from "../../contexts/AuthContextObject";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -19,11 +19,29 @@ export default function LoginPage() {
   const [error, setError] = useState(null);
   const [resetEmail, setResetEmail] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm({ resolver: yupResolver(schema), mode: "onSubmit" });
+
+  const handleSuccessfulLogin = () => {
+    const searchParams = new URLSearchParams(location.search);
+    const redirectPath = searchParams.get('redirect');
+    
+    if (redirectPath) {
+      navigate(`/${redirectPath}`);
+    } else {
+      const pendingQuizId = quizService.getPendingRedirectQuiz();
+      if (pendingQuizId) {
+        quizService.clearPendingRedirectQuiz();
+        navigate(`/quizzes/${pendingQuizId}`);
+      } else {
+        navigate('/dashboard');
+      }
+    }
+  };
 
   const onSubmit = async (data) => {
     setError(null);
@@ -37,13 +55,20 @@ export default function LoginPage() {
         localStorage.setItem("refreshToken", refreshToken);
       }
       
-      setTimeout(() => {
-        navigate("/");
-      }, 100);
+      handleSuccessfulLogin();
     } catch (err) {
       setError(
         err.response?.data?.message || "Login failed. Please try again."
       );
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      await authService.loginWithGoogle();
+      handleSuccessfulLogin();
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -141,7 +166,7 @@ export default function LoginPage() {
           <button
             type="button"
             className="w-full text-black p-3 rounded-lg border-1 border-gray-300 hover:border-[#4096ff] hover:text-[#4096ff]"
-            onClick={() => authService.loginWithGoogle()}
+            onClick={handleGoogleLogin}
           >
             <i className="fa-solid fa-g"></i> SIGN IN WITH GOOGLE
           </button>

@@ -48,7 +48,9 @@ const NavBar = () => {
           <div className="flex-shrink-0 transition-transform duration-300 hover:scale-105">
             <Link to="/" className="flex items-center space-x-2">
               <img className="h-14 w-auto" src="/logo.png" alt="Logo" />
-              <span className="font-semibold text-xl text-gray-800 hidden sm:block">Marriage Counseling</span>
+              <span className="font-semibold text-xl text-gray-800 hidden sm:block">
+                Marriage Counseling
+              </span>
             </Link>
           </div>
 
@@ -117,6 +119,8 @@ const NavBar = () => {
                 <div>
                   <button
                     className="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform hover:scale-105"
+                    popoverTarget="user-dropdown"
+                    style={{ anchorName: "--user-dropdown-anchor" }}
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     aria-expanded={isDropdownOpen}
                   >
@@ -135,32 +139,46 @@ const NavBar = () => {
                   </button>
                 </div>
 
-                {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10 overflow-hidden border border-gray-100">
-                    <div className="py-1">
-                      <div className="px-4 py-3 border-b border-gray-100">
-                        <p className="text-sm text-gray-500">Signed in as</p>
-                        <p className="text-sm font-medium text-gray-800 truncate">{user?.fullname || user?.username || user?.email}</p>
-                      </div>
+                <div
+                  className="dropdown menu w-56 rounded-lg bg-white shadow-lg z-10 overflow-hidden border border-gray-100"
+                  popover="auto"
+                  id="user-dropdown"
+                  style={{ positionAnchor: "--user-dropdown-anchor" }}
+                >
+                  <div className="py-1">
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="text-sm text-gray-500">Signed in as</p>
+                      <p className="text-sm font-medium text-gray-800 truncate">
+                        {user?.fullname || user?.username || user?.email}
+                      </p>
+                    </div>
+                    {(user?.role === "admin" || user?.role === "couple_therapist") && (
                       <Link
-                        to="/profile"
+                        to="/dashboard"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
                         onClick={() => setIsDropdownOpen(false)}
                       >
-                        Your Profile
+                        Dashboard
                       </Link>
-                      <button
-                        className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors duration-150"
-                        onClick={() => {
-                          localStorage.removeItem("accessToken");
-                          window.location.href = "/login";
-                        }}
-                      >
-                        Sign out
-                      </button>
-                    </div>
+                    )}
+                    <Link
+                      to="/profile"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      Your Profile
+                    </Link>
+                    <button
+                      className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors duration-150"
+                      onClick={() => {
+                        localStorage.removeItem("accessToken");
+                        window.location.href = "/login";
+                      }}
+                    >
+                      Sign out
+                    </button>
                   </div>
-                )}
+                </div>
               </div>
             ) : (
               <div className="flex items-center space-x-3">
@@ -225,6 +243,15 @@ const NavBar = () => {
                     {user?.fullname || user?.username || "User"}
                   </span>
                 </div>
+                {(user?.role === "admin" || user?.role === "couple_therapist") && (
+                  <Link
+                    to="/dashboard"
+                    className="block px-3 py-3 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                )}
                 <Link
                   to="/profile"
                   className="block px-3 py-3 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"

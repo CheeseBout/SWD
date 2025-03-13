@@ -25,7 +25,7 @@ const createUserValidation = {
       .required()
       .min(3)
       .max(50)
-      .pattern(/^[a-zA-Z\s]*$/)
+      .pattern(/^[\p{L}\s]*$/u)
       .messages({
         "string.empty": "Full name is required",
         "string.min": "Full name must be at least 3 characters long",
@@ -88,7 +88,7 @@ const updateProfileValidation = {
       .required()
       .min(3)
       .max(50)
-      .pattern(/^[a-zA-Z\s]*$/)
+      .pattern(/^[\p{L}\s]*$/u)
       .messages({
         "string.empty": "Full name is required",
         "string.min": "Full name must be at least 3 characters long",

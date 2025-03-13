@@ -26,11 +26,6 @@ const packageSchema = new mongoose.Schema(
       min: 0,
       max: 100,
     },
-    times: {
-      type: Number,
-      required: true,
-      min: 1,
-    },
     comissionFee: {
       type: Number,
       required: true,

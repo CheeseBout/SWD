@@ -34,6 +34,12 @@ class PackageController {
     return OK(res, "Therapist packages retrieved successfully", result);
   });
 
+  getPackageByID = catchAsync(async (req, res) => {
+    const { packageID } = req.params;
+    const result = await packageService.getPackageByID(packageID);
+    return OK(res, "Package details retrieved successfully", result);
+  });
+
   updatePackage = catchAsync(async (req, res) => {
     const result = await packageService.updatePackage(
       req.params.packageID,

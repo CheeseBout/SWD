@@ -17,6 +17,7 @@ const TRANSACTION = require("../models/transaction.model");
 const moment = require("moment");
 const reservationsRepo = require("../repositories/reservations.repo");
 const APIError = require("../utils/ApiError");
+const packageServices = require("./package.services");
 
 const vnpay = new VNPay({
   tmnCode: config.VNPay.vnp_TmnCode,
@@ -45,6 +46,15 @@ class PaymentService {
         throw new Error("Reservation not found");
       }
 
+      const disconutPackage = existingReservation.packageID;
+      console.log("Package ID: ", disconutPackage);
+      const response = await packageServices.getPackageByID(disconutPackage);
+      const discountRate = response.discount;
+      console.log("Discount Rate: ", discountRate);
+
+      const newPrice = totalPrice - (totalPrice * discountRate) / 100;
+      console.log("New Price: ", newPrice);
+
       if (existingReservation.status === "PENDING") {
         throw new APIError(
           400,
@@ -57,10 +67,14 @@ class PaymentService {
       if (!payment) {
         payment = new PAYMENT({
           reservation: new mongoose.Types.ObjectId(reservationID),
-          totalPrice,
+          totalPrice: newPrice,
           totalPaid: 0,
           status: "PENDING",
         });
+        await payment.save();
+      } else {
+        // Update existing payment record with new discounted price
+        payment.totalPrice = newPrice;
         await payment.save();
       }
 
@@ -69,7 +83,7 @@ class PaymentService {
       const amount =
         phase === "DEPOSIT"
           ? Math.round(payment.totalPrice * 0.5)
-          : Math.round(payment.totalPrice * 0.5);
+          : Math.round(payment.totalPrice - payment.totalPaid);
 
       console.log("Amount to pay:", amount, "VND"); // Log để debug
 

@@ -36,6 +36,8 @@ const { auth } = require("../middlewares/auth.middleware");
  *                   type: string
  *                 email:
  *                   type: string
+ *             description:
+ *               type: string
  *           description: Couple therapist associated with the package
  *         name:
  *           type: string
@@ -49,9 +51,6 @@ const { auth } = require("../middlewares/auth.middleware");
  *         discount:
  *           type: number
  *           description: Discount percentage (0-100)
- *         times:
- *           type: number
- *           description: Number of sessions included
  *         comissionFee:
  *           type: number
  *           description: Commission fee for the platform
@@ -79,11 +78,11 @@ const { auth } = require("../middlewares/auth.middleware");
  *             fullname: "Dr. Jane Smith"
  *             photoURL: "https://example.com/photos/therapist.jpg"
  *             email: "jane@example.com"
+ *           description: "Licensed marriage counselor with 10+ years experience"
  *         name: "Premium Package"
  *         description: "Complete access to all counseling services"
- *         price: 199.99
+ *         price: 200000
  *         discount: 20
- *         times: 5
  *         comissionFee: 10
  *         status: "active"
  *         isActive: true
@@ -111,7 +110,6 @@ const { auth } = require("../middlewares/auth.middleware");
  *               - description
  *               - price
  *               - discount
- *               - times
  *               - comissionFee
  *               - coupleTherapistID
  *             properties:
@@ -123,13 +121,10 @@ const { auth } = require("../middlewares/auth.middleware");
  *                 example: "Complete access to all counseling services"
  *               price:
  *                 type: number
- *                 example: 199.99
+ *                 example: 200000
  *               discount:
  *                 type: number
  *                 example: 20
- *               times:
- *                 type: number
- *                 example: 5
  *               comissionFee:
  *                 type: number
  *                 example: 10
@@ -137,7 +132,7 @@ const { auth } = require("../middlewares/auth.middleware");
  *                 type: string
  *                 example: "67c724df85e0c3351b1ef814"
  *     responses:
- *       201:
+ *       200:
  *         description: Package created successfully
  *         content:
  *           application/json:
@@ -270,13 +265,10 @@ const { auth } = require("../middlewares/auth.middleware");
  *                 description: New price
  *               discount:
  *                 type: number
- *                 description: New discount percentage
- *               times:
- *                 type: number
- *                 description: New number of sessions
+ *                 description: New discount percentage (0-100)
  *               comissionFee:
  *                 type: number
- *                 description: New commission fee
+ *                 description: New commission fee percentage
  *               status:
  *                 type: string
  *                 enum: [active, inactive, pending]
@@ -398,6 +390,41 @@ const { auth } = require("../middlewares/auth.middleware");
  *       404:
  *         description: Package not found
  */
+/**
+ * @swagger
+ * /package/get-package-detail/{packageID}:
+ *   get:
+ *     summary: Get package by ID
+ *     description: Retrieve detailed information for a specific package (accessible to all users)
+ *     tags: [Packages]
+ *     parameters:
+ *       - in: path
+ *         name: packageID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Package ID
+ *     responses:
+ *       200:
+ *         description: Package details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 message:
+ *                   type: string
+ *                   example: Package details retrieved successfully
+ *                 data:
+ *                   $ref: '#/components/schemas/Package'
+ *       400:
+ *         description: Invalid package ID
+ *       404:
+ *         description: Package not found
+ */
 
 // Admin middleware for protected routes
 const adminOnly = (req, res, next) => {
@@ -422,6 +449,7 @@ router.get(
   "/get-package/:therapistID",
   packageController.getPackageByTherapist
 );
+router.get("/get-package-detail/:packageID", packageController.getPackageByID);
 router.put(
   "/update-package/:packageID",
   auth,

@@ -18,7 +18,6 @@ class PackageServices {
       !data.name ||
       !data.description ||
       !data.price ||
-      !data.times ||
       !data.discount ||
       !data.coupleTherapistID ||
       !data.comissionFee

@@ -119,6 +119,9 @@ router.get(
   coupleTherapistController.getCoupleTherapistById
 );
 
+
+router.get("/get-therapistId/:userId", coupleTherapistController.getCoupleTherapistIdByUserId);
+
 /**
  * @swagger
  * /coupletherapist/create-availability:

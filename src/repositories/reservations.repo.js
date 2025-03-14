@@ -125,6 +125,7 @@ class ReservationRepo {
       startTime: { $lt: endTime },
       endTime: { $gt: startTime },
       _id: { $ne: reservationID },
+      status: { $ne: "canceled" },
     });
   }
 

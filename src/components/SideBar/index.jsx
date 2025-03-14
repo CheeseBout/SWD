@@ -103,6 +103,13 @@ const SideBar = () => {
           icon={KeyIcon}
           label="Change Password"
         />
+        {user?.role === "member" && (
+          <NavItem
+            to="/profile/your-reservations"
+            icon={ClipboardCheckIcon}
+            label="Your Reservations"
+          />
+        )}
       </nav>
 
       <div className="mt-auto pt-8 px-4">

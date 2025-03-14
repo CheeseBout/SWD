@@ -59,12 +59,10 @@ export default function TherapistReservations() {
     setShowDetailsModal(true);
   };
 
-  const handleUpdateStatus = async (id, newStatus) => {
+  const handleUpdateStatus = async (id, newStatus, price) => {
     try {
       setIsUpdating(true);
-      await api.put(`/api/v1/coupletherapist/reservation/${id}`, {
-        status: newStatus,
-      });
+      await reservationService.approveReservation(id, price);
       toast.success(`Reservation ${newStatus} successfully`);
       fetchReservations();
       setShowDetailsModal(false);
@@ -520,7 +518,11 @@ export default function TherapistReservations() {
                   <button
                     className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
                     onClick={() =>
-                      handleUpdateStatus(selectedReservation._id, "confirmed")
+                      handleUpdateStatus(
+                        selectedReservation._id,
+                        "confirmed",
+                        selectedReservation.totalPrice
+                      )
                     }
                   >
                     Confirm

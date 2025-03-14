@@ -95,7 +95,6 @@ export default function YourReservation() {
   const handleCancel = (id) => {
     setCancelReservationId(id);
     setShowCancelModal(true);
-    setRefreshKey((prevKey) => prevKey + 1);
   };
 
   const confirmCancel = async () => {

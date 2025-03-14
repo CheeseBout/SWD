@@ -14,6 +14,20 @@ export const reservationService = {
     }
   },
 
+  async createReservation(reservationData) {
+    try {
+      const response = await api.post(
+        "/api/v1/reservation/create-reservation",
+        reservationData
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error creating reservation:", error);
+      throw error;
+    }
+  },
+
+
   // Get all reservations for a member
   getMemberReservation: async (id, status = "", page = 1, limit = 10) => {
     try {
@@ -38,10 +52,7 @@ export const reservationService = {
   async cancelReservation(reservationId) {
     try {
       const response = await api.put(
-        `/api/v1/coupletherapist/reservation/${reservationId}`,
-        {
-          status: "canceled",
-        }
+        `/api/v1/reservation/delete-reservation/${reservationId}`
       );
       return response.data;
     } catch (error) {

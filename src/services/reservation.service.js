@@ -46,6 +46,44 @@ class ReservationService {
       filter.status = status;
     }
 
+    const result = await reservationsRepo.getAll(filter, { page, limit });
+
+    console.log("Therapist reservations: ", result);
+
+    if (result.reservations && result.reservations.length > 0) {
+      for (const reservation of result.reservations) {
+        // Handle reservations with "confirmed" status - check if they should be marked as deposited
+        if (reservation.status === "confirmed") {
+          try {
+            const isDeposited = await this.checkDepositedReservation(
+              reservation._id
+            );
+            if (isDeposited) {
+              // Update reservation status to deposited in the database
+              await mongoose
+                .model("Reservation")
+                .findByIdAndUpdate(reservation._id, { status: "deposited" });
+
+              // Update the status in the returned object as well
+              reservation.status = "deposited";
+              console.log(
+                `Reservation ${reservation._id} updated to "deposited"`
+              );
+            } else {
+              // Not deposited, continue to the next reservation
+              continue;
+            }
+          } catch (error) {
+            console.error(
+              `Error checking/updating deposit status for reservation ${reservation._id}:`,
+              error
+            );
+            continue;
+          }
+        }
+      }
+    }
+
     return await reservationsRepo.getAll(filter, { page, limit });
   }
 
@@ -263,7 +301,7 @@ class ReservationService {
             if (isDeposited) {
               // Update reservation status to deposited in the database
               await mongoose
-                .model("Reservation")
+                .model("Reservations")
                 .findByIdAndUpdate(reservation._id, { status: "deposited" });
 
               // Update the status in the returned object as well

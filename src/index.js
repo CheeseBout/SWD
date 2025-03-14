@@ -27,6 +27,7 @@ const startServer = async () => {
         const allowedOrigins = [
           "http://localhost:5173",
           "http://localhost:3000",
+          "http://localhost:8080",
           "https://premarital-counseling.vercel.app",
           appConfig.CLIENT_URL,
         ];
@@ -93,16 +94,53 @@ const startServer = async () => {
     }
 
     app.use("/api/v1", require("./routes"));
+
+    // Handle 404 routes more gracefully
     app.use("*", (req, res) => {
-      res.status(404).json({ message: "Not found" });
+      res.status(404).json({
+        message: "Not found",
+        path: req.originalUrl,
+        method: req.method,
+      });
     });
 
+    // Error handlers must be last
     app.use(errorConverter);
     app.use(errorHandler);
 
-    app.listen(port, () => {
+    // Create server with more robust error handling
+    const server = app.listen(port, () => {
       console.log(`🚀 Server is running on port ${port}`);
     });
+
+    // Handle server-level errors
+    server.on("error", (err) => {
+      console.error("Server error:", err);
+      if (err.code === "EADDRINUSE") {
+        console.error(`Port ${port} is already in use. Trying another port...`);
+        // Could implement logic to try another port here
+      }
+    });
+
+    // Graceful shutdown
+    const gracefulShutdown = () => {
+      console.log("🔴 Shutting down gracefully...");
+      server.close(() => {
+        console.log("💤 Server closed");
+        process.exit(0);
+      });
+
+      // Force shutdown after 10 seconds if not closed gracefully
+      setTimeout(() => {
+        console.error(
+          "⚠️ Could not close connections in time, forcing shutdown"
+        );
+        process.exit(1);
+      }, 10000);
+    };
+
+    process.on("SIGTERM", gracefulShutdown);
+    process.on("SIGINT", gracefulShutdown);
   } catch (error) {
     console.error("Failed to start server:", error);
     process.exit(1);

@@ -1,0 +1,177 @@
+import { StyleSheet } from "react-native";
+
+export const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f9f9f9",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#4a6ee0",
+    paddingTop: 60,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+  },
+  backButton: {
+    marginRight: 15,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f9f9f9",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#666",
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+  },
+  statusSection: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  statusLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  statusText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  section: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 10,
+  },
+  contentText: {
+    fontSize: 14,
+    color: "#555",
+    lineHeight: 20,
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  infoIcon: {
+    width: 40,
+    alignItems: "center",
+  },
+  infoContent: {
+    flex: 1,
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 2,
+  },
+  infoValue: {
+    fontSize: 16,
+    color: "#333",
+  },
+  priceValue: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#4a6ee0",
+  },
+  deniedSection: {
+    backgroundColor: "#FEF2F2",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  },
+  deniedTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#B91C1C",
+    marginBottom: 8,
+  },
+  deniedReason: {
+    fontSize: 14,
+    color: "#B91C1C",
+    lineHeight: 20,
+  },
+  cancelButton: {
+    backgroundColor: "#F44336",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 30,
+  },
+  cancelButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
+  },
+  therapistSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  therapistImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 15,
+  },
+  therapistInfo: {
+    flex: 1,
+  },
+  therapistName: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+  },
+  packageName: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#333",
+    marginBottom: 4,
+  },
+  meetingLink: {
+    fontSize: 16,
+    color: "#4a6ee0",
+    textDecorationLine: "underline",
+  },
+});

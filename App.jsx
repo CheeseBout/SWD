@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { LogBox, InteractionManager } from "react-native";
 import { LoginScreen } from "./screens/Login/Login";
 import { HomeScreen } from "./screens/Home/Home";
 import { RegisterScreen } from "./screens/Register/Register";
@@ -22,6 +23,16 @@ import BlogList from "./screens/BlogList/BlogList";
 import BlogDetail from "./screens/BlogDetail/BlogDetail";
 import QuizList from "./screens/QuizList/QuizList";
 import QuizDetail from "./screens/QuizDetail/QuizDetail";
+import ReservationsScreen from "./screens/Reservations/Reservations";
+import YourReservation from "./screens/YourReservation/YourReservation";
+
+// Add this line to ignore the specific warning related to this React Native bug
+LogBox.ignoreLogs([
+  "ViewGroup",
+  "Cannot remove child at index",
+  "Warning: childCount may be incorrect",
+  "VirtualizedLists should never be nested",
+]);
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -34,15 +45,15 @@ const TabItems = () => {
         tabBarIcon: ({ focused }) => {
           let iconName;
           if (route.name === "Home") {
-            focused ? (iconName = "home") : (iconName = "home-outline");
+            iconName = focused ? "home" : "home-outline";
           } else if (route.name === "Calendar") {
-            focused ? (iconName = "calendar") : (iconName = "calendar-outline");
+            iconName = focused ? "calendar" : "calendar-outline";
           } else if (route.name === "Blog") {
-            focused
-              ? (iconName = "newspaper")
-              : (iconName = "newspaper-outline");
+            iconName = focused ? "newspaper" : "newspaper-outline";
+          } else if (route.name === "Reservations") {
+            iconName = focused ? "bookmark" : "bookmark-outline";
           } else if (route.name === "Profile") {
-            focused ? (iconName = "person") : (iconName = "person-outline");
+            iconName = focused ? "person" : "person-outline";
           }
           return <Ionicons name={iconName} size={24} color="#4a6ee0" />;
         },
@@ -51,11 +62,11 @@ const TabItems = () => {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Calendar" component={CalendarScreen} />
       <Tab.Screen name="Blog" component={BlogList} />
+      <Tab.Screen name="Reservations" component={ReservationsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 };
-
 const NavigationScreens = () => {
   const { isAuthenticated, loading } = useAuth();
 
@@ -68,7 +79,19 @@ const NavigationScreens = () => {
   }
 
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenListeners={{
+        beforeRemove: (e) => {
+          // Handle back navigation more gracefully
+          const event = e;
+          if (event.data.action.type === "GO_BACK") {
+            InteractionManager.runAfterInteractions(() => {
+              // Let any animations complete before continuing
+            });
+          }
+        },
+      }}
+    >
       {!isAuthenticated ? (
         <>
           <Stack.Screen
@@ -102,7 +125,11 @@ const NavigationScreens = () => {
           <Stack.Screen
             name="SearchTherapist"
             component={SearchTherapistScreen}
-            options={{ headerShown: true, title: "Find a Therapist" }}
+            options={{
+              headerShown: true,
+              title: "Find a Therapist",
+              animation: "slide_from_right", // Add animation type
+            }}
           />
           <Stack.Screen
             name="SearchTherapistResult"
@@ -134,13 +161,23 @@ const NavigationScreens = () => {
             component={QuizDetail}
             options={{ headerShown: false }}
           />
+          <Stack.Screen
+            name="Reservations"
+            component={ReservationsScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="ReservationDetails"
+            component={YourReservation}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="TherapistDetail"
+            component={TherapistDetailScreen}
+            options={{ headerShown: true, title: "Find a Therapist" }}
+          />
         </>
       )}
-      <Stack.Screen
-        name="TherapistDetail"
-        component={TherapistDetailScreen}
-        options={{ headerShown: true, title: "Find a Therapist" }}
-      />
     </Stack.Navigator>
   );
 };

@@ -26,6 +26,7 @@ export default function SearchTherapistResultScreen({ navigation, route }) {
         const response = await fetchSearchTherapistList(query);
         setTherapistList(response);
         setFilteredTherapists(response);
+        console.log("");
         console.log(response);
       } catch (error) {
         console.log("Error while fetching couple therapist", error);
@@ -38,6 +39,7 @@ export default function SearchTherapistResultScreen({ navigation, route }) {
   const filterTherapists = async () => {
     const response = await fetchSearchTherapistList(searchQuery);
     setFilteredTherapists(response);
+    console.log(response);
   };
 
   // Handle enter key press
@@ -75,29 +77,43 @@ export default function SearchTherapistResultScreen({ navigation, route }) {
         navigation.navigate("TherapistDetail", { therapist: item })
       }
     >
-      <Image source={{ uri: item.image }} style={styles.therapistImage} />
+      <Image
+        source={{ uri: item.userInfo.photoURL }}
+        style={styles.therapistImage}
+      />
       <View style={styles.therapistInfo}>
         <View style={styles.nameContainer}>
           <Text style={styles.therapistName}>{item.userInfo.fullname}</Text>
+          {item.userInfo.isVerified && (
+            <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+          )}
         </View>
 
-        <Text style={styles.therapistSpecialty}>{item.specialty}</Text>
+        <Text style={styles.therapistCategory}>{item.category}</Text>
+        <Text style={styles.therapistLocation}>{item.userInfo.address}</Text>
 
         <View style={styles.therapistDetails}>
           <View style={styles.detailItem}>
-            <Ionicons name="time-outline" size={14} color="#666" />
-            <Text style={styles.detailText}>{item.experience}</Text>
+            <Ionicons name="star" size={14} color="#FFD700" />
+            <Text style={styles.detailText}>
+              {item.rating || "New"}{" "}
+              {item.rating ? `(${item.reviewCount} reviews)` : ""}
+            </Text>
           </View>
 
-          <View style={styles.detailItem}>
-            <Ionicons name="star" size={14} color="#FFD700" />
-            <Text style={styles.detailText}>{item.rating}</Text>
-            <Text style={styles.reviewCount}>({item.reviews})</Text>
-          </View>
+          {item.certificates && item.certificates.length > 0 && (
+            <View style={styles.detailItem}>
+              <Ionicons name="school-outline" size={14} color="#666" />
+              <Text style={styles.detailText}>
+                {item.certificates.length} Certificate
+                {item.certificates.length > 1 ? "s" : ""}
+              </Text>
+            </View>
+          )}
 
           <View style={styles.detailItem}>
             <Ionicons name="location-outline" size={14} color="#666" />
-            <Text style={styles.detailText}>{item.location}</Text>
+            <Text style={styles.detailText}>{item.userInfo.address}</Text>
           </View>
         </View>
       </View>

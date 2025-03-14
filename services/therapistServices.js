@@ -36,6 +36,7 @@ const fetchSearchTherapistList = async (searchQuery) => {
 const fetchTherapistDetail = async (therapistId) => {
   try {
     const response = await apiClient.get(`/coupletherapist/${therapistId}`);
+    console.log("Therapist detail response", response.data.data);
     return response.data.data;
   } catch (error) {
     console.log(error);
@@ -48,6 +49,7 @@ const fetchAvailabilityList = async (therapistId) => {
     const response = await apiClient.get(
       `/coupletherapist/get-availability/${therapistId}`
     );
+    console.log("Availability response", response.data.data);
     return response.data.data;
   } catch (error) {
     console.log(

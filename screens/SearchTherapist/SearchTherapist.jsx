@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { styles } from "./styles";
 import { fetchTherapistList } from "../../services/therapistServices";
+import { useFocusEffect } from "@react-navigation/native";
 
 // Process steps data
 const PROCESS_STEPS = [
@@ -32,20 +33,32 @@ const PROCESS_STEPS = [
 export default function SearchTherapistScreen({ navigation }) {
   const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        await fetchTherapistList();
-      } catch (error) {
-        console.log("Error while fetching couple therapist", error);
-      }
-    };
-    fetchData();
-  });
+  useFocusEffect(
+    useCallback(() => {
+      const fetchData = async () => {
+        try {
+          await fetchTherapistList();
+        } catch (error) {
+          console.log("Error while fetching couple therapist", error);
+        }
+      };
+
+      fetchData();
+
+      // Cleanup function
+      return () => {
+        // Reset states when screen loses focus
+        setSearchQuery("");
+      };
+    }, [])
+  );
 
   const handleSearch = () => {
     if (searchQuery.trim() !== "") {
-      navigation.navigate("SearchTherapistResult", { searchQuery });
+      // Use requestAnimationFrame to handle navigation more smoothly
+      requestAnimationFrame(() => {
+        navigation.navigate("SearchTherapistResult", { searchQuery });
+      });
     }
   };
 

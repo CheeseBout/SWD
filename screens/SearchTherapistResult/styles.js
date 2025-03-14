@@ -69,15 +69,18 @@ export const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   therapistCard: {
-    flexDirection: "row",
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
+    flexDirection: "row",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: 3,
     elevation: 3,
   },
   therapistImage: {
@@ -88,19 +91,43 @@ export const styles = StyleSheet.create({
   },
   therapistInfo: {
     flex: 1,
-    justifyContent: "space-between",
   },
   nameContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 4,
   },
   therapistName: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "600",
     color: "#333",
-    flexShrink: 1,
+    marginRight: 6,
+  },
+  therapistCategory: {
+    fontSize: 14,
+    color: "#4a6ee0",
+    marginBottom: 4,
+  },
+  therapistLocation: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 8,
+  },
+  therapistDetails: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+  },
+  detailItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 16,
+    marginBottom: 4,
+  },
+  detailText: {
+    fontSize: 13,
+    color: "#666",
+    marginLeft: 4,
   },
   availableTag: {
     paddingHorizontal: 8,
@@ -124,21 +151,6 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     marginBottom: 8,
-  },
-  therapistDetails: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  detailItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 16,
-    marginBottom: 4,
-  },
-  detailText: {
-    fontSize: 13,
-    color: "#666",
-    marginLeft: 4,
   },
   reviewCount: {
     fontSize: 12,

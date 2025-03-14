@@ -10,6 +10,7 @@ import {
   UserIcon,
   UserCircleIcon,
   KeyIcon,
+  LinkIcon,
 } from "@heroicons/react/outline";
 
 const SideBar = () => {
@@ -151,6 +152,9 @@ const SideBar = () => {
               icon={KeyIcon}
               label="Change Password"
             />
+            {user?.role === "couple_therapist" && (
+              <NavItem to="/profile/connect" icon={LinkIcon} label="Connect" />
+            )}
             {user?.role === "member" && (
               <NavItem
                 to="/profile/your-reservations"

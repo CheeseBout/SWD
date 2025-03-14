@@ -29,17 +29,15 @@ export default function TherapistReservations() {
   const fetchReservations = async () => {
     try {
       setIsLoading(true);
-      // Using direct API call to see the response structure
       const response = await reservationService.getTherapistReservation(
-        therapistId
+        therapistId,
+        filterStatus,
+        currentPage,
+        10
       );
-      console.log("API Response:", response.data);
-
-      if (response?.data?.data?.reservations) {
-        // Getting the data from the actual response structure
-        setReservations(response.data.data.reservations);
-        setTotalPages(response.data.data.pages || 1);
-        console.log("Setting reservations:", response.data.data.reservations);
+      if (response?.reservations) {
+        setReservations(response.reservations);
+        setTotalPages(response?.pages || 1);
       } else {
         setReservations([]);
         setTotalPages(1);
@@ -125,12 +123,14 @@ export default function TherapistReservations() {
       case "confirmed":
         return "bg-green-100 text-green-800";
       case "pending":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-gray-200 text-gray-800";
       case "completed":
         return "bg-blue-100 text-blue-800";
       case "canceled":
       case "denied":
         return "bg-red-100 text-red-800";
+      case "deposited":
+        return "bg-yellow-100 text-yellow-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -169,6 +169,7 @@ export default function TherapistReservations() {
                   <option value="completed">Completed</option>
                   <option value="canceled">Canceled</option>
                   <option value="denied">Denied</option>
+                  <option value="deposited">Deposited</option>
                 </select>
               </div>
             </div>

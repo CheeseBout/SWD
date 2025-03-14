@@ -164,4 +164,7 @@ export const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: "center",
   },
+  searchButton: {
+    backgroundColor: "#4a6ee0",
+  },
 });

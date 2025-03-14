@@ -93,22 +93,21 @@ export const styles = StyleSheet.create({
     color: "#333",
     flex: 1,
   },
-  servicesContainer: {
-    marginBottom: 20,
-  },
-  serviceItem: {
-    flexDirection: "row",
-    alignItems: "center",
+  availabilityItem: {
+    padding: 10,
     backgroundColor: "#f0f0f0",
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 10,
-    marginBottom: 10,
+    borderRadius: 5,
+    marginVertical: 5,
   },
-  serviceText: {
-    marginLeft: 10,
-    fontSize: 15,
-    color: "#444",
+  availabilityText: {
+    fontSize: 14,
+    color: "#333",
+  },
+  noAvailabilityText: {
+    fontSize: 14,
+    color: "#999",
+    textAlign: "center",
+    marginTop: 10,
   },
   reviewContainer: {
     marginBottom: 15,

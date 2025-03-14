@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { styles } from "./styles";
+import { fetchTherapistList } from "../../services/therapistServices";
 
 // Process steps data
 const PROCESS_STEPS = [
@@ -31,9 +32,19 @@ const PROCESS_STEPS = [
 export default function SearchTherapistScreen({ navigation }) {
   const [searchQuery, setSearchQuery] = useState("");
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        await fetchTherapistList();
+      } catch (error) {
+        console.log("Error while fetching couple therapist", error);
+      }
+    };
+    fetchData();
+  });
+
   const handleSearch = () => {
     if (searchQuery.trim() !== "") {
-      console.log("Searching for:", searchQuery);
       navigation.navigate("SearchTherapistResult", { searchQuery });
     }
   };

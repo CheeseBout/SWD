@@ -1,87 +1,49 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   FlatList,
   Image,
   TouchableOpacity,
-  StyleSheet,
   TextInput,
+  Button,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { fetchSearchTherapistList } from "../../services/therapistServices";
 import { styles } from "./styles";
-// Mock data for therapists
-const MOCK_THERAPISTS = [
-  {
-    id: "1",
-    name: "Dr. Sarah Johnson",
-    specialty: "Marriage & Family Therapy",
-    experience: "15 years",
-    rating: 4.9,
-    reviews: 124,
-    location: "New York, NY",
-    image: "https://randomuser.me/api/portraits/women/44.jpg",
-  },
-  {
-    id: "2",
-    name: "Dr. Michael Williams",
-    specialty: "Relationship Counseling",
-    experience: "10 years",
-    rating: 4.7,
-    reviews: 98,
-    location: "Boston, MA",
-    image: "https://randomuser.me/api/portraits/men/32.jpg",
-  },
-  {
-    id: "3",
-    name: "Dr. Emily Rodriguez",
-    specialty: "Pre-marital Counseling",
-    experience: "8 years",
-    rating: 4.8,
-    reviews: 86,
-    location: "Chicago, IL",
-    image: "https://randomuser.me/api/portraits/women/68.jpg",
-  },
-  {
-    id: "4",
-    name: "Dr. Robert Chen",
-    specialty: "Couples Therapy",
-    experience: "12 years",
-    rating: 4.6,
-    reviews: 112,
-    location: "San Francisco, CA",
-    image: "https://randomuser.me/api/portraits/men/75.jpg",
-  },
-  {
-    id: "5",
-    name: "Dr. Lisa Thompson",
-    specialty: "Family Counseling",
-    experience: "9 years",
-    rating: 4.5,
-    reviews: 79,
-    location: "Seattle, WA",
-    image: "https://randomuser.me/api/portraits/women/33.jpg",
-  },
-];
 
 export default function SearchTherapistResultScreen({ navigation, route }) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredTherapists, setFilteredTherapists] = useState(MOCK_THERAPISTS);
+  const query = route.params.searchQuery || "";
+  const [therapistList, setTherapistList] = useState([]);
+  const [filteredTherapists, setFilteredTherapists] = useState([]);
   const [sortBy, setSortBy] = useState("rating"); // Options: rating, experience, reviews
 
-  // Filter therapists based on search query
-  const filterTherapists = (query) => {
+  useEffect(() => {
     setSearchQuery(query);
-    if (!query.trim()) {
-      setFilteredTherapists(MOCK_THERAPISTS);
-    } else {
-      const filtered = MOCK_THERAPISTS.filter(
-        (therapist) =>
-          therapist.name.toLowerCase().includes(query.toLowerCase()) ||
-          therapist.specialty.toLowerCase().includes(query.toLowerCase()) ||
-          therapist.location.toLowerCase().includes(query.toLowerCase())
-      );
-      setFilteredTherapists(filtered);
+    const fetchData = async () => {
+      try {
+        const response = await fetchSearchTherapistList(query);
+        setTherapistList(response);
+        setFilteredTherapists(response);
+        console.log(response);
+      } catch (error) {
+        console.log("Error while fetching couple therapist", error);
+      }
+    };
+    fetchData();
+  }, [query]);
+
+  // Filter therapists based on search query
+  const filterTherapists = async () => {
+    const response = await fetchSearchTherapistList(searchQuery);
+    setFilteredTherapists(response);
+  };
+
+  // Handle enter key press
+  const handleKeyPress = (event) => {
+    if (event.key === "Enter") {
+      filterTherapists();
     }
   };
 
@@ -116,7 +78,7 @@ export default function SearchTherapistResultScreen({ navigation, route }) {
       <Image source={{ uri: item.image }} style={styles.therapistImage} />
       <View style={styles.therapistInfo}>
         <View style={styles.nameContainer}>
-          <Text style={styles.therapistName}>{item.name}</Text>
+          <Text style={styles.therapistName}>{item.userInfo.fullname}</Text>
         </View>
 
         <Text style={styles.therapistSpecialty}>{item.specialty}</Text>
@@ -156,8 +118,10 @@ export default function SearchTherapistResultScreen({ navigation, route }) {
           style={styles.searchInput}
           placeholder="Refine your search..."
           value={searchQuery}
-          onChangeText={filterTherapists}
+          onChangeText={setSearchQuery}
+          onKeyPress={handleKeyPress}
         />
+        <Button title="Search" onPress={filterTherapists} />
       </View>
 
       {/* Sort Options */}
@@ -222,7 +186,7 @@ export default function SearchTherapistResultScreen({ navigation, route }) {
       {filteredTherapists.length > 0 ? (
         <FlatList
           data={filteredTherapists}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item._id}
           renderItem={renderTherapistCard}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}

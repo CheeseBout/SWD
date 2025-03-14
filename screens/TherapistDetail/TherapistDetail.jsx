@@ -1,12 +1,26 @@
 import { View, Text, TouchableOpacity, Image, ScrollView } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { fetchAvailabilityList } from "../../services/therapistServices";
 import { styles } from "./styles";
 
 export default function TherapistDetailScreen({ route, navigation }) {
   // State to track the selected tab
   const [activeTab, setActiveTab] = useState(1);
   const { therapist } = route.params;
+  const [availability, setAvailability] = useState([]);
+
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      try {
+        const response = await fetchAvailabilityList(therapist._id);
+        setAvailability(response.timeAvailable);
+      } catch (error) {
+        console.log("Error while fetching availability", error);
+      }
+    };
+    fetchAvailability();
+  }, [therapist._id]);
 
   const renderStars = (rating) => {
     const stars = [];
@@ -51,10 +65,10 @@ export default function TherapistDetailScreen({ route, navigation }) {
           <View>
             <Text style={styles.sectionTitle}>About</Text>
             <Text style={styles.aboutText}>
-              {therapist.name} is a licensed therapist specializing in{" "}
-              {therapist.specialty}. With {therapist.experience} of professional
-              experience, they have helped numerous clients overcome challenges
-              and improve their relationships.
+              {therapist.userInfo?.fullname} is a licensed therapist
+              specializing in {therapist.specialty}. With {therapist.experience}{" "}
+              of professional experience, they have helped numerous clients
+              overcome challenges and improve their relationships.
             </Text>
 
             <View style={styles.sectionDivider} />
@@ -105,9 +119,9 @@ export default function TherapistDetailScreen({ route, navigation }) {
               </View>
               {renderStars(5)}
               <Text style={styles.reviewText}>
-                Dr. {therapist.name.split(" ")[1]} was incredibly helpful during
-                our sessions. Their insights and advice really transformed my
-                relationship. Highly recommended!
+                Dr. {therapist.userInfo?.fullname?.split(" ")[1]} was incredibly
+                helpful during our sessions. Their insights and advice really
+                transformed my relationship. Highly recommended!
               </Text>
             </View>
 
@@ -134,36 +148,21 @@ export default function TherapistDetailScreen({ route, navigation }) {
       case 3:
         return (
           <View>
-            <Text style={styles.sectionTitle}>Services Offered</Text>
-
-            <View style={styles.servicesContainer}>
-              <View style={styles.serviceItem}>
-                <Ionicons name="checkmark-circle" size={20} color="#4a6ee0" />
-                <Text style={styles.serviceText}>Individual Therapy</Text>
-              </View>
-
-              <View style={styles.serviceItem}>
-                <Ionicons name="checkmark-circle" size={20} color="#4a6ee0" />
-                <Text style={styles.serviceText}>Couples Counseling</Text>
-              </View>
-
-              <View style={styles.serviceItem}>
-                <Ionicons name="checkmark-circle" size={20} color="#4a6ee0" />
-                <Text style={styles.serviceText}>{therapist.specialty}</Text>
-              </View>
-
-              <View style={styles.serviceItem}>
-                <Ionicons name="checkmark-circle" size={20} color="#4a6ee0" />
-                <Text style={styles.serviceText}>
-                  Online Sessions Available
-                </Text>
-              </View>
-
-              <View style={styles.serviceItem}>
-                <Ionicons name="checkmark-circle" size={20} color="#4a6ee0" />
-                <Text style={styles.serviceText}>In-person Consultations</Text>
-              </View>
-            </View>
+            <Text style={styles.sectionTitle}>Availability</Text>
+            {availability.length > 0 ? (
+              availability.map((slot, index) => (
+                <View key={index} style={styles.availabilityItem}>
+                  <Text style={styles.availabilityText}>
+                    {new Date(slot.startHour).toLocaleString()} -{" "}
+                    {new Date(slot.endHour).toLocaleString()}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.noAvailabilityText}>
+                No availability data
+              </Text>
+            )}
           </View>
         );
       default:
@@ -183,7 +182,7 @@ export default function TherapistDetailScreen({ route, navigation }) {
           </View>
 
           <View style={styles.infoContainer}>
-            <Text style={styles.name}>{therapist.name}</Text>
+            <Text style={styles.name}>{therapist.userInfo?.fullname}</Text>
             <Text style={styles.specialty}>{therapist.specialty}</Text>
 
             <View style={styles.statsRow}>
@@ -241,7 +240,7 @@ export default function TherapistDetailScreen({ route, navigation }) {
               activeTab === 3 ? styles.activeTabText : styles.inactiveTabText,
             ]}
           >
-            Services
+            Availability
           </Text>
         </TouchableOpacity>
       </View>

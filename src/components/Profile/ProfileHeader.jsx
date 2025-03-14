@@ -29,32 +29,20 @@ const ProfileHeader = ({ user, onUpdateUser }) => {
 
   const fetchUserData = async () => {
     try {
-      console.log("Auth user data available:", authUser);
-
       const userId =
         authUser?.userId || authUser?._id || authUser?.id || authUser?.sub;
+      if (!userId) {
+        console.warn("No user ID found in auth data");
+        return;
+      }
 
-      if (userId) {
-        try {
-          console.log("Attempting to fetch user with ID:", userId);
-          const response = await userService.getUserById(userId);
-          console.log("User data response:", response);
-          if (response?.data?.user) {
-            setProfileData(response.data.user);
-          } else {
-            setProfileData(authUser);
-          }
-        } catch (fetchError) {
-          console.error("Error fetching user profile:", fetchError);
-          setProfileData(authUser);
-        }
-      } else {
-        console.log("No user ID found in auth data, using available data");
-        setProfileData(authUser);
+      const response = await userService.getUserById(userId);
+      if (response?.data?.user?.photoURL) {
+        setLocalPhotoURL(response.data.user.photoURL);
       }
     } catch (error) {
-      console.error("Error handling profile data:", error);
-      setError("An error occurred while loading your profile.");
+      console.error("Error fetching user data:", error);
+      toast.error("Failed to refresh user data");
     }
   };
 
@@ -64,20 +52,19 @@ const ProfileHeader = ({ user, onUpdateUser }) => {
       return;
     }
 
-    const previewURL = URL.createObjectURL(file);
-    setLocalPhotoURL(previewURL);
-
-    const formData = new FormData();
-    formData.append("image", file);
+    const previousPhotoURL = localPhotoURL;
 
     try {
-      const token = localStorage.getItem("token");
+      const previewURL = URL.createObjectURL(file);
+      setLocalPhotoURL(previewURL);
 
+      const token = localStorage.getItem("accessToken");
       if (!token) {
-        toast.error("Authentication required. Please log in again.");
-        setLocalPhotoURL(user?.photoURL);
-        return;
+        throw new Error("Authentication required");
       }
+
+      const formData = new FormData();
+      formData.append("image", file);
 
       const response = await api.patch(
         "/api/v1/users/change-avatar",
@@ -90,40 +77,79 @@ const ProfileHeader = ({ user, onUpdateUser }) => {
         }
       );
 
-      console.log("Upload response:", response.data);
+      console.log("Avatar upload response:", response);
 
-      const newPhotoURL =
-        response.data?.user?.photoURL || response.data?.photoURL;
+      let newPhotoURL = null;
+
+      if (response.data?.user?.photoURL) {
+        newPhotoURL = response.data.user.photoURL;
+      } else if (response.data?.photoURL) {
+        newPhotoURL = response.data.photoURL;
+      } else if (response.data?.data?.photoURL) {
+        newPhotoURL = response.data.data.photoURL;
+      } else if (response.data?.user?.data?.photoURL) {
+        newPhotoURL = response.data.user.data.photoURL;
+      } else if (response.data?.url) {
+        newPhotoURL = response.data.url;
+      } else if (
+        typeof response.data === "string" &&
+        response.data.startsWith("http")
+      ) {
+        newPhotoURL = response.data;
+      }
+
+      if (!newPhotoURL && response.status >= 200 && response.status < 300) {
+        toast.success("Avatar updated. Refresh to see changes.");
+
+        if (refreshUser) {
+          await refreshUser();
+        }
+
+        URL.revokeObjectURL(previewURL);
+        return;
+      }
 
       if (newPhotoURL) {
         setLocalPhotoURL(newPhotoURL);
 
         if (onUpdateUser) {
-          onUpdateUser({
-            ...user,
-            photoURL: newPhotoURL,
-          });
+          onUpdateUser({ ...user, photoURL: newPhotoURL });
         }
 
-        if (typeof updateUser === "function") {
-          updateUser({
-            ...authUser,
-            photoURL: newPhotoURL,
-          });
-          toast.success("Avatar updated successfully");
-        } else {
-          if (typeof fetchUserData === "function") {
-            fetchUserData();
-          }
-          toast.success(
-            "Avatar updated successfully, but context update failed"
-          );
+        if (updateUser) {
+          await updateUser({ ...authUser, photoURL: newPhotoURL });
+        }
+
+        if (refreshUser) {
+          await refreshUser();
+        }
+
+        toast.success("Avatar updated successfully");
+      } else {
+        toast.info(
+          "Avatar uploaded, but couldn't retrieve the image URL. Refresh to see changes."
+        );
+
+        if (refreshUser) {
+          await refreshUser();
         }
       }
+
+      URL.revokeObjectURL(previewURL);
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error(error.response?.data?.message || "Avatar update failed.");
-      setLocalPhotoURL(user?.photoURL); 
+
+      setLocalPhotoURL(previousPhotoURL);
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Failed to update avatar";
+
+      toast.error(errorMessage);
+
+      URL.revokeObjectURL(previewURL);
     }
   };
 

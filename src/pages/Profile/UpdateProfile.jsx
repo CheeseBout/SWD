@@ -264,7 +264,7 @@ export default function UpdateProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-indigo-50 to-white">
+    <div className="min-h-screen">
       <div className="flex flex-col md:flex-row">
         <div className="md:sticky md:top-16 md:h-screen">
           <SideBar />

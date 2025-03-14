@@ -23,10 +23,8 @@ const TherapistSidebar = () => {
   useEffect(() => {
     setKey((prevKey) => prevKey + 1);
 
-    // Close mobile menu when route changes
     setIsMobileMenuOpen(false);
 
-    // Check for screen size and set collapsed state for initial load
     const checkScreenSize = () => {
       setIsCollapsed(window.innerWidth < 1024);
     };
@@ -47,7 +45,12 @@ const TherapistSidebar = () => {
     if (path === "/therapist" && location.pathname === "/therapist") {
       return true;
     }
-    return location.pathname.includes(path);
+
+    if (path === "/therapist") {
+      return false;
+    }
+
+    return location.pathname.startsWith(path);
   };
 
   const NavItem = ({ to, icon: Icon, label }) => {
@@ -85,7 +88,7 @@ const TherapistSidebar = () => {
 
   return (
     <>
-      {/* Mobile Menu Button */}
+      {}
       <div className="lg:hidden fixed top-4 left-4 z-20">
         <button
           onClick={toggleSidebar}
@@ -99,7 +102,7 @@ const TherapistSidebar = () => {
         </button>
       </div>
 
-      {/* Mobile menu overlay */}
+      {}
       {isMobileMenuOpen && (
         <div
           className="fixed inset-0 bg-black/30 backdrop-blur-sm z-10 lg:hidden"
@@ -107,7 +110,7 @@ const TherapistSidebar = () => {
         ></div>
       )}
 
-      {/* Sidebar */}
+      {}
       <div
         key={key}
         className={`bg-white shadow-md py-8 transition-all duration-300 z-20 ${
@@ -170,7 +173,7 @@ const TherapistSidebar = () => {
           </nav>
         </div>
 
-        {/* User info at bottom */}
+        {}
         {!isCollapsed && (
           <div className="mt-auto pt-8 px-4 border-t border-gray-200 mx-2 mt-8">
             <div className="flex items-center">

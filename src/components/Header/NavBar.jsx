@@ -160,10 +160,10 @@ const NavBar = () => {
                     aria-expanded={isDropdownOpen}
                   >
                     <span className="sr-only">Open user menu</span>
-                    {user?.imageUrl ? (
+                    {user?.photoURL ? (
                       <img
                         className="h-10 w-10 rounded-full object-cover border-2 border-blue-100 shadow-sm"
-                        src={user.imageUrl}
+                        src={user.photoURL}
                         alt="User profile"
                       />
                     ) : (
@@ -240,7 +240,7 @@ const NavBar = () => {
           ref={mobileMenuRef}
           className="md:hidden mobile-menu bg-white border-t border-gray-100 p-4 space-y-2 shadow-lg"
         >
-          {["Find a Therapist", "Quizzes", "Blogs", "Courses", "About Us"].map(
+          {["Find a Therapist", "Quizzes", "Blogs", "About Us"].map(
             (item, index) => (
               <button
                 key={index}
@@ -259,10 +259,10 @@ const NavBar = () => {
             {isAuthenticated ? (
               <>
                 <div className="flex items-center space-x-3 px-3 py-2 bg-gray-50 rounded-lg">
-                  {user?.profileImage ? (
+                  {user?.photoURL ? (
                     <img
                       className="h-12 w-12 rounded-full object-cover border-2 border-blue-100 shadow-sm"
-                      src={user.profileImage}
+                      src={user.photoURL}
                       alt="User profile"
                     />
                   ) : (

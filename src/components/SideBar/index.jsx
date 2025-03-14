@@ -22,10 +22,8 @@ const SideBar = () => {
   useEffect(() => {
     setKey((prevKey) => prevKey + 1);
 
-    // Close mobile menu when route changes
     setIsMobileMenuOpen(false);
 
-    // Check for screen size and set collapsed state for initial load
     const checkScreenSize = () => {
       setIsCollapsed(window.innerWidth < 1024);
     };
@@ -43,12 +41,15 @@ const SideBar = () => {
   }
 
   const isActive = (path) => {
-    if (path === "/profile") {
-      return location.pathname === "/profile";
+    if (path === "/profile" && location.pathname === "/profile") {
+      return true;
     }
-    return (
-      location.pathname === path || location.pathname.startsWith(`${path}/`)
-    );
+
+    if (path === "/profile") {
+      return false;
+    }
+
+    return location.pathname.startsWith(path);
   };
 
   const NavItem = ({ to, icon: Icon, label }) => {
@@ -85,53 +86,103 @@ const SideBar = () => {
   };
 
   return (
-    <div
-      key={key}
-      className="bg-white w-64 min-h-screen shadow-md py-8 px-4 flex flex-col"
-    >
-      <h2 className="text-xl font-bold px-4 mb-6 text-gray-800">My Account</h2>
-
-      <nav className="space-y-2">
-        <NavItem to="/profile" icon={UserCircleIcon} label="Profile" />
-        <NavItem
-          to="/profile/update-profile"
-          icon={UserIcon}
-          label="Update Profile"
-        />
-        <NavItem
-          to="/profile/change-password"
-          icon={KeyIcon}
-          label="Change Password"
-        />
-        {user?.role === "member" && (
-          <NavItem
-            to="/profile/your-reservations"
-            icon={ClipboardCheckIcon}
-            label="Your Reservations"
-          />
-        )}
-      </nav>
-
-      <div className="mt-auto pt-8 px-4">
-        <div className="text-sm text-gray-500">
-          Logged in as:
-          <div className="font-semibold text-gray-700">
-            {user?.fullname || user?.username || "User"}
-          </div>
-          <div className="text-xs text-gray-500 capitalize">
-            {user?.role || "Member"}
-          </div>
-        </div>
+    <>
+      {}
+      <div className="lg:hidden fixed top-4 left-4 z-20">
+        <button
+          onClick={toggleSidebar}
+          className="p-2 rounded-md bg-white shadow-md text-gray-700 hover:bg-gray-100"
+        >
+          {isMobileMenuOpen ? (
+            <XIcon className="h-6 w-6" />
+          ) : (
+            <MenuAlt2Icon className="h-6 w-6" />
+          )}
+        </button>
       </div>
 
-      {/* Mobile menu overlay */}
+      {}
       {isMobileMenuOpen && (
         <div
           className="fixed inset-0 bg-black/30 backdrop-blur-sm z-10 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         ></div>
       )}
-    </div>
+
+      {}
+      <div
+        key={key}
+        className={`bg-white shadow-md py-8 transition-all duration-300 z-20 ${
+          isCollapsed ? "w-16" : "w-64"
+        } ${
+          isMobileMenuOpen
+            ? "fixed left-0 top-0 h-full"
+            : "sticky top-0 hidden lg:block h-screen"
+        }`}
+      >
+        <div className="flex items-center justify-between px-4 mb-8">
+          {!isCollapsed && (
+            <h2 className="text-xl font-bold text-gray-800">My Account</h2>
+          )}
+
+          <button
+            onClick={toggleSidebar}
+            className="hidden lg:block rounded-full p-1 hover:bg-gray-100"
+          >
+            <MenuAlt2Icon className="h-5 w-5 text-gray-600" />
+          </button>
+        </div>
+
+        <div className={`mb-6 ${isCollapsed ? "px-2" : "px-4"}`}>
+          {!isCollapsed && (
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              Profile
+            </h3>
+          )}
+          <nav className="space-y-1">
+            <NavItem to="/profile" icon={UserCircleIcon} label="Profile" />
+            <NavItem
+              to="/profile/update-profile"
+              icon={UserIcon}
+              label="Update Profile"
+            />
+            <NavItem
+              to="/profile/change-password"
+              icon={KeyIcon}
+              label="Change Password"
+            />
+            {user?.role === "member" && (
+              <NavItem
+                to="/profile/your-reservations"
+                icon={ClipboardCheckIcon}
+                label="Your Reservations"
+              />
+            )}
+          </nav>
+        </div>
+
+        {}
+        {!isCollapsed && (
+          <div className="mt-auto pt-8 px-4 border-t border-gray-200 mx-2 mt-8">
+            <div className="flex items-center">
+              <div className="flex-shrink-0 h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                <span className="text-blue-700 font-medium text-sm">
+                  {user?.fullname?.[0] || user?.username?.[0] || "U"}
+                </span>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-800">
+                  {user?.fullname || user?.username || "User"}
+                </p>
+                <p className="text-xs text-gray-500 capitalize">
+                  {user?.role || "Member"}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 

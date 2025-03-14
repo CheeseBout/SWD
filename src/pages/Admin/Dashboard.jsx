@@ -137,7 +137,7 @@ export default function AdminDashboard() {
                           <h3 className="text-base font-medium">{blog.title}</h3>
                           <div className="flex items-center text-sm text-gray-500 mt-1">
                             <span>
-                              {new Date(blog.createdAt || blog.created_at).toLocaleDateString()}
+                              {new Date(blog.postDate || blog.created_at).toLocaleDateString('en-GB')}
                             </span>
                             <span className="mx-1">•</span>
                             <span className="capitalize">

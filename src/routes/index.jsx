@@ -29,7 +29,7 @@ const TherapistDetail = lazy(() =>
 );
 const BlogsPage = lazy(() => import("../pages/Blogs"));
 const BlogDetailPage = lazy(() => import("../pages/Blogs/BlogDetail"));
-const AdminBlogs = lazy(() => import("../pages/Admin/Blogs"));
+const AdminBlogs = lazy(() => import("../pages/Admin/BlogsManagement"));
 const AdminDashboard = lazy(() => import("../pages/Admin/Dashboard"));
 const BlogCreate = lazy(() => import("../pages/Admin/BlogCreate"));
 const BlogEdit = lazy(() => import("../pages/Admin/BlogEdit"));
@@ -46,6 +46,11 @@ const TherapistCertificates = lazy(() =>
 const TherapistAvailability = lazy(() =>
   import("../pages/Therapist/Availability")
 );
+const CertificateRequest = lazy(() =>
+  import("../pages/Admin/CertificateRequest")
+);
+const QuizManagement = lazy(() => import("../pages/Admin/QuizzesManagement"));
+const TopicManagement = lazy(() => import("../pages/Admin/TopicsManagement"));
 const LazyLoad = ({ children }) => (
   <Suspense fallback={<div></div>}>{children}</Suspense>
 );
@@ -315,6 +320,30 @@ export function AppRoutes() {
             element={
               <LazyLoad>
                 <AdminDashboard />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="certificates"
+            element={
+              <LazyLoad>
+                <CertificateRequest />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="quizzes"
+            element={
+              <LazyLoad>
+                <QuizManagement />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="topics"
+            element={
+              <LazyLoad>
+                <TopicManagement />
               </LazyLoad>
             }
           />

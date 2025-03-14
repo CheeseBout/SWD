@@ -1,4 +1,3 @@
-const { response } = require("express");
 const COUPLETHERAPIST = require("../models/coupleTherapist.model");
 const COUPLETHERAPIST_AVAILABILITY = require("../models/coupleTherapistAvailability.model");
 const APIError = require("../utils/ApiError");

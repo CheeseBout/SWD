@@ -18,6 +18,7 @@ const moment = require("moment");
 const reservationsRepo = require("../repositories/reservations.repo");
 const APIError = require("../utils/ApiError");
 const packageServices = require("./package.services");
+const RESERVATION = require("../models/reservation.model");
 
 const vnpay = new VNPay({
   tmnCode: config.VNPay.vnp_TmnCode,

@@ -15,18 +15,34 @@ class GoogleMeetServices {
     }
 
     try {
-      const googleCreds = await tokenRepo.findTokenWithGoogleCreds(userId);
+      // Log the inputs for debugging
+      console.log("Creating meeting with params:", {
+        startTime,
+        endTime,
+        userId,
+        email,
+      });
 
+      const googleCreds = await tokenRepo.findTokenWithGoogleCreds(userId);
+      console.log("Google credentials found:", googleCreds ? "Yes" : "No");
+
+      // Check if credentials exist and are valid
       if (
         !googleCreds?.access_token ||
         googleCreds.access_token === "NEED_GOOGLE_AUTH"
       ) {
-        throw new APIError(401, {
+        console.log(
+          "Invalid Google credentials. User needs to authenticate with Google."
+        );
+
+        // Return a structured response instead of throwing error
+        return {
+          error: true,
+          requireGoogleAuth: true,
           message:
             "To use this feature, you must connect with your Google Account",
-          requireGoogleAuth: true,
           googleAuthUrl: "/api/v1/auth/login/google",
-        });
+        };
       }
 
       oauth2Client.setCredentials({
@@ -53,16 +69,23 @@ class GoogleMeetServices {
         },
       };
 
+      console.log("Attempting to create Google Calendar event");
       const response = await calendar.events.insert({
         calendarId: "primary",
         requestBody: event,
         conferenceDataVersion: 1,
       });
+      console.log("Google Calendar API response received");
 
       const meetLink = response.data.hangoutLink;
       if (!meetLink) {
+        console.error("No meeting link returned from Google Calendar API");
         throw new APIError(500, "Could not generate meet link");
       }
+
+      console.log("Generated meeting link:", meetLink);
+
+      // Prepare and send email notification
       const sentMailHTML = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
           <h2 style="color: #2c3e50; text-align: center;">Meeting Scheduled Successfully</h2>
@@ -80,12 +103,14 @@ class GoogleMeetServices {
         </div>
       `;
 
+      console.log(`Sending confirmation email to ${email}`);
       await sendEmail(
         email,
         "Marriage Counseling Session - Appointment Confirmation",
         meetLink,
         sentMailHTML
       );
+      console.log("Email sent successfully");
 
       return {
         meetLink,
@@ -94,11 +119,31 @@ class GoogleMeetServices {
         eventId: response.data.id,
       };
     } catch (error) {
-      if (error.statusCode === 401) {
-        throw error; // Re-throw authorization errors with our custom format
+      console.error("Google Meet Error:", error);
+
+      if (
+        error.code === 401 ||
+        (error.response && error.response.status === 401)
+      ) {
+        console.log("Google API authorization failed - token likely expired");
+        return {
+          error: true,
+          requireGoogleAuth: true,
+          message:
+            "Your Google authorization has expired. Please reconnect your Google account.",
+          googleAuthUrl: "/api/v1/auth/login/google",
+        };
       }
-      console.error("Google Calendar Error:", error.response?.data || error);
-      throw new APIError(500, "Failed to create meeting: " + error.message);
+
+      // For other types of errors
+      console.error(
+        "Google Calendar API Error Details:",
+        error.response
+          ? JSON.stringify(error.response.data, null, 2)
+          : "No response data"
+      );
+
+      throw new APIError(500, `Failed to create meeting: ${error.message}`);
     }
   }
 }

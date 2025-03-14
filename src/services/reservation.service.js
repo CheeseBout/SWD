@@ -1,6 +1,9 @@
 const APIError = require("../utils/ApiError");
 const reservationsRepo = require("../repositories/reservations.repo");
 const mongoose = require("mongoose");
+const PAYMENT = require("../models/payment.model");
+const TRANSACTION = require("../models/transaction.model");
+const GoogleMeetService = require("./meet.services");
 
 class ReservationService {
   async getAllReservations(filter) {
@@ -68,7 +71,7 @@ class ReservationService {
       throw new APIError(400, "Invalid packageID");
     }
 
-    req.user._id = new mongoose.Types.ObjectId(req.user._id);
+    data.userID = new mongoose.Types.ObjectId(req.user._id);
     data.coupleTherapistID = new mongoose.Types.ObjectId(
       data.coupleTherapistID
     );
@@ -245,6 +248,129 @@ class ReservationService {
     }
 
     const result = await reservationsRepo.getAll(filter, { page, limit });
+
+    console.log("Therapist reservations: ", result);
+
+    // Process each reservation to check and update deposit status
+    if (result.reservations && result.reservations.length > 0) {
+      for (const reservation of result.reservations) {
+        // Handle reservations with "confirmed" status - check if they should be marked as deposited
+        if (reservation.status === "confirmed") {
+          try {
+            const isDeposited = await this.checkDepositedReservation(
+              reservation._id
+            );
+            if (isDeposited) {
+              // Update reservation status to deposited in the database
+              await mongoose
+                .model("Reservation")
+                .findByIdAndUpdate(reservation._id, { status: "deposited" });
+
+              // Update the status in the returned object as well
+              reservation.status = "deposited";
+              console.log(
+                `Reservation ${reservation._id} updated to "deposited"`
+              );
+            } else {
+              // Not deposited, continue to the next reservation
+              continue;
+            }
+          } catch (error) {
+            console.error(
+              `Error checking/updating deposit status for reservation ${reservation._id}:`,
+              error
+            );
+            continue;
+          }
+        }
+
+        // For all deposited reservations (newly updated or already deposited),
+        // check if they need a meeting URL
+        if (reservation.status === "deposited") {
+          // Skip if the reservation already has a meeting URL
+          if (reservation.meetingURL && reservation.meetingURL.trim() !== "") {
+            console.log(
+              `Reservation ${reservation._id} already has meeting URL: ${reservation.meetingURL}`
+            );
+            continue;
+          }
+
+          // Create meeting link for the deposited reservation
+          try {
+            // Get user email for the meeting invitation
+            const userInfo = await reservationsRepo.findUserEmail(
+              reservation.userID
+            );
+
+            if (!userInfo || !userInfo.email) {
+              console.error(
+                `Cannot create meeting: User email not found for reservation ${reservation._id}`
+              );
+              continue;
+            }
+
+            // Create the meeting
+            console.log("Creating meeting for reservation:", reservation._id);
+            const meetingDetails = await GoogleMeetService.createMeeting({
+              startTime: reservation.startTime,
+              endTime: reservation.endTime,
+              userId: user._id, // Using the therapist's ID for creating the meeting
+              email: userInfo.email,
+            });
+
+            console.log("Meeting service response:", meetingDetails);
+
+            // Check if there was an auth error
+            if (meetingDetails.error && meetingDetails.requireGoogleAuth) {
+              console.log(
+                "Google authentication required:",
+                meetingDetails.message
+              );
+              // Add auth error information to the response
+              if (!result.authError) {
+                result.authError = {
+                  message: meetingDetails.message,
+                  googleAuthUrl: meetingDetails.googleAuthUrl,
+                };
+              }
+              // Skip further meeting creation attempts
+              authErrorOccurred = true;
+              continue;
+            }
+
+            // Only proceed if we have a valid meeting link
+            if (meetingDetails && meetingDetails.meetLink) {
+              // Update the reservation with the meeting URL in database
+              const updatedReservation = await mongoose
+                .model("Reservation")
+                .findByIdAndUpdate(
+                  reservation._id,
+                  { meetingURL: meetingDetails.meetLink },
+                  { new: true } // This returns the updated document
+                );
+
+              console.log("Updated reservation:", updatedReservation);
+
+              // Update the returned object as well
+              reservation.meetingURL = meetingDetails.meetLink;
+              console.log(
+                `Meeting created for reservation ${reservation._id}: ${meetingDetails.meetLink}`
+              );
+            } else {
+              console.error(
+                `No meetLink received for reservation ${reservation._id}`
+              );
+            }
+          } catch (meetingError) {
+            console.error(
+              `Error creating meeting for reservation ${reservation._id}:`,
+              meetingError
+            );
+          }
+        }
+      }
+    }
+
     return result;
   }
 
@@ -460,6 +586,31 @@ class ReservationService {
     }
 
     return reservation;
+  }
+
+  async checkDepositedReservation(reservationId) {
+    const payment = await PAYMENT.findOne({ reservation: reservationId });
+    if (!payment) {
+      return false;
+    }
+
+    console.log("Payment", payment);
+    const paymentID = payment._id;
+    console.log("Payment ID", paymentID);
+
+    const transaction = await TRANSACTION.findOne({
+      payment: paymentID,
+      status: "PAID",
+    });
+
+    if (!transaction) {
+      return false;
+    }
+
+    console.log("Transaction", transaction);
+    console.log("Transaction status", transaction.status);
+
+    return transaction.status === "PAID";
   }
 }
 

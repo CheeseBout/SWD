@@ -1,6 +1,8 @@
 const CERTIFICATE = require("../models/certificate.model");
 const COUPLETHERAPIST = require("../models/coupleTherapist.model");
 const COUPLETHERAPIST_AVAILABILITY = require("../models/coupleTherapistAvailability.model");
+const PAYMENT = require("../models/payment.model");
+const TRANSACTION = require("../models/transaction.model");
 
 class TherapistRepo {
   async getAll(filter, options) {

@@ -119,8 +119,10 @@ router.get(
   coupleTherapistController.getCoupleTherapistById
 );
 
-
-router.get("/get-therapistId/:userId", coupleTherapistController.getCoupleTherapistIdByUserId);
+router.get(
+  "/get-therapistId/:userId",
+  coupleTherapistController.getCoupleTherapistIdByUserId
+);
 
 /**
  * @swagger

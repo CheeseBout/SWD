@@ -106,6 +106,7 @@ const { auth } = require("../middlewares/auth.middleware");
  *             type: object
  *             required:
  *               - coupleTherapistID
+ *               - packageID
  *               - title
  *               - content
  *               - startTime
@@ -114,6 +115,10 @@ const { auth } = require("../middlewares/auth.middleware");
  *               coupleTherapistID:
  *                 type: string
  *                 example: "65f2d6789abcdef01234568"
+ *               packageID:
+ *                 type: string
+ *                 example: "65f2d6789abcdef01234570"
+ *                 description: ID of the selected package (required)
  *               title:
  *                 type: string
  *                 example: "Marriage Counseling Session"
@@ -145,7 +150,7 @@ const { auth } = require("../middlewares/auth.middleware");
  *                 data:
  *                   $ref: '#/components/schemas/Reservation'
  *       400:
- *         description: Duplicate reservation or therapist not available
+ *         description: Duplicate reservation, missing packageID, or therapist not available
  *       401:
  *         description: Unauthorized - Missing or invalid token
  */
@@ -405,17 +410,6 @@ const { auth } = require("../middlewares/auth.middleware");
  *         schema:
  *           type: string
  *         description: The reservation ID to approve
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               price:
- *                 type: number
- *                 example: 690000
- *                 description: Price in VND
  *     responses:
  *       200:
  *         description: Reservation approved successfully

@@ -96,12 +96,19 @@ class ReservationRepo {
     return await RESERVATION.findById(reservationID);
   }
 
-  async approveReservation(reservationID, price) {
-    return await RESERVATION.findByIdAndUpdate(
-      reservationID,
-      { status: "confirmed", totalPrice: price },
-      { new: true }
-    );
+  async approveReservation(reservationID) {
+    try {
+      return await RESERVATION.findByIdAndUpdate(
+        reservationID,
+        {
+          status: "confirmed",
+        },
+        { new: true }
+      );
+    } catch (error) {
+      console.error(`Error approving reservation ${reservationID}:`, error);
+      return null;
+    }
   }
 
   async denyReservation(reservationID, reason) {
@@ -319,6 +326,43 @@ class ReservationRepo {
     const COUPLETHERAPIST = require("../models/coupleTherapist.model");
     const therapist = await COUPLETHERAPIST.findById(therapistID);
     return !!therapist; // Returns true if therapist exists, false otherwise
+  }
+
+  async verifyPackageOwnership(packageId, therapistId) {
+    try {
+      const PACKAGE = require("../models/package.model");
+      const pack = await PACKAGE.findOne({
+        _id: packageId,
+        coupleTherapistID: therapistId,
+        isActive: true,
+      });
+      return !!pack; // Returns true if package exists and belongs to therapist
+    } catch (error) {
+      console.error("Error verifying package ownership:", error);
+      return false;
+    }
+  }
+
+  // Add method to calculate final price after discount
+  async calculatePackagePrice(packageId) {
+    try {
+      const pack = await PACKAGE.findById(packageId);
+      if (!pack) return null;
+
+      // Calculate price after discount
+      const discountAmount = pack.price * (pack.discount / 100);
+      const finalPrice = pack.price - discountAmount;
+
+      return {
+        originalPrice: pack.price,
+        discountPercentage: pack.discount,
+        discountAmount: discountAmount,
+        finalPrice: finalPrice,
+      };
+    } catch (error) {
+      console.error("Error calculating package price:", error);
+      return null;
+    }
   }
 }
 

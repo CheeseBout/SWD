@@ -75,15 +75,11 @@ class ReservationController {
 
   approveReservation = catchAsync(async (req, res) => {
     const { reservationID } = req.params;
-    const { price } = req.body;
+    // Remove price from the body
     return OK(
       res,
-      "Success",
-      await reservationService.approveReservation(
-        reservationID,
-        price,
-        req.user
-      )
+      "Reservation approved successfully",
+      await reservationService.approveReservation(reservationID, req.user)
     );
   });
 

@@ -52,6 +52,11 @@ class ReservationService {
       throw new APIError(403, "Permission denied");
     }
 
+    // Validate required fields
+    if (!data.packageID) {
+      throw new APIError(400, "Package ID is required");
+    }
+
     // Validate and convert IDs to ObjectId
     if (!mongoose.Types.ObjectId.isValid(data.userID)) {
       throw new APIError(400, "Invalid userId");
@@ -59,10 +64,15 @@ class ReservationService {
     if (!mongoose.Types.ObjectId.isValid(data.coupleTherapistID)) {
       throw new APIError(400, "Invalid coupleTherapistID");
     }
+    if (!mongoose.Types.ObjectId.isValid(data.packageID)) {
+      throw new APIError(400, "Invalid packageID");
+    }
+
     data.userID = new mongoose.Types.ObjectId(data.userID);
     data.coupleTherapistID = new mongoose.Types.ObjectId(
       data.coupleTherapistID
     );
+    data.packageID = new mongoose.Types.ObjectId(data.packageID);
 
     // Format date strings consistently to avoid issues
     try {
@@ -72,6 +82,7 @@ class ReservationService {
       throw new APIError(400, "Invalid date format: " + error.message);
     }
 
+    // Check for duplicate reservation
     const isDuplicate = await reservationsRepo.checkDuplicate(
       data.coupleTherapistID,
       data.startTime,
@@ -93,6 +104,50 @@ class ReservationService {
         400,
         "Therapist is not available at the requested time"
       );
+    }
+
+    // Get package details and set the total price
+    try {
+      const packageDetails = await mongoose
+        .model("Package")
+        .findById(data.packageID);
+      if (!packageDetails) {
+        throw new APIError(404, "Selected package not found");
+      }
+
+      // Check if this package belongs to the selected therapist
+      if (
+        packageDetails.coupleTherapistID.toString() !==
+        data.coupleTherapistID.toString()
+      ) {
+        throw new APIError(
+          400,
+          "The selected package does not belong to this therapist"
+        );
+      }
+
+      // Check if the package is active
+      if (!packageDetails.isActive) {
+        throw new APIError(
+          400,
+          "The selected package is not currently available"
+        );
+      }
+
+      // Apply discount to get final price
+      const discountAmount =
+        packageDetails.price * (packageDetails.discount / 100);
+      data.totalPrice = packageDetails.price - discountAmount;
+
+      console.log(
+        `Setting reservation price to ${data.totalPrice} from package ${packageDetails.name}`
+      );
+    } catch (error) {
+      if (error instanceof APIError) {
+        throw error;
+      }
+      console.error("Error fetching package details:", error);
+      throw new APIError(500, "Error processing package information");
     }
 
     try {
@@ -242,7 +297,7 @@ class ReservationService {
     return canceledReservation;
   }
 
-  async approveReservation(reservationID, price, user) {
+  async approveReservation(reservationID, user) {
     console.log("User: ", user);
     if (user.role !== "couple_therapist") {
       throw new APIError(403, "Permission denied");
@@ -254,10 +309,9 @@ class ReservationService {
     );
     if (!existingReservation) throw new APIError(404, "Reservation not found");
 
-    // Approve the reservation
+    // Approve the reservation - no price needed as it's already set from package
     const reservation = await reservationsRepo.approveReservation(
-      reservationID,
-      price
+      reservationID
     );
     if (!reservation) throw new APIError(404, "Reservation not found");
 
@@ -272,6 +326,11 @@ class ReservationService {
         const startTime = new Date(existingReservation.startTime);
         const endTime = new Date(existingReservation.endTime);
 
+        // Format the price from the reservation's totalPrice
+        const formattedPrice = existingReservation.totalPrice
+          ? existingReservation.totalPrice.toLocaleString("vi-VN") + " VND"
+          : "To be determined";
+
         // Simplified email without payment link
         const sentMailHTML = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
@@ -284,11 +343,7 @@ class ReservationService {
               <p style="margin: 10px 0;"><strong>End Time:</strong> ${endTime.toLocaleString(
                 "vi-VN"
               )}</p>
-              <p style="margin: 10px 0;"><strong>Price:</strong> ${
-                price
-                  ? price.toLocaleString("vi-VN") + " VND"
-                  : "To be determined"
-              }</p>
+              <p style="margin: 10px 0;"><strong>Price:</strong> ${formattedPrice}</p>
             </div>
             <p style="color: #666; font-size: 14px; text-align: center;">Please be available at the scheduled time. We look forward to helping you.</p>
           </div>
@@ -299,9 +354,7 @@ class ReservationService {
           "Reservation Confirmed - Marriage Counseling Session",
           `Your reservation for ${startTime.toLocaleString(
             "vi-VN"
-          )} has been confirmed. Price: ${
-            price ? price.toLocaleString("vi-VN") + " VND" : "To be determined"
-          }`,
+          )} has been confirmed. Price: ${formattedPrice}`,
           sentMailHTML
         );
 
@@ -315,7 +368,6 @@ class ReservationService {
       console.error("Failed to send email notification:", error);
     }
 
-    // Just return the reservation without payment information
     return reservation;
   }
 

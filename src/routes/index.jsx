@@ -3,6 +3,7 @@ import { HomePage } from "@pages/HomePage";
 import App from "../App";
 import { Suspense, lazy } from "react";
 import PropTypes from "prop-types";
+import ProtectedRoute from "../components/ProtectedRoute/ProtectedRoute";
 
 const Topics = lazy(() => import("../pages/Topics"));
 const Quizzes = lazy(() => import("../pages/Quiz/Quizzes"));
@@ -16,6 +17,8 @@ const SearchTherapist = lazy(() =>
 );
 const FAQs = lazy(() => import("../pages/FAQs"));
 const ProfilePage = lazy(() => import("../pages/Profile"));
+const UpdateProfile = lazy(() => import("../pages/Profile/UpdateProfile"));
+const ChangePassword = lazy(() => import("../pages/Profile/ChangePassword"));
 const LoginPage = lazy(() => import("../pages/Login"));
 const RegisterPage = lazy(() => import("../pages/Register"));
 const CookiePolicy = lazy(() => import("../pages/Policy/CookiePolicy"));
@@ -30,10 +33,19 @@ const AdminBlogs = lazy(() => import("../pages/Admin/Blogs"));
 const AdminDashboard = lazy(() => import("../pages/Admin/Dashboard"));
 const BlogCreate = lazy(() => import("../pages/Admin/BlogCreate"));
 const BlogEdit = lazy(() => import("../pages/Admin/BlogEdit"));
-
+const TherapistDashboard = lazy(() => import("../pages/Therapist/Dashboard"));
 const Therapist = lazy(() => import("../pages/Therapist/Therapist"));
 const BookReservation = lazy(() => import("../pages/BookReservation"));
 const YourReservation = lazy(() => import("../pages/Reservation"));
+const TherapistReservations = lazy(() =>
+  import("../pages/Therapist/Reservations")
+);
+const TherapistCertificates = lazy(() =>
+  import("../pages/Therapist/Certificates")
+);
+const TherapistAvailability = lazy(() =>
+  import("../pages/Therapist/Availability")
+);
 const LazyLoad = ({ children }) => (
   <Suspense fallback={<div></div>}>{children}</Suspense>
 );
@@ -71,51 +83,6 @@ export function AppRoutes() {
             </LazyLoad>
           }
         />
-        <Route
-          path="profile"
-          element={
-            <LazyLoad>
-              <ProfilePage />
-            </LazyLoad>
-          }
-        />
-        ;
-        <Route path="quizzes">
-          <Route
-            index
-            element={
-              <LazyLoad>
-                <Quizzes />
-              </LazyLoad>
-            }
-          />
-          <Route
-            path=":id"
-            element={
-              <LazyLoad>
-                <QuizDetail />
-              </LazyLoad>
-            }
-          />
-        </Route>
-        <Route path="topics">
-          <Route
-            index
-            element={
-              <LazyLoad>
-                <Topics />
-              </LazyLoad>
-            }
-          />
-          <Route
-            path=":id"
-            element={
-              <LazyLoad>
-                <TopicDetail />
-              </LazyLoad>
-            }
-          />
-        </Route>
         <Route
           path="about-us"
           element={
@@ -208,7 +175,113 @@ export function AppRoutes() {
             </LazyLoad>
           }
         />
-        <Route path="manage">
+        <Route
+          path="find-therapist"
+          element={
+            <LazyLoad>
+              <Therapist />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="bookReservation/:therapistId"
+          element={
+            <LazyLoad>
+              <BookReservation />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="payment/result"
+          element={
+            <LazyLoad>
+              <YourReservation />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="quizzes"
+          element={
+            <LazyLoad>
+              <Quizzes />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="quizzes/:id"
+          element={
+            <LazyLoad>
+              <QuizDetail />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="topics"
+          element={
+            <LazyLoad>
+              <Topics />
+            </LazyLoad>
+          }
+        />
+        <Route
+          path="topics/:id"
+          element={
+            <LazyLoad>
+              <TopicDetail />
+            </LazyLoad>
+          }
+        />
+
+        {/* Protected Profile Routes */}
+        <Route
+          path="profile"
+          element={
+            <ProtectedRoute
+              allowedRoles={["member", "admin", "couple_therapist"]}
+            />
+          }
+        >
+          <Route
+            index
+            element={
+              <LazyLoad>
+                <ProfilePage />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="your-reservations"
+            element={
+              <LazyLoad>
+                <YourReservation />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="update-profile"
+            element={
+              <LazyLoad>
+                <UpdateProfile />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="change-password"
+            element={
+              <LazyLoad>
+                <ChangePassword />
+              </LazyLoad>
+            }
+          />
+        </Route>
+
+        {/* Protected Admin Routes */}
+        <Route
+          path="manage"
+          element={
+            <ProtectedRoute allowedRoles={["admin", "couple_therapist"]} />
+          }
+        >
           <Route
             path="blogs"
             element={
@@ -234,7 +307,9 @@ export function AppRoutes() {
             }
           />
         </Route>
-        <Route path="admin">
+
+        {/* Admin Only Routes */}
+        <Route path="admin" element={<ProtectedRoute allowedRoles="admin" />}>
           <Route
             path="dashboard"
             element={
@@ -244,38 +319,45 @@ export function AppRoutes() {
             }
           />
         </Route>
+
+        {/* Therapist Only Routes */}
         <Route
-          path="find-therapist"
-          element={
-            <LazyLoad>
-              <Therapist />
-            </LazyLoad>
-          }
-        />
-        <Route
-          path="bookReservation/:therapistId"
-          element={
-            <LazyLoad>
-              <BookReservation />
-            </LazyLoad>
-          }
-        />
-        <Route
-          path="your-reservations"
-          element={
-            <LazyLoad>
-              <YourReservation />
-            </LazyLoad>
-          }
-        />
-        <Route
-          path="payment/result"
-          element={
-            <LazyLoad>
-              <YourReservation />
-            </LazyLoad>
-          }
-        />
+          path="therapist"
+          element={<ProtectedRoute allowedRoles="couple_therapist" />}
+        >
+          <Route
+            path="dashboard"
+            element={
+              <LazyLoad>
+                <TherapistDashboard />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="reservations"
+            element={
+              <LazyLoad>
+                <TherapistReservations />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="certificates"
+            element={
+              <LazyLoad>
+                <TherapistCertificates />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="availability"
+            element={
+              <LazyLoad>
+                <TherapistAvailability />
+              </LazyLoad>
+            }
+          />
+        </Route>
       </Route>
     </Routes>
   );

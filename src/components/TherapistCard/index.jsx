@@ -20,9 +20,12 @@ export function TherapistCard({ therapist }) {
       {/* Fake Avatar */}
       <figure className="bg-gray-100 p-4 flex justify-center">
         <img
-          src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-            therapist.userInfo.fullname
-          )}&background=random&color=fff&size=128`}
+          src={
+            therapist.userInfo.photoURL ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+              therapist.userInfo.fullname
+            )}&background=random&color=fff&size=128`
+          }
           alt={therapist.userInfo.fullname}
           className="rounded-full w-24 h-24 object-cover"
         />

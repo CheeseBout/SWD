@@ -76,9 +76,7 @@ const ProfileInfoCard = ({ user, formatDate }) => {
             />
           </svg>
           <span className="font-medium w-36">Date of Birth:</span>
-          <span>
-            {user?.dob ? formatDate(user.dob) : "Not provided"}
-          </span>
+          <span>{user?.dob ? formatDate(user.dob) : "Not provided"}</span>
         </div>
 
         <div className="flex items-center text-gray-700">
@@ -96,7 +94,39 @@ const ProfileInfoCard = ({ user, formatDate }) => {
             />
           </svg>
           <span className="font-medium w-36">Gender:</span>
-          <span>{user?.gender || "Not provided"}</span>
+          <span>
+            {user?.gender 
+              ? user.gender.toLowerCase() === 'male' 
+                ? 'Male' 
+                : user.gender.toLowerCase() === 'female' 
+                  ? 'Female' 
+                  : 'Other'
+              : "Not provided"}
+          </span>
+        </div>
+
+        <div className="flex items-center text-gray-700">
+          <svg
+            className="h-5 w-5 text-blue-500 mr-3"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1113.314 0z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+          <span className="font-medium w-36">Address:</span>
+          <span>{user?.address || "Not provided"}</span>
         </div>
       </div>
     </div>
@@ -109,9 +139,10 @@ ProfileInfoCard.propTypes = {
     username: PropTypes.string,
     email: PropTypes.string,
     dob: PropTypes.string,
-    gender: PropTypes.string
+    gender: PropTypes.string,
+    address: PropTypes.string,
   }),
-  formatDate: PropTypes.func.isRequired
+  formatDate: PropTypes.func.isRequired,
 };
 
 export default ProfileInfoCard;

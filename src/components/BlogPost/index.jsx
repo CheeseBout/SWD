@@ -60,7 +60,22 @@ export function BlogPost({ post }) {
     );
   }
 
-  const { title, coverPhoto, content, author, postDate, category } = post;
+  const { title, coverPhoto, content, author, postDate, category, stage } = post;
+
+  const getStageBadgeColor = (stage) => {
+    switch(stage) {
+      case 'PUBLISHED':
+        return 'bg-green-100 text-green-800';
+      case 'DRAFT':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'ARCHIVED':
+        return 'bg-gray-100 text-gray-800';
+      case 'PENDING':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   const formattedDate = postDate
     ? new Date(postDate).toLocaleDateString("en-US", {
@@ -86,11 +101,18 @@ export function BlogPost({ post }) {
 
         <div className="absolute inset-0 z-20 flex flex-col justify-end p-4 sm:p-8 lg:p-12 container mx-auto max-w-5xl">
           <div className="mb-4">
-            {category && (
-              <span className="inline-flex items-center px-3 py-1 text-sm font-medium text-blue-100 bg-blue-600/80 backdrop-blur-sm rounded-full mb-4">
-                {category}
-              </span>
-            )}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {category && (
+                <span className="inline-flex items-center px-3 py-1 text-sm font-medium text-blue-100 bg-blue-600/80 backdrop-blur-sm rounded-full">
+                  {category}
+                </span>
+              )}
+              {stage && (
+                <span className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full backdrop-blur-sm ${getStageBadgeColor(stage)}`}>
+                  {stage}
+                </span>
+              )}
+            </div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 drop-shadow-sm">
               {title}
             </h1>
@@ -164,9 +186,11 @@ export function BlogPost({ post }) {
 
       <div className="container mx-auto px-4 pb-16">
         <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm p-6 lg:p-10">
-          <div className="prose prose-lg max-w-none prose-headings:text-gray-800 prose-p:text-gray-600 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-lg">
+          <div className="prose prose-lg max-w-none prose-headings:text-gray-800 prose-p:text-gray-600 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-lg blog-content">
             {content?.html ? (
-              <div dangerouslySetInnerHTML={{ __html: content.html }} />
+              <div dangerouslySetInnerHTML={{ 
+                __html: content.html.replace(/([^<>]+)(?![^<]*>)/g, '<p>$1</p>').replace(/<p><\/p>/g, '') 
+              }} />
             ) : (
               <p className="text-gray-500 italic">
                 No content available for this post.
@@ -207,6 +231,7 @@ BlogPost.propTypes = {
     coverPhoto: PropTypes.string,
     category: PropTypes.string,
     postDate: PropTypes.string,
+    stage: PropTypes.string, // Add stage property to PropTypes
     content: PropTypes.shape({
       html: PropTypes.string,
     }),

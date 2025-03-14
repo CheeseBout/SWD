@@ -43,21 +43,72 @@ export const blogService = {
 
   createBlog: async (blogData) => {
     try {
-      const response = await api.post(`${BASE_URL}/api/v1/blog/create-blog`, blogData);
+      if (!blogData.title) {
+        throw new Error("Blog title is required");
+      }
+      
+      if (!blogData.slug) {
+        throw new Error("Blog slug is required");
+      }
+
+      const formattedBlogData = {
+        title: blogData.title,
+        slug: blogData.slug,
+        category: blogData.category || "",
+        coverPhoto: blogData.coverPhoto || "",
+        content: blogData.content || { json: { type: "doc", content: [] } },
+        tags: blogData.tags || [],
+      };
+
+      console.log("Sending blog data:", formattedBlogData);
+      
+      const response = await api.post(`${BASE_URL}/api/v1/blog/create-post`, formattedBlogData);
       return response.data;
     } catch (error) {
-      console.error("Error creating blog:", error);
-      return null;
+      if (error.response) {
+        console.error("Server responded with error:", {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers,
+        });
+      } else if (error.request) {
+        console.error("No response received:", error.request);
+      } else {
+        console.error("Error setting up request:", error.message);
+      }
+      
+      throw error;
     }
   },
 
   updateBlog: async (blogData, id) => {
     try {
-      const response = await api.put(`${BASE_URL}/api/v1/blog/${id}`, blogData);
+      if (!id) {
+        throw new Error("Blog ID is required for updating");
+      }
+      
+      const formattedBlogData = {
+        title: blogData.title,
+        slug: blogData.slug,
+        category: blogData.category || "",
+        coverPhoto: blogData.coverPhoto || "",
+        content: blogData.content || { json: { type: "doc", content: [] } },
+        stage: blogData.stage || "DRAFT",
+        tags: blogData.tags || [],
+      };
+
+      const response = await api.put(`${BASE_URL}/api/v1/blog/${id}`, formattedBlogData);
       return response.data;
     } catch (error) {
-      console.error("Error updating blog:", error);
-      return null;
+      if (error.response) {
+        console.error("Server error during blog update:", {
+          status: error.response.status,
+          data: error.response.data
+        });
+      } else {
+        console.error("Error updating blog:", error.message);
+      }
+      throw error;
     }
   },
 
@@ -71,3 +122,4 @@ export const blogService = {
     }
   },
 };
+

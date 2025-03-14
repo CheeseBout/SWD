@@ -9,6 +9,12 @@ export const therapistService = {
     const response = await api.get(`/api/v1/coupletherapist/${id}`);
     return response.data;
   },
+  getTherapistIdByUserId: async (userId) => {
+    const response = await api.get(
+      `/api/v1/coupletherapist/get-therapistId/${userId}`
+    );
+    return response.data;
+  },
   searchTherapistsByName: async (searchName) => {
     const response = await api.get("/api/v1/coupletherapist", {
       params: { searchName },

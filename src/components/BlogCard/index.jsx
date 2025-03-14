@@ -3,12 +3,27 @@ import PropTypes from 'prop-types';
 import { useState } from 'react';
 
 export function BlogCard({ blog }) {
-  const { title, category, author, coverPhoto, slug } = blog;
+  const { title, category, author, coverPhoto, slug, stage } = blog;
   const [imageError, setImageError] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
   
   const defaultAvatar = "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
   const defaultCoverPhoto = "https://www.beautylabinternational.com/wp-content/uploads/2020/03/Hero-Banner-Placeholder-Light-1024x480-1.png";
+  
+  const getStageBadgeColor = (stage) => {
+    switch(stage) {
+      case 'PUBLISHED':
+        return 'bg-green-100 text-green-800';
+      case 'DRAFT':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'ARCHIVED':
+        return 'bg-gray-100 text-gray-800';
+      case 'PENDING':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
   
   return (
     <div className="group overflow-hidden bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 hover:translate-y-[-4px] flex flex-col h-full">
@@ -17,7 +32,7 @@ export function BlogCard({ blog }) {
           <div className="absolute inset-0 bg-gradient-to-t from-gray-900/60 via-transparent to-transparent z-10"></div>
           
           <img 
-            src={coverPhoto.url || defaultCoverPhoto} 
+            src={coverPhoto || defaultCoverPhoto} 
             alt={title}
             className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
             onError={(e) => {
@@ -26,10 +41,17 @@ export function BlogCard({ blog }) {
             }}
           />
           
-          <div className="absolute top-4 left-4 z-20">
-            <span className="inline-flex items-center px-3 py-1 text-xs font-medium text-white bg-blue-600/80 backdrop-blur-sm rounded-full">
-              {category}
-            </span>
+          <div className="absolute top-4 left-4 z-20 flex flex-wrap gap-2">
+            {category && (
+              <span className="inline-flex items-center px-3 py-1 text-xs font-medium text-white bg-blue-600/80 backdrop-blur-sm rounded-full">
+                {category}
+              </span>
+            )}
+            {stage && (
+              <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full ${getStageBadgeColor(stage)}`}>
+                {stage}
+              </span>
+            )}
           </div>
         </div>
       </Link>
@@ -90,6 +112,7 @@ BlogCard.propTypes = {
     postDate: PropTypes.string,
     slug: PropTypes.string.isRequired,
     category: PropTypes.string,
+    stage: PropTypes.string,
     author: PropTypes.shape({
       name: PropTypes.string,
       avatar: PropTypes.shape({

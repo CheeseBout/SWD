@@ -12,8 +12,7 @@ const BlogForm = ({
   setTitle,
   category,
   setCategory,
-  status,
-  setStatus,
+  status = 'PUBLISHED',
   coverPhoto,
   setCoverPhoto,
   slug,
@@ -132,7 +131,7 @@ const BlogForm = ({
           <p className="mt-1 text-sm text-gray-500">URL-friendly version of the title</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div className="mb-4">
           <div>
             <label htmlFor="category" className="block mb-1 font-medium text-gray-700">Category</label>
             <input
@@ -142,19 +141,6 @@ const BlogForm = ({
               onChange={(e) => setCategory(e.target.value)}
               className="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
             />
-          </div>
-
-          <div>
-            <label htmlFor="status" className="block mb-1 font-medium text-gray-700">Status</label>
-            <select
-              id="status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-            </select>
           </div>
         </div>
 

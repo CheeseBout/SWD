@@ -7,7 +7,6 @@ export const authService = {
         email,
         password,
       });
-      console.log("Login API response:", response.data);
 
       localStorage.setItem("accessToken", response.data.token);
 
@@ -33,6 +32,11 @@ export const authService = {
 
   forgotPassword: async (email) => {
     const response = await api.post("/api/v1/auth/forgot-password", { email });
+    return response.data;
+  },
+
+  changePassword: async (data) => {
+    const response = await api.post("/api/v1/auth/change-password", data);
     return response.data;
   },
 };

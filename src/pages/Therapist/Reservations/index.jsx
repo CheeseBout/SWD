@@ -79,12 +79,9 @@ export default function TherapistReservations() {
 
     try {
       setIsUpdating(true);
-      await api.put(
-        `/api/v1/coupletherapist/reservation/${selectedReservation._id}`,
-        {
-          status: "denied",
-          reason: cancelReason,
-        }
+      await reservationService.denyReservation(
+        selectedReservation._id,
+        cancelReason
       );
       toast.success("Reservation cancelled successfully");
       fetchReservations();

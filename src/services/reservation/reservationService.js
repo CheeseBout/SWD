@@ -27,7 +27,6 @@ export const reservationService = {
     }
   },
 
-
   // Get all reservations for a member
   getMemberReservation: async (id, status = "", page = 1, limit = 10) => {
     try {
@@ -93,4 +92,27 @@ export const reservationService = {
       throw error;
     }
   },
+  async denyReservation(reservationId, reason) {
+    try {
+      const response = await api.put(
+        `/api/v1/reservation/deny-reservation/${reservationId}`,
+        { reason }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error denying reservation:", error);
+      throw error;
+    }
+  },
+  async approveReservation(reservationId) {
+    try {
+      const response = await api.put(
+        `/api/v1/reservation/approve-reservation/${reservationId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error approving reservation:", error);
+      throw error;
+    }
+  }
 };

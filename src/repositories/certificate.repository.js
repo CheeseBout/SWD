@@ -37,6 +37,12 @@ class CertificateRepository {
       { new: true }
     ).populate("processedBy", "fullname email");
   }
+
+  async getAllCertificateRequests() {
+    return await CERTIFICATE.find({
+      status: "pending",
+    }).populate();
+  }
 }
 
 module.exports = new CertificateRepository();

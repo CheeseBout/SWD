@@ -98,4 +98,29 @@ const { auth } = require("../middlewares/auth.middleware");
  */
 router.post("/manage-certificate", auth, adminController.manageCertificate);
 
+/**
+ * @swagger
+ * /admin/certificate-requests:
+ *   get:
+ *     summary: Get all certificate requests
+ *     description: Endpoint for admins to view all pending certificate requests
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of certificate requests
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Certificate'
+ *       401:
+ *         description: Unauthorized - Admin access required
+ *       403:
+ *         description: Forbidden - Not an admin
+ */
+router.get("/certificate-requests", auth, adminController.getAllCertificateRequests);
+
 module.exports = router;

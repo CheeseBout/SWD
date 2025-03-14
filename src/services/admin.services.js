@@ -103,6 +103,16 @@ class AdminServices {
       );
     }
   }
+
+  async getAllCertificateRequests(req) {
+    const userRole = req?.user?.role;
+
+    if (userRole !== "admin") {
+      throw new APIError(401, "You are not authorized to perform this action");
+    }
+
+    return await certificateRepository.getAllCertificateRequests();
+  }
 }
 
 module.exports = new AdminServices();

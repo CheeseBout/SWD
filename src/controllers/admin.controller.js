@@ -15,6 +15,11 @@ class AdminController {
 
     return OK(res, "Success", result);
   });
+
+  getAllCertificateRequests = catchAsync(async (req, res) => {
+    const result = await adminServices.getAllCertificateRequests(req);
+    return OK(res, "Success", result);
+  });
 }
 
 module.exports = new AdminController();

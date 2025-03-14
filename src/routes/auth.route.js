@@ -15,6 +15,7 @@ const {
   changePasswordValidation,
 } = require("../validations/auth.validation");
 const { auth } = require("../middlewares/auth.middleware");
+const { google } = require("googleapis");
 
 /**
  * @swagger
@@ -284,15 +285,79 @@ router.get(
   })
 );
 
+/**
+ * @swagger
+ * /auth/login/google/callback:
+ *   get:
+ *     summary: Google OAuth callback
+ *     tags: [Authentication]
+ *     parameters:
+ *       - in: query
+ *         name: code
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: state
+ *         schema:
+ *           type: string
+ *     responses:
+ *       302:
+ *         description: Redirects after processing the OAuth response
+ */
 router.get(
   "/login/google/callback",
-  passport.authenticate("google", {
-    session: false,
-    failureRedirect: `${appConfig.CLIENT_URL}/login?error=google_auth_failed`,
-    failureMessage: true,
-  }),
+  (req, res, next) => {
+    // Handle calendar auth directly without passport if it's present in state
+    try {
+      if (req.query.state) {
+        const stateData = JSON.parse(req.query.state);
+        if (stateData.isCalendarAuth && req.query.code) {
+          // Skip passport authentication for calendar auth
+          return authController.authCallBack(req, res, next);
+        }
+      }
+      // Otherwise, continue with passport for normal logins
+      passport.authenticate("google", {
+        session: false,
+        failureRedirect: `${appConfig.CLIENT_URL}/login?error=google_auth_failed`,
+        failureMessage: true,
+      })(req, res, next);
+    } catch (error) {
+      console.error("Error in callback router decision:", error);
+      return res.redirect(
+        `${
+          appConfig.CLIENT_URL
+        }/login?error=callback_error&message=${encodeURIComponent(
+          error.message
+        )}`
+      );
+    }
+  },
   authController.authCallBack
 );
+
+/**
+ * @swagger
+ * /auth/calendar-callback:
+ *   get:
+ *     summary: Google Calendar OAuth callback
+ *     tags: [Authentication]
+ *     parameters:
+ *       - in: query
+ *         name: code
+ *         schema:
+ *           type: string
+ *         description: Authorization code from Google
+ *       - in: query
+ *         name: state
+ *         schema:
+ *           type: string
+ *         description: State data containing userId and other parameters
+ *     responses:
+ *       302:
+ *         description: Redirects back to application after handling calendar auth
+ */
+router.get("/calendar-callback", authController.handleCalendarCallback);
 
 /**
  * @swagger
@@ -404,6 +469,255 @@ router.post(
   auth,
   validate(updateExpertProfileValidation),
   authController.updateExpertProfile
+);
+
+/**
+ * @swagger
+ * /auth/therapist-google-connect:
+ *   get:
+ *     summary: Get Google authentication URL for therapists (only needed once)
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Google authentication URL generated or status if already connected
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 message:
+ *                   type: string
+ *                   example: Google authentication URL generated
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     authUrl:
+ *                       type: string
+ *                       example: https://accounts.google.com/o/oauth2/auth?...
+ *                     note:
+ *                       type: string
+ *                       example: After connecting, you'll be able to create meetings without further authentication
+ *                     status:
+ *                       type: string
+ *                       example: connected
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       403:
+ *         description: Forbidden - User is not a therapist
+ */
+router.get(
+  "/therapist-google-connect",
+  auth,
+  authController.getTherapistGoogleAuthUrl
+);
+
+/**
+ * @swagger
+ * /auth/therapist-direct-connect:
+ *   get:
+ *     summary: Direct connection to Google Calendar API
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       302:
+ *         description: Redirects to Google authorization
+ */
+router.get(
+  "/therapist-direct-connect",
+  auth,
+  authController.getTherapistDirectConnection
+);
+
+/**
+ * @swagger
+ * /auth/calendar-auth:
+ *   get:
+ *     summary: Connect Google Calendar for therapists (one-time setup)
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       302:
+ *         description: Redirects to Google authorization
+ */
+router.get("/calendar-auth", auth, authController.calendarAuth);
+
+/**
+ * @swagger
+ * /auth/debug-user-tokens/{userId}:
+ *   get:
+ *     summary: Debug user tokens (admin only)
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID to check tokens for
+ *     responses:
+ *       200:
+ *         description: Token debug information
+ */
+router.get("/debug-user-tokens/:userId", auth, authController.debugUserToken);
+
+/**
+ * @swagger
+ * /auth/therapist-google-auth-url:
+ *   get:
+ *     summary: Get Google authentication URL for therapists (as JSON response)
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Google authentication URL generated as JSON
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 message:
+ *                   type: string
+ *                   example: Google authentication URL generated
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     authUrl:
+ *                       type: string
+ *                       example: https://accounts.google.com/o/oauth2/auth?...
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       403:
+ *         description: Forbidden - User is not a therapist
+ */
+router.get(
+  "/therapist-google-auth-url",
+  auth,
+  authController.getTherapistGoogleAuthUrlJSON
+);
+
+/**
+ * @swagger
+ * /auth/create-google-connect-url:
+ *   get:
+ *     summary: Create URLs for connecting Google Calendar with token
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Connection URLs generated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     directConnectUrl:
+ *                       type: string
+ *                     intermediatePageUrl:
+ *                       type: string
+ *                     authUrl:
+ *                       type: string
+ */
+router.get(
+  "/create-google-connect-url",
+  auth,
+  authController.createGoogleConnectUrl
+);
+
+/**
+ * @swagger
+ * /auth/connect-google-calendar:
+ *   get:
+ *     summary: HTML page to help connect Google Calendar
+ *     tags: [Authentication]
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User's auth token
+ *     responses:
+ *       200:
+ *         description: HTML page with redirection script
+ */
+router.get("/connect-google-calendar", authController.showCalendarConnectPage);
+
+/**
+ * @swagger
+ * /auth/test-google-token/{userId}:
+ *   get:
+ *     summary: Test Google token functionality (admin only)
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID to test token for
+ *     responses:
+ *       200:
+ *         description: Google token test results
+ */
+router.get("/test-google-token/:userId", auth, authController.testGoogleToken);
+
+/**
+ * @swagger
+ * /auth/google-connection-status:
+ *   get:
+ *     summary: Check Google Calendar connection status
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Returns connection status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     isConnected:
+ *                       type: boolean
+ *                     isGoogleUser:
+ *                       type: boolean
+ *                     hasToken:
+ *                       type: boolean
+ */
+router.get(
+  "/google-connection-status",
+  auth,
+  authController.checkGoogleConnectionStatus
 );
 
 module.exports = router;

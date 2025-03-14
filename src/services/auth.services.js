@@ -11,6 +11,7 @@ const ms = require("ms");
 const appConfig = require("../configs/app.config");
 const userRepo = require("../repositories/user.repo");
 const { OAuth2Client } = require("google-auth-library");
+const { getAuthURL } = require("../configs/googleAuth.config");
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -387,6 +388,48 @@ class AuthService {
     await user.save();
 
     return user;
+  }
+
+  async getTherapistGoogleAuthUrl(req) {
+    const userId = req?.user?._id;
+    const userRole = req?.user?.role;
+
+    if (!userId) {
+      throw new APIError(401, "Authentication required");
+    }
+
+    if (userRole !== "couple_therapist") {
+      throw new APIError(403, "Only therapists can connect Google accounts");
+    }
+
+    // Check if therapist already has Google credentials
+    const tokenRepo = require("../repositories/token.repo");
+    const existingCreds = await tokenRepo.findTokenWithGoogleCreds(userId);
+
+    if (
+      existingCreds &&
+      existingCreds.access_token &&
+      existingCreds.access_token !== "NEED_GOOGLE_AUTH"
+    ) {
+      return {
+        message: "Your Google account is already connected",
+        status: "connected",
+        note: "You can now create meetings for your sessions without further authentication",
+      };
+    }
+
+    // Import the Google Auth configuration with expanded scopes
+    const { getAuthUrl } = require("../configs/googleMeet.config");
+
+    // Generate the Google auth URL with calendar scopes
+    const authUrl = getAuthUrl();
+
+    return {
+      message:
+        "Please use this URL to connect your Google account (only needed once)",
+      googleAuthUrl: authUrl,
+      note: "After connecting, you'll be able to create meetings for your sessions without further authentication",
+    };
   }
 }
 

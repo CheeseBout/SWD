@@ -113,6 +113,8 @@ class AdminServices {
 
     return await certificateRepository.getAllCertificateRequests();
   }
+
+
 }
 
 module.exports = new AdminServices();

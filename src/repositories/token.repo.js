@@ -82,12 +82,30 @@ class TokenRepository {
 
   async findTokenWithGoogleCreds(userId) {
     const tokenDoc = await TOKEN.findOne({ userID: userId });
-    return tokenDoc
-      ? {
+
+    if (!tokenDoc || !tokenDoc.googleToken) {
+      return null;
+    }
+
+    try {
+      // Try to parse the token
+      let parsedToken;
+      try {
+        parsedToken = JSON.parse(tokenDoc.googleToken);
+      } catch (e) {
+        // If not parsed correctly, return the raw token
+        return {
           access_token: tokenDoc.googleToken,
           userEmail: tokenDoc.userEmail,
-        }
-      : null;
+        };
+      }
+
+      // Return the properly formatted token
+      return parsedToken;
+    } catch (error) {
+      console.error("Error parsing Google token:", error);
+      return null;
+    }
   }
 
   async generateInitialGoogleToken(userId) {
@@ -103,6 +121,54 @@ class TokenRepository {
       },
       { upsert: true }
     );
+  }
+
+  // Thêm phương thức debug để in thông tin token
+  async debugToken(userId) {
+    try {
+      const token = await this.findTokenByUserId(userId);
+
+      if (!token) {
+        console.log(`No token found for user ${userId}`);
+        return { found: false };
+      }
+
+      const hasGoogleToken = !!token.googleToken;
+      let googleTokenInfo = null;
+
+      if (hasGoogleToken) {
+        try {
+          const parsedToken = JSON.parse(token.googleToken);
+          googleTokenInfo = {
+            hasAccessToken: !!parsedToken.access_token,
+            hasRefreshToken: !!parsedToken.refresh_token,
+            accessTokenPrefix:
+              parsedToken.access_token?.substring(0, 10) + "...",
+            refreshTokenPrefix:
+              parsedToken.refresh_token?.substring(0, 10) + "...",
+            expiryTime: parsedToken.expiry_date,
+            expiryDate: parsedToken.expiry_date
+              ? new Date(parsedToken.expiry_date)
+              : null,
+          };
+        } catch (e) {
+          googleTokenInfo = { error: e.message, raw: token.googleToken };
+        }
+      }
+
+      return {
+        found: true,
+        id: token._id,
+        userId: token.userID,
+        hasGoogleToken,
+        googleTokenInfo,
+        expiryDate: token.expiryDate,
+        updatedAt: token.tokenUpdatedAt || token.updatedAt,
+      };
+    } catch (error) {
+      console.error("Debug token error:", error);
+      return { error: error.message };
+    }
   }
 }
 

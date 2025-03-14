@@ -56,4 +56,5 @@ module.exports = {
     clientID: process.env.IMGUR_CLIENT_ID,
     clientSecret: process.env.IMGUR_CLIENT_SECRET,
   },
+  API_URL: process.env.API_URL || "http://localhost:8080",
 };

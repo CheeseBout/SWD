@@ -20,13 +20,32 @@ const startServer = async () => {
   try {
     await connectToDatabase();
 
-    // Configure CORS with credentials
-    app.use(
-      cors({
-        origin: process.env.CLIENT_URL || "http://localhost:5173",
-        credentials: true,
-      })
-    );
+    // Add CORS configuration
+    const corsOptions = {
+      origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        const allowedOrigins = [
+          "http://localhost:5173",
+          "http://localhost:3000",
+          "https://premarital-counseling.vercel.app",
+          appConfig.CLIENT_URL,
+        ];
+
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+          callback(null, true);
+        } else {
+          console.log("Blocked by CORS:", origin);
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
+      credentials: true,
+      methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+      allowedHeaders: ["Content-Type", "Authorization"],
+      exposedHeaders: ["Content-Type", "Authorization"],
+    };
+
+    // Apply CORS before other middleware
+    app.use(cors(corsOptions));
 
     // Session middleware configuration
     app.use(
@@ -53,13 +72,25 @@ const startServer = async () => {
     const googleMeetRoutes = require("./routes/meet.route");
     app.use("/api/v1/google-meet", googleMeetRoutes);
 
+    // Add test routes for debugging
+    if (process.env.NODE_ENV !== "production") {
+      const testRoutes = require("./routes/test-callback.route");
+      app.use("/api/v1/test", testRoutes);
+      console.log("Test routes enabled for debugging");
+    }
+
     app.get("/", (req, res) => {
       res.send("Hello World!");
     });
 
-    // Swagger setup
-    const swaggerSpec = swaggerJSDoc(swaggerOptions);
-    app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+    try {
+      // Swagger setup - thêm try-catch để xử lý lỗi
+      const swaggerSpec = swaggerJSDoc(swaggerOptions);
+      app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+    } catch (swaggerError) {
+      console.error("Swagger initialization failed:", swaggerError);
+      // Tiếp tục khởi động server dù swagger có lỗi
+    }
 
     app.use("/api/v1", require("./routes"));
     app.use("*", (req, res) => {

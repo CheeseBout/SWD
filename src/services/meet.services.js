@@ -23,31 +23,29 @@ class GoogleMeetServices {
         email,
       });
 
-      const googleCreds = await tokenRepo.findTokenWithGoogleCreds(userId);
-      console.log("Google credentials found:", googleCreds ? "Yes" : "No");
+      // Get token from repository
+      const googleTokenService = require("./googleToken.services");
+      const googleToken = await googleTokenService.getGoogleToken(userId);
 
-      // Check if credentials exist and are valid
-      if (
-        !googleCreds?.access_token ||
-        googleCreds.access_token === "NEED_GOOGLE_AUTH"
-      ) {
+      if (!googleToken) {
         console.log(
-          "Invalid Google credentials. User needs to authenticate with Google."
+          "No Google token found. User needs to authenticate with Google."
         );
-
-        // Return a structured response instead of throwing error
         return {
           error: true,
           requireGoogleAuth: true,
           message:
-            "To use this feature, you must connect with your Google Account",
-          googleAuthUrl: "/api/v1/auth/login/google",
+            "To use this feature, you must connect your Google Account (only required once)",
+          googleAuthUrl: "/api/v1/auth/therapist-google-auth-url",
+          instructions:
+            "Click the link to connect your Google account. After completing this step once, you'll be able to create meetings without further authentication.",
         };
       }
 
-      oauth2Client.setCredentials({
-        access_token: googleCreds.access_token,
-      });
+      console.log("Found Google token for user:", userId);
+
+      const { createCalendarClient } = require("../configs/googleMeet.config");
+      const oauth2Client = createCalendarClient(googleToken);
 
       const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 

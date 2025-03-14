@@ -1,32 +1,45 @@
 const mongoose = require("mongoose");
 const config = require("../configs/app.config");
-const ApiError = require("../utils/ApiError");
+const httpStatus = require("http-status");
+const APIError = require("../utils/ApiError");
 
 const errorConverter = (err, req, res, next) => {
+  // Log detailed error information
+  console.error("ERROR DETAILS:", {
+    originalUrl: req.originalUrl,
+    method: req.method,
+    statusCode: err.statusCode || err.status,
+    message: err.message,
+    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+    name: err.name,
+    isOperational: err.isOperational,
+  });
+
   let error = err;
-  if (!(error instanceof ApiError)) {
+  if (!(error instanceof APIError)) {
     const statusCode =
-      error.statusCode || error instanceof mongoose.Error ? 400 : 500;
-    const message = error.message || "Something went wrong";
-    error = new ApiError(statusCode, message, err.stack);
+      error.statusCode || error.status || httpStatus.INTERNAL_SERVER_ERROR;
+    const message = error.message || httpStatus[statusCode];
+    error = new APIError(statusCode, message, false, err.stack);
   }
   next(error);
 };
 
-// eslint-disable-next-line no-unused-vars
 const errorHandler = (err, req, res, next) => {
   let { statusCode, message } = err;
 
-  res.locals.errorMessage = err.message;
+  // Set status code
+  statusCode = statusCode || httpStatus.INTERNAL_SERVER_ERROR;
 
-  const response = {
+  // Response with error details
+  res.status(statusCode).json({
     code: statusCode,
     message,
-    ...(config.ENV === "development" && { stack: err.stack }),
-  };
-  console.error(err);
-
-  res.status(statusCode).json(response);
+    ...(process.env.NODE_ENV === "development" && {
+      stack: err.stack,
+      details: err.errors || err.details || undefined,
+    }),
+  });
 };
 
 module.exports = {

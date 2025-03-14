@@ -58,7 +58,7 @@ class ReservationService {
     }
 
     // Validate and convert IDs to ObjectId
-    if (!mongoose.Types.ObjectId.isValid(data.userID)) {
+    if (!mongoose.Types.ObjectId.isValid(req.user._id)) {
       throw new APIError(400, "Invalid userId");
     }
     if (!mongoose.Types.ObjectId.isValid(data.coupleTherapistID)) {
@@ -68,7 +68,7 @@ class ReservationService {
       throw new APIError(400, "Invalid packageID");
     }
 
-    data.userID = new mongoose.Types.ObjectId(data.userID);
+    req.user._id = new mongoose.Types.ObjectId(req.user._id);
     data.coupleTherapistID = new mongoose.Types.ObjectId(
       data.coupleTherapistID
     );

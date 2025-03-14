@@ -247,74 +247,125 @@ class ReservationRepo {
   }
 
   async revertAvailability(therapistID, startTime, endTime) {
-    const availability = await COUPLETHERAPIST_AVAILABILITY.findOne({
-      coupleTherapistID: therapistID,
-    });
+    // const availability = await COUPLETHERAPIST_AVAILABILITY.findOne({
+    //   coupleTherapistID: therapistID,
+    // });
 
-    if (!availability) {
-      console.log("Therapist availability not found for:", therapistID);
-      throw new Error("Therapist availability not found");
-    }
+    // if (!availability) {
+    //   console.log("Therapist availability not found for:", therapistID);
+    //   throw new Error("Therapist availability not found");
+    // }
 
-    // Convert startTime and endTime to Date objects
+    // // Convert startTime and endTime to Date objects
+    // startTime = new Date(startTime);
+    // endTime = new Date(endTime);
+
+    // console.log(
+    //   "Reverting availability for therapist:",
+    //   therapistID,
+    //   "start:",
+    //   startTime,
+    //   "end:",
+    //   endTime
+    // );
+
+    // let foundMatch = false;
+    // // Find by matching start and end times exactly
+    // for (const available of availability.timeAvailable) {
+    //   const startTimeMatches =
+    //     startTime.getTime() === available.startHour.getTime();
+    //   const endTimeMatches = endTime.getTime() === available.endHour.getTime();
+
+    //   console.log(
+    //     "Checking slot:",
+    //     available,
+    //     "startMatches:",
+    //     startTimeMatches,
+    //     "endMatches:",
+    //     endTimeMatches
+    //   );
+
+    //   if (startTimeMatches && endTimeMatches) {
+    //     console.log("Found matching slot to revert:", available);
+    //     available.isOccupied = false;
+    //     foundMatch = true;
+    //     break;
+    //   }
+    // }
+
+    // if (!foundMatch) {
+    //   console.log("No exact matching time slot found. Trying partial match...");
+
+    //   // If no exact match, try to find a slot that contains the time range
+    //   for (const available of availability.timeAvailable) {
+    //     if (startTime >= available.startHour && endTime <= available.endHour) {
+    //       console.log("Found containing slot to revert:", available);
+    //       available.isOccupied = false;
+    //       foundMatch = true;
+    //       break;
+    //     }
+    //   }
+    // }
+
+    // if (!foundMatch) {
+    //   console.log("No matching time slot found for reverting availability");
+    // } else {
+    //   await availability.save();
+    //   console.log("Availability reverted successfully");
+    // }
+
+    // return foundMatch;
+
+    console.log("TherapistID:", therapistID);
+    console.log("Start time:", startTime);
+    console.log("End time:", endTime);
+
+    // Convert startTime and endTime to Date objects if they aren't already
     startTime = new Date(startTime);
     endTime = new Date(endTime);
 
-    console.log(
-      "Reverting availability for therapist:",
-      therapistID,
-      "start:",
-      startTime,
-      "end:",
-      endTime
-    );
+    // Find all availability records for this therapist
+    const availabilityRecords = await COUPLETHERAPIST_AVAILABILITY.find({
+      coupleTherapistID: therapistID,
+    });
 
-    let foundMatch = false;
-    // Find by matching start and end times exactly
-    for (const available of availability.timeAvailable) {
-      const startTimeMatches =
-        startTime.getTime() === available.startHour.getTime();
-      const endTimeMatches = endTime.getTime() === available.endHour.getTime();
-
-      console.log(
-        "Checking slot:",
-        available,
-        "startMatches:",
-        startTimeMatches,
-        "endMatches:",
-        endTimeMatches
-      );
-
-      if (startTimeMatches && endTimeMatches) {
-        console.log("Found matching slot to revert:", available);
-        available.isOccupied = false;
-        foundMatch = true;
-        break;
-      }
+    if (!availabilityRecords || availabilityRecords.length === 0) {
+      console.log("Therapist availability not found for:", therapistID);
+      return false;
     }
 
-    if (!foundMatch) {
-      console.log("No exact matching time slot found. Trying partial match...");
+    console.log(`Found ${availabilityRecords.length} availability records`);
 
-      // If no exact match, try to find a slot that contains the time range
-      for (const available of availability.timeAvailable) {
-        if (startTime >= available.startHour && endTime <= available.endHour) {
-          console.log("Found containing slot to revert:", available);
-          available.isOccupied = false;
+    let foundMatch = false;
+
+    // Loop through all availability records to find a matching slot
+    for (const availability of availabilityRecords) {
+      for (const slot of availability.timeAvailable) {
+        // Check for exact match of start and end times
+        const startTimeMatches =
+          startTime.getTime() === slot.startHour.getTime();
+        const endTimeMatches = endTime.getTime() === slot.endHour.getTime();
+
+        if (startTimeMatches && endTimeMatches) {
+          console.log("Found matching slot to revert:", slot);
+
+          // Set the slot as not occupied
+          slot.isOccupied = false;
+
+          // Save the changes
+          await availability.save();
+          console.log("Availability successfully reverted");
+
           foundMatch = true;
-          break;
+          return true;
         }
       }
     }
 
     if (!foundMatch) {
       console.log("No matching time slot found for reverting availability");
-    } else {
-      await availability.save();
-      console.log("Availability reverted successfully");
+      return false;
     }
-
-    return foundMatch;
   }
 
   async checkUserExists(userID) {

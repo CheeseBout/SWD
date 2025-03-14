@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { Link } from "react-router-dom";
 import { FaStar } from "react-icons/fa";
 TherapistCard.defaultProps = {

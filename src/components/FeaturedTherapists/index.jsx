@@ -79,7 +79,7 @@ export function FeaturedTherapists() {
                     View Profile
                   </Link>
                   <Link
-                    to={`/book/${therapist._id}`}
+                    to={`/bookReservation/${therapist._id}`}
                     className="btn btn-primary"
                   >
                     Book Session

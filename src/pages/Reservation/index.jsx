@@ -25,6 +25,8 @@ export default function YourReservation() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReservationId, setCancelReservationId] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showReasonModal, setShowReasonModal] = useState(false);
+  const [deniedReason, setDeniedReason] = useState("");
 
   const handlePayment = async (reservation) => {
     setIsLoading(true);
@@ -48,7 +50,10 @@ export default function YourReservation() {
       setIsLoading(false);
     }
   };
-
+  const handleShowReason = (reason) => {
+    setDeniedReason(reason);
+    setShowReasonModal(true);
+  };
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const isCancelled = params.get("cancelled");
@@ -109,6 +114,10 @@ export default function YourReservation() {
     }
   };
 
+  const filteredReservations = reservations.filter(
+    (reservation) => reservation.status !== "canceled"
+  );
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="flex">
@@ -140,7 +149,8 @@ export default function YourReservation() {
                   <option value="pending">Pending</option>
                   <option value="confirmed">Confirmed</option>
                   <option value="completed">Completed</option>
-                  <option value="canceled">Canceled</option>
+                  {/* <option value="canceled">Canceled</option> */}
+                  <option value="deposited">Deposited</option>
                   <option value="denied">Denied</option>
                 </select>
               </div>
@@ -177,8 +187,8 @@ export default function YourReservation() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {reservations?.length > 0 ? (
-                      reservations.map((reservation) => (
+                    {filteredReservations?.length > 0 ? (
+                      filteredReservations.map((reservation) => (
                         <tr
                           key={reservation._id}
                           className="hover:bg-gray-50 transition-colors duration-150"
@@ -224,9 +234,11 @@ export default function YourReservation() {
                                 reservation.status === "confirmed"
                                   ? "bg-green-100 text-green-800"
                                   : reservation.status === "pending"
-                                  ? "bg-yellow-100 text-yellow-800"
+                                  ? "bg-gray-200 text-gray-800"
                                   : reservation.status === "completed"
                                   ? "bg-blue-100 text-blue-800"
+                                  : reservation.status === "deposited"
+                                  ? "bg-yellow-100 text-yellow-800"
                                   : "bg-red-100 text-red-800"
                               }`}
                             >
@@ -248,6 +260,16 @@ export default function YourReservation() {
                                   Cancel
                                 </button>
                               )}
+                              {reservation.status === "denied" && (
+                                <button
+                                  className="px-3 py-1 bg-white border-1 border-gray-500 text-black rounded-md hover:bg-gray-400 transition-colors duration-150"
+                                  onClick={() =>
+                                    handleShowReason(reservation.reason)
+                                  }
+                                >
+                                  Detail
+                                </button>
+                              )}
                               {reservation.status === "confirmed" && (
                                 <button
                                   className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-150"
@@ -255,6 +277,19 @@ export default function YourReservation() {
                                 >
                                   Pay Deposit
                                 </button>
+                              )}
+                              {reservation.status === "deposited" && (
+                                <a
+                                  href={
+                                    reservation.meetingURL ||
+                                    "https://meet.google.com/landing"
+                                  }
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors duration-150"
+                                >
+                                  Join Meeting
+                                </a>
                               )}
                             </div>
                           </td>
@@ -515,6 +550,46 @@ export default function YourReservation() {
                 onClick={confirmCancel}
               >
                 Yes, Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reason Modal */}
+      {showReasonModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center bg-black/30 backdrop-blur-sm">
+          <div className="bg-white rounded-lg max-w-sm w-full p-6 shadow-xl">
+            <div className="flex justify-center items-center mb-4">
+              <div className="rounded-full bg-gray-100 p-3">
+                <svg
+                  className="h-4 w-4 text-gray-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-center ml-2">
+                Reason for Denial
+              </h3>
+            </div>
+
+            <p className="text-md font-semibold text-gray-500 text-center mb-6">
+              {deniedReason}
+            </p>
+            <div className="flex justify-end space-x-3 mt-16">
+              <button
+                className="px-4 py-2 bg-gray-300 text-black rounded-md hover:bg-gray-400 transition-colors duration-150"
+                onClick={() => setShowReasonModal(false)}
+              >
+                Close
               </button>
             </div>
           </div>

@@ -70,6 +70,27 @@ router.get("/", questionsController.getAllQuestions);
 
 /**
  * @swagger
+ * /questions/get-all-question-banks:
+ *   get:
+ *     summary: Get all question banks
+ *     tags: [Questions]
+ *     responses:
+ *       200:
+ *         description: Success
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/QuestionBank'
+ */
+router.get("/get-all-question-banks", questionsController.getAllQuestionsBank);
+
+/**
+ * @swagger
  * /questions/{questionId}:
  *   get:
  *     summary: Get question by ID

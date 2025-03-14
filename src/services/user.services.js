@@ -92,7 +92,7 @@ class UserService {
       throw new APIError(403, "Cannot deactivate admin users");
     }
 
-    return await userRepo.update(userId, { status: "inactive" });
+    return await userRepo.update(userId, { isActive: false });
   };
 
   activeUser = async (req) => {
@@ -111,7 +111,7 @@ class UserService {
       throw new APIError(404, "User not found");
     }
 
-    return await userRepo.update(userId, { status: "active" });
+    return await userRepo.update(userId, { isActive: true });
   };
 }
 

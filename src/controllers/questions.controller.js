@@ -8,7 +8,7 @@ class QuestionsController {
     return OK(
       res,
       "Success",
-      await questionsBankServices.getAllQuestionsBank()
+      await questionsBankServices.getAllQuestionBanks()
     );
   });
 

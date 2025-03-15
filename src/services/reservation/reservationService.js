@@ -2,12 +2,24 @@ import { api } from "../apiConfig";
 
 export const reservationService = {
   // Get all reservations for a therapist
-  async getTherapistReservation(therapistId) {
+  async getTherapistReservation(
+    therapistId,
+    status = "",
+    page = 1,
+    limit = 10
+  ) {
     try {
       const response = await api.get(
-        `/api/v1/reservation/get-all-reservation/therapist/${therapistId}`
+        `/api/v1/reservation/get-all-reservation/therapist/${therapistId}`,
+        {
+          params: {
+            status: status || undefined,
+            page,
+            limit,
+          },
+        }
       );
-      return response;
+      return response?.data?.data;
     } catch (error) {
       console.error("Error fetching therapist reservations:", error);
       throw error;
@@ -114,5 +126,5 @@ export const reservationService = {
       console.error("Error approving reservation:", error);
       throw error;
     }
-  }
+  },
 };

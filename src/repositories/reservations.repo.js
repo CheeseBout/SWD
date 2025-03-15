@@ -125,10 +125,9 @@ class ReservationRepo {
       startTime: { $lt: endTime },
       endTime: { $gt: startTime },
       _id: { $ne: reservationID },
-      status: { $ne: "canceled" },
+      status: { $nin: ["canceled", "denied"] },
     });
   }
-
   async checkOccupied(therapistID, startTime, endTime) {
     // Instead of finding just one availability record, get all records for this therapist
     const availabilityRecords = await COUPLETHERAPIST_AVAILABILITY.find({

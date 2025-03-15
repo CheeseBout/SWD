@@ -9,8 +9,7 @@ class QuizService {
 
   async getQuizById(quizId) {
     try {
-      console.log(quizId);
-      let data = await quizRepo.findQuizById(quizId);
+      const data = await quizRepo.findQuizById(quizId);
 
       if (!data) {
         throw new APIError(404, "Quiz not found");
@@ -19,10 +18,6 @@ class QuizService {
       if (data.status === "inactive") {
         throw new APIError(400, "Quiz is inactive");
       }
-
-      // Populate the questions data before returning
-      data = await quizRepo.populateQuizQuestions(data);
-      console.log(data);
 
       return { quiz: data };
     } catch (error) {

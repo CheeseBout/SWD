@@ -9,22 +9,46 @@ class QuizRepository {
 
   async findQuizById(quizId) {
     try {
-      const topic = await TOPIC.findOne({ "quiz._id": quizId }).populate({
-        path: "quiz.questions",
-        model: QUESTIONS,
-        select:
-          "questionText options correctAnswer explanation category difficulty",
-      });
+      const quizFromQuizzes = await QUIZZES.findById(quizId);
+      if (!quizFromQuizzes) {
+        return null;
+      }
 
+      const topic = await TOPIC.findOne({ "quiz._id": quizId });
       if (!topic) {
         return null;
       }
 
-      // Find the specific quiz in the topic's quiz array
-      const quiz = topic.quiz.find((q) => q._id.toString() === quizId);
-      return quiz;
+      const quizFromTopic = topic.quiz.find((q) => q._id.toString() === quizId);
+      if (!quizFromTopic) {
+        return null;
+      }
+
+      // Get all questions from the quiz without sorting
+      const questions = await QUESTIONS.find({
+        _id: { $in: quizFromQuizzes.questions || [] },
+      }).select(
+        "questionContent options status createdAt lastEdited questionBank quizzes userAnswers"
+      );
+
+      const sortedQuestions = [...questions].sort(
+        (a, b) => a.createdAt - b.createdAt
+      );
+
+      // Combine data from both sources
+      return {
+        _id: quizFromTopic._id,
+        quizName: quizFromTopic.quizName,
+        quizDescription: quizFromTopic.quizDescription,
+        questions: sortedQuestions,
+        userAnswer: quizFromTopic.userAnswer || [],
+        imageUrl: quizFromTopic.imageUrl,
+        status: quizFromTopic.status,
+        createdAt: quizFromTopic.createdAt,
+        lastEdited: quizFromTopic.lastEdited,
+      };
     } catch (error) {
-      console.log("Error in findQuizById:", error);
+      console.error("Error in findQuizById:", error);
       throw error;
     }
   }

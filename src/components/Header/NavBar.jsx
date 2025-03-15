@@ -126,12 +126,11 @@ const NavBar = () => {
             </button>
           </div>
 
-          <div className="hidden md:flex md:items-center md:space-x-6">
+          <div className="hidden md:flex md:items-center md:space-x-6 mr-12">
             {[
               "Find a Therapist",
               "Quizzes",
               "Blogs",
-              "Courses",
               "About Us",
             ].map((item, index) => (
               <button

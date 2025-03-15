@@ -47,48 +47,40 @@ class PaymentService {
         throw new Error("Reservation not found");
       }
 
-      const disconutPackage = existingReservation.packageID;
-      console.log("Package ID: ", disconutPackage);
-      const response = await packageServices.getPackageByID(disconutPackage);
-      const discountRate = response.discount;
-      console.log("Discount Rate: ", discountRate);
-
-      const newPrice = totalPrice - (totalPrice * discountRate) / 100;
-      console.log("New Price: ", newPrice);
-
-      if (existingReservation.status === "PENDING") {
+      // Check if reservation is confirmed
+      if (existingReservation.status === "pending") {
         throw new APIError(
           400,
           "Reservation is not confirmed by couple therapist yet"
         );
       }
 
+      // Use the totalPrice parameter directly without recalculating the discount
       // Find or create payment record
       let payment = await PAYMENT.findOne({ reservation: reservationID });
       if (!payment) {
         payment = new PAYMENT({
           reservation: new mongoose.Types.ObjectId(reservationID),
-          totalPrice: newPrice,
+          totalPrice: totalPrice, // Use the total price directly
           totalPaid: 0,
           status: "PENDING",
         });
         await payment.save();
       } else {
-        // Update existing payment record with new discounted price
-        payment.totalPrice = newPrice;
+        // Update existing payment record with the provided price
+        payment.totalPrice = totalPrice; // Use the provided total price
         await payment.save();
       }
 
-      // Calculate payment amount - sửa lỗi hiển thị số tiền
-      // Đảm bảo amount là số nguyên và không nhân thêm 100 ở đây
+      // Calculate payment amount
       const amount =
         phase === "DEPOSIT"
           ? Math.round(payment.totalPrice * 0.5)
           : Math.round(payment.totalPrice - payment.totalPaid);
 
-      console.log("Amount to pay:", amount, "VND"); // Log để debug
+      console.log("Amount to pay:", amount, "VND"); // Log for debugging
 
-      // Generate transaction code với platform để phân biệt
+      // Generate transaction code with platform identifier
       const timestamp = moment().format("HHmmss");
       const transactionCode = `${platform}_${timestamp}`;
 
@@ -97,14 +89,13 @@ class PaymentService {
       expDate.setMinutes(expDate.getMinutes() + 5);
 
       // Build payment URL using vnpay library
-      // vnp_Amount đã được nhân với 100 bởi thư viện VNPay, không cần nhân lại
       const paymentUrl = vnpay.buildPaymentUrl({
-        vnp_Amount: amount, // Truyền đúng số tiền, thư viện sẽ tự nhân với 100
-        vnp_IpAddr: "52.151.214.177", // Azure host IP (instead of 127.0.0.1)
+        vnp_Amount: amount, // The library will multiply by 100
+        vnp_IpAddr: "52.151.214.177", // Azure host IP
         vnp_TxnRef: transactionCode,
         vnp_OrderInfo: "Thanh toan don hang: " + transactionCode,
         vnp_OrderType: ProductCode.Other,
-        vnp_ReturnUrl: config.VNPay.vnp_ReturnUrl, //localhost:8080'}/api/payment/vnpay-return`,
+        vnp_ReturnUrl: config.VNPay.vnp_ReturnUrl,
         vnp_Locale: VnpLocale.VN,
         vnp_BankCode: "VNBANK",
         vnp_ExpireDate: dateFormat(expDate),
@@ -114,11 +105,11 @@ class PaymentService {
       const transaction = new TRANSACTION({
         payment: payment._id,
         phase,
-        amount, // Lưu đúng số tiền vào DB
+        amount,
         method: "VNPAY",
         transactionCode: transactionCode,
         status: "PENDING",
-        platform, // Thêm thông tin platform
+        platform,
       });
 
       await transaction.save();

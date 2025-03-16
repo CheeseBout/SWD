@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const reservationResultController = require("../controllers/reservationResult.controller");
 const { auth } = require("../middlewares/auth.middleware");
+const { route } = require("./reservation.route");
 
 /**
  * @swagger
@@ -22,24 +23,20 @@ const { auth } = require("../middlewares/auth.middleware");
  *         reservationID:
  *           type: string
  *           description: Reference to the reservation
- *         questions:
+ *         sessionSummary:
+ *           type: string
+ *           description: Summary of the counseling session
+ *         issuesIdentified:
  *           type: array
  *           items:
- *             type: object
- *             properties:
- *               questionId:
- *                 type: string
- *               content:
- *                 type: string
- *         answers:
- *           type: array
- *           items:
- *             type: object
- *             properties:
- *               questionId:
- *                 type: string
- *               answer:
- *                 type: string
+ *             type: string
+ *           description: List of issues identified during the session
+ *         therapistRecommendations:
+ *           type: string
+ *           description: Recommendations provided by the therapist
+ *         homeworkAssignment:
+ *           type: string
+ *           description: Homework assigned to the client
  *         status:
  *           type: string
  *           enum: [completed, deleted]
@@ -68,30 +65,28 @@ const { auth } = require("../middlewares/auth.middleware");
  *             type: object
  *             required:
  *               - reservationID
- *               - questions
- *               - answers
+ *               - sessionSummary
+ *               - issuesIdentified
+ *               - therapistRecommendations
+ *               - homeworkAssignment
  *             properties:
  *               reservationID:
  *                 type: string
  *                 example: "65f2d6789abcdef01234567"
- *               questions:
+ *               sessionSummary:
+ *                 type: string
+ *                 example: "Detailed summary of the counseling session"
+ *               issuesIdentified:
  *                 type: array
  *                 items:
- *                   type: object
- *                   properties:
- *                     questionId:
- *                       type: string
- *                     content:
- *                       type: string
- *               answers:
- *                 type: array
- *                 items:
- *                   type: object
- *                   properties:
- *                     questionId:
- *                       type: string
- *                     answer:
- *                       type: string
+ *                   type: string
+ *                   example: "Communication difficulties"
+ *               therapistRecommendations:
+ *                 type: string
+ *                 example: "Weekly practice of active listening techniques"
+ *               homeworkAssignment:
+ *                 type: string
+ *                 example: "Complete the communication exercise worksheet"
  *     responses:
  *       201:
  *         description: Reservation result created successfully
@@ -145,24 +140,16 @@ const { auth } = require("../middlewares/auth.middleware");
  *           schema:
  *             type: object
  *             properties:
- *               questions:
+ *               sessionSummary:
+ *                 type: string
+ *               issuesIdentified:
  *                 type: array
  *                 items:
- *                   type: object
- *                   properties:
- *                     questionId:
- *                       type: string
- *                     content:
- *                       type: string
- *               answers:
- *                 type: array
- *                 items:
- *                   type: object
- *                   properties:
- *                     questionId:
- *                       type: string
- *                     answer:
- *                       type: string
+ *                   type: string
+ *               therapistRecommendations:
+ *                 type: string
+ *               homeworkAssignment:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Reservation result updated successfully
@@ -238,7 +225,147 @@ const { auth } = require("../middlewares/auth.middleware");
  *               items:
  *                 $ref: '#/components/schemas/ReservationResult'
  */
+/**
+ * @swagger
+ * /reservation-result/get-all-reservation-result/user/{userID}:
+ *   get:
+ *     summary: Get all reservation results for a user
+ *     tags: [Reservation Results]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the user
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [completed, deleted]
+ *         description: Filter results by status
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Items per page
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved reservation results
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Reservation results retrieved successfully
+ *                 status:
+ *                   type: integer
+ *                   example: 200
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     results:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/ReservationResult'
+ *                     total:
+ *                       type: integer
+ *                       example: 10
+ *                     page:
+ *                       type: integer
+ *                       example: 1
+ *                     pages:
+ *                       type: integer
+ *                       example: 2
+ *       400:
+ *         description: Invalid user ID format
+ *       403:
+ *         description: Permission denied
+ *       404:
+ *         description: User not found
+ */
 
+/**
+ * @swagger
+ * /reservation-result/get-all-reservation-result/therapist/{therapistID}:
+ *   get:
+ *     summary: Get all reservation results created by a therapist
+ *     tags: [Reservation Results]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: therapistID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the therapist
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [completed, deleted]
+ *         description: Filter results by status
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Items per page
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved reservation results
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Reservation results retrieved successfully
+ *                 status:
+ *                   type: integer
+ *                   example: 200
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     results:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/ReservationResult'
+ *                     total:
+ *                       type: integer
+ *                       example: 8
+ *                     page:
+ *                       type: integer
+ *                       example: 1
+ *                     pages:
+ *                       type: integer
+ *                       example: 1
+ *       400:
+ *         description: Invalid therapist ID format
+ *       403:
+ *         description: Permission denied
+ *       404:
+ *         description: Therapist not found
+ */
 router.post(
   "/create-reservation-result",
   auth,
@@ -259,8 +386,13 @@ router.put(
   reservationResultController.deleteReservationResult
 );
 router.get(
-  "/get-all-reservation-result",
-  reservationResultController.getAllReservationResult
+  "/get-all-reservation-result/user/:userID",
+  auth,
+  reservationResultController.getAllReservationResultByUser
 );
-
+router.get(
+  "/get-all-reservation-result/therapist/:coupleTherapistID",
+  auth,
+  reservationResultController.getAllReservationResultByTherapist
+);
 module.exports = router;

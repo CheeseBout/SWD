@@ -39,12 +39,42 @@ class ReservationResultController {
       )
     );
   });
-  getAllReservationResult = catchAsync(async (req, res) => {
+
+  // Add these new methods
+  getAllReservationResultByUser = catchAsync(async (req, res) => {
+    const { userID } = req.params;
+    const { status, page = 1, limit = 10 } = req.query;
+
     return OK(
       res,
-      "Success",
-      await reservationResultService.getAllReservationResults()
+      "Reservation results retrieved successfully",
+      await reservationResultService.getAllReservationResultsByUser(userID, {
+        status,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        user: req.user,
+      })
+    );
+  });
+
+  getAllReservationResultByTherapist = catchAsync(async (req, res) => {
+    const { coupleTherapistID } = req.params;
+    const { status, page = 1, limit = 10 } = req.query;
+
+    return OK(
+      res,
+      "Reservation results retrieved successfully",
+      await reservationResultService.getAllReservationResultsByTherapist(
+        coupleTherapistID,
+        {
+          status,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          user: req.user,
+        }
+      )
     );
   });
 }
+
 module.exports = new ReservationResultController();

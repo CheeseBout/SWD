@@ -6,19 +6,25 @@ const reservationResultSchema = new mongoose.Schema(
       ref: "Reservation",
       required: true,
     },
-    questions: [
+    sessionSummary: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    issuesIdentified: [
       {
         type: String,
         required: true,
-        trim: true,
       },
     ],
-    answers: [
-      {
-        type: String,
-        required: true,
-      },
-    ],
+    therapistRecommendations: {
+      type: String,
+      required: true,
+    },
+    homeworkAssignment: {
+      type: String,
+      required: true,
+    },
     status: {
       type: String,
       required: true,

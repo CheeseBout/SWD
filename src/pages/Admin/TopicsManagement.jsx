@@ -4,7 +4,7 @@ import { topicService } from "../../services/api";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
-import AdminSideBar from "../../components/Admin/AdminSidebar";
+import AdminSideBar from "../../components/Sidebar/AdminSidebar";
 import TopicForm from "../../components/Admin/TopicForm";
 import { toast } from "react-toastify";
 import {
@@ -552,7 +552,6 @@ export default function TopicsManagement() {
           </div>
         )}
 
-        {/* Create Topic Modal */}
         <dialog id="create_topic_modal" className="modal backdrop-blur-sm">
           <div className="modal-box">
             <h3 className="text-xl font-semibold mb-4">Create New Topic</h3>
@@ -589,7 +588,6 @@ export default function TopicsManagement() {
           </form>
         </dialog>
 
-        {/* Delete Confirmation Modal */}
         <ConfirmationModal
           id="delete_topic_modal"
           title="Delete Topic"

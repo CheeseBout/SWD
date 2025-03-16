@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { userService } from "../../services/api";
-import AdminSideBar from "../../components/Admin/AdminSidebar";
+import AdminSideBar from "../../components/SideBar/AdminSidebar";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { toast } from "react-toastify";

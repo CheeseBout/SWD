@@ -50,6 +50,11 @@ const EditorToolbar = ({ editor }) => {
     }
   };
 
+  const handleModalClick = (e) => {
+    // Prevent modal from closing when clicking inside the modal content
+    e.stopPropagation();
+  };
+
   return (
     <>
       <div className="p-2 border-b border-gray-300 bg-gray-50 flex flex-wrap gap-1">
@@ -102,7 +107,7 @@ const EditorToolbar = ({ editor }) => {
       {/* Image Modal with checkbox toggle */}
       <input type="checkbox" id="image_modal" className="modal-toggle" />
       <div className="modal" role="dialog">
-        <div className="modal-box">
+        <div className="modal-box" onClick={handleModalClick}>
           <h3 className="text-lg font-bold">Insert Image</h3>
           
           <div className="my-4">
@@ -118,6 +123,7 @@ const EditorToolbar = ({ editor }) => {
               onKeyDown={handleKeyDown}
               placeholder="https://example.com/image.jpg"
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              onClick={(e) => e.stopPropagation()}
             />
             <p className="mt-1 text-sm text-gray-500">
               Enter the URL of the image you want to insert

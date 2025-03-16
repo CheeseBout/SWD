@@ -3,9 +3,8 @@ import { Link } from "react-router-dom";
 import { quizService } from "../../services/api";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import ErrorMessage from "../../components/common/ErrorMessage";
-import ConfirmationModal from "../../components/common/ConfirmationModal";
 import { toast } from "react-toastify";
-import AdminSideBar from "../../components/Admin/AdminSidebar";
+import AdminSideBar from "../../components/Sidebar/AdminSidebar";
 import {
   PlusIcon,
   PencilAltIcon,
@@ -462,7 +461,6 @@ export default function QuizzesManagement() {
           </div>
         )}
 
-        {/* Delete Confirmation Modal */}
         <dialog id="delete_quiz_modal" className="modal">
           <div className="modal-box">
             <h3 className="text-lg font-bold">Delete Quiz</h3>

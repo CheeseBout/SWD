@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import AdminSideBar from "../../components/Admin/AdminSidebar";
+import AdminSideBar from "../../components/Sidebar/AdminSidebar";
 import {
   UsersIcon,
   BookOpenIcon,

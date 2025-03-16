@@ -5,7 +5,7 @@ import LoadingSpinner from "../../components/common/LoadingSpinner";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
 import { toast } from "react-toastify";
-import AdminSideBar from "../../components/Admin/AdminSidebar";
+import AdminSideBar from "../../components/Sidebar/AdminSidebar";
 import {
   PlusIcon,
   PencilAltIcon,

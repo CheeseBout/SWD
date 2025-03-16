@@ -11,6 +11,10 @@ const coupleTherapistSchema = new mongoose.Schema(
       type: String,
       default: "New Couple Therapist",
     },
+    isUpdatedInformation: {
+      type: Boolean,
+      default: false,
+    },
     certificates: [
       {
         certificateID: {

@@ -146,6 +146,23 @@ class AuthController {
     return OK(res, "Success", result);
   });
 
+  updateTherapistProfile = catchAsync(async (req, res) => {
+    const userId = req.user._id;
+    const { description, category } = req.body;
+
+    console.log("Updating therapist profile with data:", {
+      description,
+      category,
+    });
+
+    const updatedProfile = await authServices.updateTherapistProfile(userId, {
+      description,
+      category, 
+    });
+
+    return OK(res, "Therapist profile updated successfully", updatedProfile);
+  });
+
   /**
    * Google OAuth Callback for Web
    */

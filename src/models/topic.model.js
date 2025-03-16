@@ -1,4 +1,3 @@
-const { required } = require("joi");
 const mongoose = require("mongoose");
 
 const topicSchema = new mongoose.Schema({
@@ -12,7 +11,8 @@ const topicSchema = new mongoose.Schema({
   },
   questionBank: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "QuestionBanks",
+    ref: "QuestionBank",
+    required: true,
   },
   quiz: [
     {

@@ -720,4 +720,10 @@ router.get(
   authController.checkGoogleConnectionStatus
 );
 
+router.put(
+  "/update-therapist-profile",
+  auth,
+  authController.updateTherapistProfile
+);
+
 module.exports = router;

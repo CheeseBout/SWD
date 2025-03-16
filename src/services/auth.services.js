@@ -25,6 +25,7 @@ class AuthService {
     dob,
     gender,
     role = "member",
+    therapistData = {}, // Add parameter for custom therapist data
   }) {
     try {
       // Check for existing user first
@@ -55,7 +56,9 @@ class AuthService {
 
       // Create initial token after user is created successfully
       await tokenRepo.createInitialToken(user._id);
-
+      if (role === "couple_therapist") {
+        await this.createTherapistProfile(user._id, therapistData); // Pass therapist data
+      }
       return { user };
     } catch (error) {
       console.error("Registration error:", error);
@@ -106,7 +109,7 @@ class AuthService {
     });
   }
 
-  async createTherapistProfile(userId) {
+  async createTherapistProfile(userId, therapistData = {}) {
     try {
       if (!userId) {
         throw new APIError(400, "User ID is required");
@@ -118,14 +121,48 @@ class AuthService {
         throw new APIError(404, "User not found");
       }
 
+      // Process certificates if provided
+      let processedCertificates = [];
+      if (
+        therapistData.certificates &&
+        Array.isArray(therapistData.certificates)
+      ) {
+        for (const cert of therapistData.certificates) {
+          const { title, issuedDate, expiryDate, documentURL, category } = cert;
+
+          // Create certificate in database
+          const certificate = await authRepo.createCertificate({
+            title,
+            issuedDate,
+            expiryDate,
+            documentURL,
+            category,
+            isCertificateVerified: false,
+            status: "pending",
+          });
+
+          // Format certificate for therapist profile
+          processedCertificates.push({
+            certificateID: certificate._id,
+            title,
+            issuedDate,
+            expiryDate,
+            documentURL,
+            category,
+            updatedAt: new Date(),
+            status: "pending",
+          });
+        }
+      }
+
+      // Use provided values or defaults
       const therapistProfile = await authRepo.createTherapistProfile({
         userID: userId,
-        description: "New Couple Therapist",
-        isVerified: false,
-        certificates: [],
-        rating: 0,
-        reviewCount: 0,
-        category: "General",
+        description: therapistData.description || "New Couple Therapist",
+        isVerified: therapistData.isVerified || false,
+        certificates: processedCertificates, // Use processed certificates
+        category: therapistData.category || "General",
+        // Add any other customizable fields
       });
 
       if (!therapistProfile) {
@@ -139,6 +176,67 @@ class AuthService {
         throw error;
       }
       throw new APIError(400, "Failed to create therapist profile");
+    }
+  }
+
+  async updateTherapistProfile(userId, therapistData = {}) {
+    try {
+      if (!userId) {
+        throw new APIError(400, "User ID is required");
+      }
+
+      // Validate that the user exists and is a therapist
+      const user = await authRepo.findUserById(userId);
+      if (!user) {
+        throw new APIError(404, "User not found");
+      }
+
+      if (user.role !== "couple_therapist") {
+        throw new APIError(400, "User is not a couple therapist");
+      }
+
+      // Find existing therapist profile
+      const existingProfile = await authRepo.findTherapistProfile(userId);
+      if (!existingProfile) {
+        throw new APIError(404, "Therapist profile not found");
+      }
+
+      // Create update object with only basic information
+      const updateData = {
+        $set: {}, // Use $set to update specific fields
+      };
+
+      if (therapistData) {
+        updateData.$set.isUpdatedInformation = true;
+      }
+
+      if (therapistData.description !== undefined) {
+        updateData.$set.description = therapistData.description;
+      }
+
+      if (therapistData.category !== undefined) {
+        updateData.$set.category = therapistData.category;
+      }
+
+      // Only update if there are changes
+      if (Object.keys(updateData.$set).length > 0) {
+        const updatedProfile = await authRepo.updateTherapistProfile(
+          userId,
+          updateData
+        );
+        return updatedProfile;
+      }
+
+      return existingProfile;
+    } catch (error) {
+      console.error("Update therapist profile error:", error);
+      if (error.isOperational) {
+        throw error;
+      }
+      throw new APIError(
+        400,
+        "Failed to update therapist profile: " + error.message
+      );
     }
   }
 
@@ -269,7 +367,7 @@ class AuthService {
     return user;
   }
 
-  async loginWithGoogle(idToken, role = "member") {
+  async loginWithGoogle(idToken, role = "member", therapistData = {}) {
     try {
       if (!idToken) {
         throw new APIError(400, "Missing Google ID Token");
@@ -325,7 +423,8 @@ class AuthService {
           isGoogleUser: true,
         });
 
-        // If user is created as couple_therapist, create therapist profile
+        // If user is created as couple_therapist, create a basic therapist profile
+        // We'll update it later with the dedicated updateTherapistProfile API
         if (role === "couple_therapist") {
           await this.createTherapistProfile(user._id);
         }

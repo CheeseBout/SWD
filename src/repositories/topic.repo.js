@@ -2,11 +2,11 @@ const TOPIC = require("../models/topic.model");
 
 class TopicRepository {
   async findAll() {
-    return await TOPIC.find();
+    return await TOPIC.find().populate("questionBank");
   }
 
   async findById(topicId) {
-    return await TOPIC.findById(topicId);
+    return await TOPIC.findById(topicId).populate("questionBank");
   }
 
   async create(topicData) {

@@ -28,8 +28,6 @@ class ReservationResultRepo {
 
   async findAll(filter = {}, skip = 0, limit = 10) {
     try {
-      // Remove the sorting by createdAt which is causing issues in Cosmos DB
-      // Instead, we'll get all results first and then sort them in-memory
       const results = await RESERVATIONRESULT.find(filter)
         .populate({
           path: "reservationID",

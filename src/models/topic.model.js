@@ -12,7 +12,6 @@ const topicSchema = new mongoose.Schema({
   questionBank: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "QuestionBank",
-    required: true,
   },
   quiz: [
     {

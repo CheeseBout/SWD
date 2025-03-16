@@ -1,5 +1,6 @@
 const APIError = require("../utils/ApiError");
 const topicRepo = require("../repositories/topic.repo");
+const questionsRepo = require("../repositories/questions.repo");
 
 class TopicServices {
   async getAllTopics() {
@@ -30,8 +31,36 @@ class TopicServices {
       throw new APIError(403, "Only admin can create topics");
     }
 
-    const data = await topicRepo.create(req.body);
-    return { data };
+    try {
+      // Create topic first
+      const createdTopic = await topicRepo.create(req.body);
+
+      // Automatically create a question bank for this topic
+      const questionBankData = {
+        questionBankName: `${req.body.name} Question Bank`, // Use topic name as prefix
+        description: `Question bank for ${req.body.name}`,
+        topic: createdTopic._id,
+      };
+
+      const questionBank = await questionsRepo.createQuestionBank(
+        questionBankData
+      );
+
+      // Update topic with the created question bank reference
+      const updatedTopic = await topicRepo.update(createdTopic._id, {
+        questionBank: questionBank._id,
+      });
+
+      return {
+        data: updatedTopic,
+        questionBank: questionBank,
+      };
+    } catch (error) {
+      throw new APIError(
+        500,
+        "Error creating topic and question bank: " + error.message
+      );
+    }
   }
 
   async updateTopic(req) {

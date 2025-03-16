@@ -4,43 +4,51 @@ const { OK } = require("../utils/response");
 
 class ReservationResultController {
   createReservationResult = catchAsync(async (req, res) => {
+    // Debug auth issue
+    console.log("Auth headers:", req.headers.authorization);
+    console.log("User in request:", req.user);
+
     return OK(
       res,
-      "Success",
-      await reservationResultService.createReservationResult(req.body)
+      "Reservation result created successfully",
+      await reservationResultService.createReservationResult(req)
     );
   });
+
   getReservationResult = catchAsync(async (req, res) => {
     return OK(
       res,
-      "Success",
+      "Reservation result retrieved successfully",
       await reservationResultService.getReservationResult(
         req.params.reservationResultID
       )
     );
   });
+
   updateReservationResult = catchAsync(async (req, res) => {
     return OK(
       res,
-      "Success",
+      "Reservation result updated successfully",
       await reservationResultService.updateReservationResult(
         req.params.reservationResultID,
-        req.body
-      )
-    );
-  });
-  deleteReservationResult = catchAsync(async (req, res) => {
-    return OK(
-      res,
-      "Success",
-      await reservationResultService.deleteReservationResult(
-        req.params.reservationResultID,
-        req.body.deleteReason
+        req.body,
+        req.user
       )
     );
   });
 
-  // Add these new methods
+  deleteReservationResult = catchAsync(async (req, res) => {
+    return OK(
+      res,
+      "Reservation result deleted successfully",
+      await reservationResultService.deleteReservationResult(
+        req.params.reservationResultID,
+        req.body.deleteReason,
+        req.user
+      )
+    );
+  });
+
   getAllReservationResultByUser = catchAsync(async (req, res) => {
     const { userID } = req.params;
     const { status, page = 1, limit = 10 } = req.query;

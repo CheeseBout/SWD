@@ -3,102 +3,237 @@ const mongoose = require("mongoose");
 const APIError = require("../utils/ApiError");
 
 class ReservationResultService {
-  async createReservationResult(data) {
-    // Validate reservation exists
-    if (
-      !(await reservationResultRepo.findReservationById(data.reservationID))
-    ) {
-      throw new APIError(400, "Reservation not found");
+  async createReservationResult(req) {
+    try {
+      const data = req.body;
+      const user = req.user;
+
+      console.log("User in request:", user);
+      console.log("Auth headers:", req.headers.authorization);
+      console.log("Data:", data);
+
+      // Check authentication
+      if (!user) {
+        throw new APIError(401, "Authentication required");
+      }
+
+      // Check authorization
+      if (user.role !== "couple_therapist") {
+        throw new APIError(
+          403,
+          "Permission denied: Only couple therapists can create reservation results"
+        );
+      }
+
+      // Validate reservation exists
+      const reservation = await reservationResultRepo.findReservationById(
+        data.reservationID
+      );
+      if (!reservation) {
+        throw new APIError(400, "Reservation not found");
+      }
+
+      // Check if the result is a duplicate
+      if (await this.checkDuplicate(data)) {
+        throw new APIError(
+          400,
+          "Reservation result already exists for this reservation"
+        );
+      }
+
+      // Create new reservation result using the repo
+      const reservationResult = await reservationResultRepo.create({
+        reservationID: data.reservationID,
+        sessionSummary: data.sessionSummary,
+        issuesIdentified: data.issuesIdentified,
+        therapistRecommendations: data.therapistRecommendations,
+        homeworkAssignment: data.homeworkAssignment,
+        status: "completed",
+        deleteReason: null,
+      });
+
+      return reservationResult;
+    } catch (error) {
+      console.error("Error in createReservationResult:", error);
+      if (error instanceof APIError) {
+        throw error;
+      }
+      throw new APIError(500, "Failed to create reservation result");
     }
-
-    // Check if the result is a duplicate
-    if (await this.checkDuplicate(data)) {
-      throw new APIError(400, "Reservation result duplicated");
-    }
-
-    // Create new reservation result using the repo
-    const reservationResult = await reservationResultRepo.create({
-      reservationID: data.reservationID,
-      sessionSummary: data.sessionSummary,
-      issuesIdentified: data.issuesIdentified,
-      therapistRecommendations: data.therapistRecommendations,
-      homeworkAssignment: data.homeworkAssignment,
-      status: "completed",
-      deleteReason: null,
-    });
-
-    return reservationResult;
   }
 
   async getReservationResult(reservationResultID) {
-    const response = await reservationResultRepo.findById(reservationResultID);
-    if (!response) {
-      throw new APIError(400, "Reservation result not found");
-    }
-    return response;
-  }
-
-  async updateReservationResult(reservationResultID, data) {
-    const updateData = {};
-
-    if (data.sessionSummary) updateData.sessionSummary = data.sessionSummary;
-    if (data.issuesIdentified)
-      updateData.issuesIdentified = data.issuesIdentified;
-    if (data.therapistRecommendations)
-      updateData.therapistRecommendations = data.therapistRecommendations;
-    if (data.homeworkAssignment)
-      updateData.homeworkAssignment = data.homeworkAssignment;
-
-    const updatedReservationResult = await reservationResultRepo.updateById(
-      reservationResultID,
-      updateData
-    );
-
-    if (!updatedReservationResult) {
-      throw new APIError(404, "Reservation result not found");
-    }
-
-    return updatedReservationResult;
-  }
-
-  async deleteReservationResult(reservationResultID, deleteReason) {
-    if (!deleteReason) {
-      throw new APIError(400, "Delete reason is required");
-    }
-
-    // Update status to 'deleted' and include the delete reason
-    const updatedReservationResult = await reservationResultRepo.updateById(
-      reservationResultID,
-      {
-        status: "deleted",
-        deleteReason: deleteReason,
+    try {
+      const response = await reservationResultRepo.findById(
+        reservationResultID
+      );
+      if (!response) {
+        throw new APIError(404, "Reservation result not found");
       }
-    );
-
-    if (!updatedReservationResult) {
-      throw new APIError(404, "Reservation result not found");
+      return response;
+    } catch (error) {
+      console.error("Error in getReservationResult:", error);
+      if (error instanceof APIError) {
+        throw error;
+      }
+      throw new APIError(500, "Error retrieving reservation result");
     }
+  }
 
-    return updatedReservationResult;
+  async updateReservationResult(reservationResultID, data, user) {
+    try {
+      if (!user) {
+        throw new APIError(401, "Authentication required");
+      }
+
+      if (!mongoose.Types.ObjectId.isValid(reservationResultID)) {
+        throw new APIError(400, "Invalid reservation result ID");
+      }
+
+      // Get the existing result
+      const existingResult = await reservationResultRepo.findById(
+        reservationResultID
+      );
+      if (!existingResult) {
+        throw new APIError(404, "Reservation result not found");
+      }
+
+      // Get the associated reservation to check permissions
+      const reservation = await reservationResultRepo.findReservationById(
+        existingResult.reservationID
+      );
+      if (!reservation) {
+        throw new APIError(404, "Related reservation not found");
+      }
+
+      const updateData = {};
+
+      if (data.sessionSummary) updateData.sessionSummary = data.sessionSummary;
+      if (data.issuesIdentified)
+        updateData.issuesIdentified = data.issuesIdentified;
+      if (data.therapistRecommendations)
+        updateData.therapistRecommendations = data.therapistRecommendations;
+      if (data.homeworkAssignment)
+        updateData.homeworkAssignment = data.homeworkAssignment;
+
+      const updatedReservationResult = await reservationResultRepo.updateById(
+        reservationResultID,
+        updateData
+      );
+
+      if (!updatedReservationResult) {
+        throw new APIError(404, "Reservation result not found");
+      }
+
+      return updatedReservationResult;
+    } catch (error) {
+      console.error("Error in updateReservationResult:", error);
+      if (error instanceof APIError) {
+        throw error;
+      }
+      throw new APIError(500, "Error updating reservation result");
+    }
+  }
+
+  async deleteReservationResult(reservationResultID, deleteReason, user) {
+    try {
+      if (!user) {
+        throw new APIError(401, "Authentication required");
+      }
+
+      if (!deleteReason) {
+        throw new APIError(400, "Delete reason is required");
+      }
+
+      if (!mongoose.Types.ObjectId.isValid(reservationResultID)) {
+        throw new APIError(400, "Invalid reservation result ID");
+      }
+
+      // Get the existing result
+      const existingResult = await reservationResultRepo.findById(
+        reservationResultID
+      );
+      if (!existingResult) {
+        throw new APIError(404, "Reservation result not found");
+      }
+
+      // Get the associated reservation to check permissions
+      const reservation = await reservationResultRepo.findReservationById(
+        existingResult.reservationID
+      );
+      if (!reservation) {
+        throw new APIError(404, "Related reservation not found");
+      }
+
+      // Check permissions - only the therapist who created the result or admin can delete it
+      if (
+        user.role !== "admin" &&
+        (user.role !== "couple_therapist" ||
+          reservation.coupleTherapistID.toString() !== user._id.toString())
+      ) {
+        throw new APIError(
+          403,
+          "Permission denied: You can only delete your own session results"
+        );
+      }
+
+      // Update status to 'deleted' and include the delete reason
+      const updatedReservationResult = await reservationResultRepo.updateById(
+        reservationResultID,
+        {
+          status: "deleted",
+          deleteReason: deleteReason,
+        }
+      );
+
+      if (!updatedReservationResult) {
+        throw new APIError(404, "Failed to delete reservation result");
+      }
+
+      return updatedReservationResult;
+    } catch (error) {
+      console.error("Error in deleteReservationResult:", error);
+      if (error instanceof APIError) {
+        throw error;
+      }
+      throw new APIError(500, "Error deleting reservation result");
+    }
+  }
+
+  async checkDuplicate(data) {
+    try {
+      const existing = await reservationResultRepo.findOne({
+        reservationID: data.reservationID,
+        status: "completed",
+      });
+      return existing !== null;
+    } catch (error) {
+      console.error("Error checking for duplicate:", error);
+      return false; // Assume no duplicate in case of error
+    }
   }
 
   async getAllReservationResultsByUser(userID, options = {}) {
     try {
+      // Check authentication
+      if (!options.user) {
+        throw new APIError(401, "Authentication required");
+      }
+
       // Validate userID format
       if (!mongoose.Types.ObjectId.isValid(userID)) {
         throw new APIError(400, "Invalid user ID format");
       }
 
-      // Check if the requesting user is authorized (must be the same user or an admin)
+      // Check if the requesting user has permission
       if (
-        options.user &&
         options.user.role !== "admin" &&
         options.user._id.toString() !== userID &&
         options.user.role !== "member"
       ) {
         throw new APIError(
           403,
-          "Permission denied: Only members can access their own reservation results"
+          "Permission denied: You can only access your own reservation results"
         );
       }
 
@@ -154,21 +289,25 @@ class ReservationResultService {
 
   async getAllReservationResultsByTherapist(therapistID, options = {}) {
     try {
+      // Check authentication
+      if (!options.user) {
+        throw new APIError(401, "Authentication required");
+      }
+
       // Validate therapistID format
       if (!mongoose.Types.ObjectId.isValid(therapistID)) {
         throw new APIError(400, "Invalid therapist ID format");
       }
 
-      // Check if the requesting user is authorized (must be the same therapist or an admin)
+      // Check if the requesting user has permission
       if (
-        options.user &&
         options.user.role !== "admin" &&
         options.user._id.toString() !== therapistID &&
         options.user.role !== "couple_therapist"
       ) {
         throw new APIError(
           403,
-          "Permission denied: Only couple therapists can access their own reservation results"
+          "Permission denied: Only therapists can access their own session results"
         );
       }
 
@@ -184,7 +323,7 @@ class ReservationResultService {
         return {
           results: [],
           total: 0,
-          page: page,
+          page: parseInt(page),
           pages: 0,
         };
       }
@@ -209,24 +348,16 @@ class ReservationResultService {
       return {
         results,
         total,
-        page,
+        page: parseInt(page),
         pages: Math.ceil(total / limit),
       };
     } catch (error) {
+      console.error("Error in getAllReservationResultsByTherapist:", error);
       if (error instanceof APIError) {
         throw error;
       }
       throw new APIError(500, "Error retrieving reservation results");
     }
-  }
-
-  async checkDuplicate(data) {
-    const existing = await reservationResultRepo.findOne({
-      reservationID: data.reservationID,
-      sessionSummary: data.sessionSummary,
-      status: "completed",
-    });
-    return existing !== null;
   }
 }
 

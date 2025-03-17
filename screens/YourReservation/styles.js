@@ -121,6 +121,15 @@ export const styles = StyleSheet.create({
     color: "#B91C1C",
     lineHeight: 20,
   },
+  confirmButton: {
+    backgroundColor: "#4a6ee0",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 10,
+  },
   cancelButton: {
     backgroundColor: "#F44336",
     flexDirection: "row",
@@ -173,5 +182,34 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     color: "#4a6ee0",
     textDecorationLine: "underline",
+  },
+  rateButton: {
+    backgroundColor: "#FFB400", // Gold color for rating
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 20,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
+  },
+  ratedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(76, 175, 80, 0.1)",
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 20,
+  },
+  ratedText: {
+    color: "#4CAF50",
+    fontSize: 16,
+    marginLeft: 8,
   },
 });

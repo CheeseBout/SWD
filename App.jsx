@@ -25,6 +25,9 @@ import QuizList from "./screens/QuizList/QuizList";
 import QuizDetail from "./screens/QuizDetail/QuizDetail";
 import ReservationsScreen from "./screens/Reservations/Reservations";
 import YourReservation from "./screens/YourReservation/YourReservation";
+import PaymentWebView from "./screens/PaymentWebView/PaymentWebView";
+import { linking } from "./navigation/linking";
+import RatingScreen from "./screens/RatingScreen/RatingScreen";
 
 // Add this line to ignore the specific warning related to this React Native bug
 LogBox.ignoreLogs([
@@ -176,6 +179,20 @@ const NavigationScreens = () => {
             component={TherapistDetailScreen}
             options={{ headerShown: true, title: "Find a Therapist" }}
           />
+          <Stack.Screen
+            name="PaymentWebView"
+            component={PaymentWebView}
+            options={{
+              headerShown: true,
+              title: "Payment",
+              animation: "slide_from_right",
+            }}
+          />
+          <Stack.Screen
+            name="RatingScreen"
+            component={RatingScreen}
+            options={{ headerShown: false }}
+          />
         </>
       )}
     </Stack.Navigator>
@@ -185,7 +202,7 @@ const NavigationScreens = () => {
 export default function App() {
   return (
     <AuthProvider>
-      <NavigationContainer>
+      <NavigationContainer linking={linking}>
         <NavigationScreens />
       </NavigationContainer>
       <Toast />

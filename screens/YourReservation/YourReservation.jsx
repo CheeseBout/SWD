@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -12,15 +12,28 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./styles";
 import reservationServices from "../../services/reservationServices";
+import paymentServices from "../../services/paymentServices";
+import ratingServices from "../../services/ratingServices";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function YourReservation({ route, navigation }) {
   const { reservation: initialReservation } = route.params;
   const [reservation, setReservation] = useState(initialReservation);
   const [loading, setLoading] = useState(false);
+  const [hasRated, setHasRated] = useState(false);
+  const [checkingRating, setCheckingRating] = useState(false);
 
-  useEffect(() => {
-    fetchReservationDetails();
-  }, []);
+  // Thêm hook để lắng nghe focus
+  useFocusEffect(
+    useCallback(() => {
+      console.log("Screen focused - fetching updated reservation details");
+      fetchReservationDetails();
+      checkIfRated();
+      return () => {
+        // cleanup if needed
+      };
+    }, [reservation._id]) // Thêm dependency
+  );
 
   const fetchReservationDetails = async () => {
     try {
@@ -30,11 +43,28 @@ export default function YourReservation({ route, navigation }) {
       );
       if (response && response.status === "success") {
         setReservation(response.data);
+        // Update reservation state with new data
+        console.log("Reservation details updated:", response.data);
       }
     } catch (error) {
       console.error("Error fetching reservation details:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Thêm function kiểm tra xem đã đánh giá chưa
+  const checkIfRated = async () => {
+    try {
+      setCheckingRating(true);
+      const response = await ratingServices.checkRatingForReservation(
+        reservation._id
+      );
+      setHasRated(response.hasRated || false);
+    } catch (error) {
+      console.error("Error checking rating status:", error);
+    } finally {
+      setCheckingRating(false);
     }
   };
 
@@ -67,8 +97,42 @@ export default function YourReservation({ route, navigation }) {
         return "#FFC107";
       case "denied":
         return "#F44336";
+      case "completed":
+        return "#4CAF50";
       default:
         return "#757575";
+    }
+  };
+
+  const handlePressPayment = async (phase) => {
+    try {
+      setLoading(true);
+      const response = await paymentServices.createPaymentUrl({
+        reservationID: reservation._id,
+        totalPrice: reservation.totalPrice,
+        phase: phase,
+        platform: "mobile",
+      });
+
+      if (response?.data?.paymentUrl) {
+        navigation.navigate("PaymentWebView", {
+          url: response.data.paymentUrl,
+        });
+      } else {
+        Alert.alert(
+          "Error",
+          "Could not generate payment URL. Please try again."
+        );
+      }
+    } catch (error) {
+      console.error("Error creating payment URL:", error);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message ||
+          "Failed to create payment URL. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -122,6 +186,14 @@ export default function YourReservation({ route, navigation }) {
         },
       ]
     );
+  };
+
+  // Xử lý navigate đến màn hình đánh giá
+  const handleRateTherapist = () => {
+    navigation.navigate("RatingScreen", {
+      reservation: reservation,
+      therapist: reservation.coupleTherapistID,
+    });
   };
 
   if (loading) {
@@ -270,13 +342,71 @@ export default function YourReservation({ route, navigation }) {
           </View>
         )}
 
-        {reservation.status === "pending" && (
+        {reservation.status === "confirmed" && (
           <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={handleCancelReservation}
+            style={styles.confirmButton}
+            onPress={() => {
+              handlePressPayment("DEPOSIT");
+            }}
           >
             <Ionicons name="close-circle-outline" size={20} color="#fff" />
-            <Text style={styles.cancelButtonText}>Cancel Reservation</Text>
+            <Text style={styles.cancelButtonText}>Pay The Deposit</Text>
+          </TouchableOpacity>
+        )}
+
+        {reservation.status === "completed" && (
+          <TouchableOpacity
+            style={styles.confirmButton}
+            onPress={() => {
+              handlePressPayment("FINAL");
+            }}
+          >
+            <Ionicons name="close-circle-outline" size={20} color="#fff" />
+            <Text style={styles.cancelButtonText}>Pay The Final</Text>
+          </TouchableOpacity>
+        )}
+
+        {reservation.status === "pending" && (
+          <>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={handleCancelReservation}
+            >
+              <Ionicons name="close-circle-outline" size={20} color="#fff" />
+              <Text style={styles.cancelButtonText}>Cancel Reservation</Text>
+            </TouchableOpacity>
+          </>
+        )}
+
+        {/* Thêm nút đánh giá cho trạng thái thanh toán FINAL */}
+        {reservation.status === "finished" && !hasRated && !checkingRating && (
+          <TouchableOpacity
+            style={styles.rateButton}
+            onPress={handleRateTherapist}
+          >
+            <Ionicons name="star" size={20} color="#fff" />
+            <Text style={styles.buttonText}>Rate This Session</Text>
+          </TouchableOpacity>
+        )}
+
+        {reservation.status === "finished" && hasRated && (
+          <View style={styles.ratedBadge}>
+            <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+            <Text style={styles.ratedText}>
+              You've already rated this session
+            </Text>
+          </View>
+        )}
+
+        {reservation.status === "paid" && (
+          <TouchableOpacity
+            style={styles.confirmButton}
+            onPress={() => {
+              handlePressPayment("FINAL");
+            }}
+          >
+            <Ionicons name="cash-outline" size={20} color="#fff" />
+            <Text style={styles.cancelButtonText}>Pay The Final</Text>
           </TouchableOpacity>
         )}
       </ScrollView>

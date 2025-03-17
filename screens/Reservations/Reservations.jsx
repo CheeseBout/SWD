@@ -92,6 +92,8 @@ export default function ReservationsScreen({ navigation }) {
         return "#FFC107";
       case "denied":
         return "#F44336";
+      case "completed":
+        return "#4CAF50";
       default:
         return "#757575";
     }
@@ -186,19 +188,24 @@ export default function ReservationsScreen({ navigation }) {
 
   const renderTabs = () => (
     <View style={styles.tabsContainer}>
-      {["all", "pending", "confirmed", "deposited", "denied"].map((tab) => (
-        <TouchableOpacity
-          key={tab}
-          style={[styles.tab, activeTab === tab && styles.activeTab]}
-          onPress={() => setActiveTab(tab)}
-        >
-          <Text
-            style={[styles.tabText, activeTab === tab && styles.activeTabText]}
+      {["all", "pending", "confirmed", "deposited", "completed", "denied"].map(
+        (tab) => (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tab, activeTab === tab && styles.activeTab]}
+            onPress={() => setActiveTab(tab)}
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </Text>
-        </TouchableOpacity>
-      ))}
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === tab && styles.activeTabText,
+              ]}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        )
+      )}
     </View>
   );
 

@@ -1,6 +1,8 @@
 const reservationResultRepo = require("../repositories/reservationResult.repo");
 const mongoose = require("mongoose");
 const APIError = require("../utils/ApiError");
+const PAYMENT = require("../models/payment.model");
+const TRANSACTION = require("../models/transaction.model");
 
 class ReservationResultService {
   async createReservationResult(req) {
@@ -48,7 +50,7 @@ class ReservationResultService {
         issuesIdentified: data.issuesIdentified,
         therapistRecommendations: data.therapistRecommendations,
         homeworkAssignment: data.homeworkAssignment,
-        status: "completed",
+        status: "pending",
         deleteReason: null,
       });
 
@@ -269,8 +271,49 @@ class ReservationResultService {
       }
 
       // Get the results
-      const results = await reservationResultRepo.findAll(filter, skip, limit);
+      let results = await reservationResultRepo.findAll(filter, skip, limit);
       const total = await reservationResultRepo.count(filter);
+
+      // Check and update the status for each result if they are pending
+      for (let i = 0; i < results.length; i++) {
+        if (results[i].status === "pending") {
+          try {
+            const isFinalPaid = await this.checkReservationResultFinal(
+              results[i].reservationID
+            );
+
+            if (isFinalPaid) {
+              // Update status to final_completed
+              const updatedResult = await reservationResultRepo.updateById(
+                results[i]._id,
+                { status: "final_completed" }
+              );
+
+              if (updatedResult) {
+                results[i] = updatedResult; // Update in our results array
+                console.log(
+                  `Updated reservation result ${results[i]._id} to final_completed`
+                );
+              }
+            } else {
+              console.log(
+                `Reservation ${results[i].reservationID} final payment not confirmed, status remains pending`
+              );
+            }
+          } catch (error) {
+            console.error(
+              `Error checking payment for reservation ${results[i].reservationID}:`,
+              error
+            );
+            // Continue with the next result without failing the whole operation
+          }
+        }
+      }
+
+      // Remove the test code
+      // const reservationID = "67d3fd87dd2a67772d18805d";
+      // const asd = await this.checkReservationResultFinal(reservationID);
+      // console.log("Check final result:", asd);
 
       return {
         results,
@@ -342,8 +385,44 @@ class ReservationResultService {
       }
 
       // Get the results
-      const results = await reservationResultRepo.findAll(filter, skip, limit);
+      let results = await reservationResultRepo.findAll(filter, skip, limit);
       const total = await reservationResultRepo.count(filter);
+
+      // Check and update the status for each result if they are pending
+      for (let i = 0; i < results.length; i++) {
+        if (results[i].status === "pending") {
+          try {
+            const isFinalPaid = await this.checkReservationResultFinal(
+              results[i].reservationID
+            );
+
+            if (isFinalPaid) {
+              // Update status to final_completed
+              const updatedResult = await reservationResultRepo.updateById(
+                results[i]._id,
+                { status: "final_completed" }
+              );
+
+              if (updatedResult) {
+                results[i] = updatedResult; // Update in our results array
+                console.log(
+                  `Updated reservation result ${results[i]._id} to final_completed`
+                );
+              }
+            } else {
+              console.log(
+                `Reservation ${results[i].reservationID} final payment not confirmed, status remains pending`
+              );
+            }
+          } catch (error) {
+            console.error(
+              `Error checking payment for reservation ${results[i].reservationID}:`,
+              error
+            );
+            // Continue with the next result without failing the whole operation
+          }
+        }
+      }
 
       return {
         results,
@@ -401,6 +480,19 @@ class ReservationResultService {
       }
       throw new APIError(500, "Error retrieving reservation result");
     }
+  }
+
+  async checkReservationResultFinal(reservationID) {
+    const payment = await PAYMENT.findOne({ reservation: reservationID });
+    console.log("Payment for reservation:", payment);
+
+    const transaction = await TRANSACTION.find({
+      payment: payment._id,
+      phase: "FINAL",
+      status: "PAID",
+    });
+    console.log("Transaction for payment:", transaction);
+    return transaction.length > 0;
   }
 }
 

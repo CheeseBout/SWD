@@ -349,7 +349,7 @@ export default function YourReservation({ route, navigation }) {
               handlePressPayment("DEPOSIT");
             }}
           >
-            <Ionicons name="close-circle-outline" size={20} color="#fff" />
+            <Ionicons name="cash-outline" size={20} color="#fff" />
             <Text style={styles.cancelButtonText}>Pay The Deposit</Text>
           </TouchableOpacity>
         )}
@@ -361,7 +361,7 @@ export default function YourReservation({ route, navigation }) {
               handlePressPayment("FINAL");
             }}
           >
-            <Ionicons name="close-circle-outline" size={20} color="#fff" />
+            <Ionicons name="cash-outline" size={20} color="#fff" />
             <Text style={styles.cancelButtonText}>Pay The Final</Text>
           </TouchableOpacity>
         )}

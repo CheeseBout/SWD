@@ -45,7 +45,7 @@ class QuestionsRepository {
   }
 
   async findAllQuestionBanks() {
-    return await QUESTION_BANK.find();
+    return await QUESTION_BANK.find().populate("questions");
   }
 
   async findQuestionBankById(bankId) {

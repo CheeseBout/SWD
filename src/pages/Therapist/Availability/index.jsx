@@ -25,34 +25,39 @@ export default function TherapistAvailability() {
     endTime: "10:00",
   });
   const calendarRef = useRef(null);
-  const therapistId = localStorage.getItem("therapistId");
 
-  // Fetch existing availability slots
+  const [therapistId, setTherapistId] = useState(
+    localStorage.getItem("therapistId")
+  );
+
   useEffect(() => {
-    fetchAvailability();
-  }, []);
+    // Check for therapistId in localStorage every 500ms until it's available
+    if (!therapistId) {
+      const intervalId = setInterval(() => {
+        const id = localStorage.getItem("therapistId");
+        if (id) {
+          setTherapistId(id);
+          clearInterval(intervalId);
+        }
+      }, 500);
+
+      return () => clearInterval(intervalId);
+    } else {
+      fetchAvailability(); // or fetchReservations()
+    }
+  }, [therapistId]);
 
   const fetchAvailability = async () => {
     try {
       setIsLoading(true);
-      console.log("Fetching availability for therapist ID:", therapistId);
-      const response = await availabilityService.getTherapistAvailability();
-      console.log("Response from API:", response);
-
+      console.log("AT Fetching availability for therapist ID:", therapistId);
+      const response = await availabilityService.getTherapistAvailability(
+        therapistId
+      );
       // Process the data according to the new data structure
       let formattedSlots = [];
-
-      if (
-        response?.data?.data?.availability &&
-        Array.isArray(response.data.data.availability)
-      ) {
-        console.log(
-          "Found availability data:",
-          response.data.data.availability.length,
-          "items in the availability array with nested timeAvailable arrays"
-        );
-
-        formattedSlots = response.data.data.availability.flatMap((item) => {
+      if (response?.availability && Array.isArray(response.availability)) {
+        formattedSlots = response.availability.flatMap((item) => {
           // Flatten the availability array with nested timeAvailable arrays
           return item.timeAvailable.map((timeSlot) => ({
             id: item._id + "_" + timeSlot._id, // Create unique ID
@@ -73,7 +78,7 @@ export default function TherapistAvailability() {
             },
           }));
         });
-        console.log("Formatted events for calendar:", formattedSlots.length);
+        console.log("Formatted events for calendar:", formattedSlots);
       } else {
         console.warn("No availability data found or incorrect format");
       }
@@ -187,7 +192,6 @@ export default function TherapistAvailability() {
   // Delete availability slot
   const handleDeleteAvailability = async () => {
     if (!selectedEvent) return;
-
     setIsSubmitting(true);
     try {
       await availabilityService.deleteAvailability(
@@ -212,6 +216,72 @@ export default function TherapistAvailability() {
     } finally {
       setIsSubmitting(false);
       setSelectedEvent(null);
+    }
+  };
+
+  const handleCreateAvailability = async () => {
+    if (!selectedDate || !selectedTime.startTime || !selectedTime.endTime) {
+      toast.error("Please select a date and time range");
+      return;
+    }
+    // Validate that end time is after start time
+    if (selectedTime.startTime >= selectedTime.endTime) {
+      toast.error("End time must be after start time");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      // Format start and end times to ISO string format
+      const startDateTime = dayjs(selectedDate)
+        .hour(parseInt(selectedTime.startTime.split(":")[0]))
+        .minute(parseInt(selectedTime.startTime.split(":")[1]))
+        .toISOString();
+
+      const endDateTime = dayjs(selectedDate)
+        .hour(parseInt(selectedTime.endTime.split(":")[0]))
+        .minute(parseInt(selectedTime.endTime.split(":")[1]))
+        .toISOString();
+
+      // Prepare the request body
+      const availabilityData = {
+        coupleTherapistId: therapistId,
+        timeAvailable: [
+          {
+            startHour: startDateTime,
+            endHour: endDateTime,
+            isOccupied: false,
+          },
+        ],
+      };
+
+      console.log("Creating availability with data:", availabilityData);
+
+      // Call the service to create the availability
+      const response = await availabilityService.createAvailability(
+        availabilityData
+      );
+
+      // Close the modal
+      setShowAddModal(false);
+
+      // Show success message
+      toast.success("Availability added successfully");
+
+      // Reset form fields
+      setSelectedTime({
+        startTime: "09:00",
+        endTime: "10:00",
+      });
+
+      // Refresh the calendar data
+      fetchAvailability();
+    } catch (error) {
+      console.error("Error creating availability:", error);
+      toast.error(
+        error.response?.data?.message || "Failed to create availability"
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -306,8 +376,8 @@ export default function TherapistAvailability() {
                     center: "title",
                     right: "dayGridMonth,timeGridWeek,timeGridDay",
                   }}
-                  slotMinTime="07:00:00"
-                  slotMaxTime="22:00:00"
+                  slotMinTime="01:00:00"
+                  slotMaxTime="24:00:00"
                   expandRows={true}
                   selectable={true}
                   selectMirror={true}
@@ -490,7 +560,7 @@ export default function TherapistAvailability() {
                     Saving...
                   </div>
                 ) : (
-                  "Save Availability"
+                  "Create"
                 )}
               </button>
             </div>
@@ -699,7 +769,7 @@ export default function TherapistAvailability() {
                     Updating...
                   </div>
                 ) : (
-                  "Update Availability"
+                  "Update"
                 )}
               </button>
             </div>
@@ -758,6 +828,7 @@ export default function TherapistAvailability() {
               </button>
             </div>
           </div>
+          
         </div>
       )}
     </div>

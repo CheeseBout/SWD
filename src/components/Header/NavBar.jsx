@@ -60,6 +60,7 @@ const NavBar = () => {
     setIsDropdownOpen(false);
     setIsMenuOpen(false);
     localStorage.removeItem("accessToken");
+    localStorage.removeItem("therapistId");
     window.location.href = "/login";
   };
 

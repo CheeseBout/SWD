@@ -15,7 +15,7 @@ export const therapistService = {
     const response = await api.get(
       `/api/v1/coupletherapist/get-therapistId/${userId}`
     );
-    return response.data;
+    return response.data.data;
   },
 
   searchTherapistsByName: async (searchName) => {

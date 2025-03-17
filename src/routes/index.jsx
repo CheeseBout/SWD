@@ -41,6 +41,10 @@ const Connect = lazy(() => import("../pages/Connection/Connect"));
 const TherapistReservations = lazy(() =>
   import("../pages/Therapist/Reservations")
 );
+const TherapistReservationsResult = lazy(() =>
+  import("../pages/Therapist/ReservationResult")
+);
+const TherapistBlogs = lazy(() => import("../pages/Therapist/BlogsManagement"));
 const TherapistCertificates = lazy(() =>
   import("../pages/Therapist/Certificates")
 );
@@ -386,6 +390,22 @@ export function AppRoutes() {
             element={
               <LazyLoad>
                 <TherapistDashboard />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="reservationResult/:reservationId"
+            element={
+              <LazyLoad>
+                <TherapistReservationsResult />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="blogs"
+            element={
+              <LazyLoad>
+                <TherapistBlogs />
               </LazyLoad>
             }
           />

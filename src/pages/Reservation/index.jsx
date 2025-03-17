@@ -25,8 +25,8 @@ export default function YourReservation() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReservationId, setCancelReservationId] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [showReasonModal, setShowReasonModal] = useState(false);
-  const [deniedReason, setDeniedReason] = useState("");
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [isPayingFull, setIsPayingFull] = useState(false);
 
   const handlePayment = async (reservation) => {
     setIsLoading(true);
@@ -50,9 +50,36 @@ export default function YourReservation() {
       setIsLoading(false);
     }
   };
-  const handleShowReason = (reason) => {
-    setDeniedReason(reason);
-    setShowReasonModal(true);
+
+  const handleViewDetails = (reservation) => {
+    setSelectedReservation(reservation);
+    setShowDetailsModal(true);
+  };
+  const navigateToResults = (reservationId) => {
+    navigate(`/profile/reservation-results/${reservationId}`);
+  };
+  const handleFullPayment = async (reservation) => {
+    setIsPayingFull(true);
+    const paymentData = {
+      reservationID: reservation._id,
+      phase: "FULL",
+      totalPrice: reservation.totalPrice / 2, // 50% remaining
+    };
+
+    try {
+      const response = await paymentService.createPayment(paymentData);
+      if (response?.paymentUrl) {
+        window.location.href = response.paymentUrl;
+      } else {
+        console.log("Payment failed!");
+        toast.error("Unable to process payment");
+      }
+    } catch (error) {
+      console.error("Payment error:", error);
+      toast.error("Payment processing error");
+    } finally {
+      setIsPayingFull(false);
+    }
   };
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -83,7 +110,7 @@ export default function YourReservation() {
         userID,
         filterStatus,
         currentPage,
-        10
+        20
       );
 
       setReservations(response.reservations);
@@ -252,45 +279,13 @@ export default function YourReservation() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <div className="flex space-x-2">
-                              {reservation.status === "pending" && (
-                                <button
-                                  className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-150"
-                                  onClick={() => handleCancel(reservation._id)}
-                                >
-                                  Cancel
-                                </button>
-                              )}
-                              {reservation.status === "denied" && (
-                                <button
-                                  className="px-3 py-1 bg-white border-1 border-gray-500 text-black rounded-md hover:bg-gray-400 transition-colors duration-150"
-                                  onClick={() =>
-                                    handleShowReason(reservation.reason)
-                                  }
-                                >
-                                  Detail
-                                </button>
-                              )}
-                              {reservation.status === "confirmed" && (
-                                <button
-                                  className="px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-150"
-                                  onClick={() => handleOpenPayment(reservation)}
-                                >
-                                  Pay Deposit
-                                </button>
-                              )}
-                              {reservation.status === "deposited" && (
-                                <a
-                                  href={
-                                    reservation.meetingURL ||
-                                    "https://meet.google.com/landing"
-                                  }
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors duration-150"
-                                >
-                                  Join Meeting
-                                </a>
-                              )}
+                              {/* View Details button for all statuses */}
+                              <button
+                                className="text-blue-600 hover:text-blue-900 mr-2"
+                                onClick={() => handleViewDetails(reservation)}
+                              >
+                                View Details
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -556,38 +551,218 @@ export default function YourReservation() {
         </div>
       )}
 
-      {/* Reason Modal */}
-      {showReasonModal && (
+      {/* Details Modal */}
+      {showDetailsModal && selectedReservation && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center bg-black/30 backdrop-blur-sm">
-          <div className="bg-white rounded-lg max-w-sm w-full p-6 shadow-xl">
-            <div className="flex justify-center items-center mb-4">
-              <div className="rounded-full bg-gray-100 p-3">
-                <svg
-                  className="h-4 w-4 text-gray-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+          <div className="bg-white rounded-lg max-w-lg w-full p-6 shadow-xl transform transition-all">
+            <div className="mb-4 pb-4 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold text-gray-900">
+                  Reservation Details
+                </h3>
+                <button
+                  onClick={() => setShowDetailsModal(false)}
+                  className="text-gray-400 hover:text-gray-500"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
               </div>
-              <h3 className="text-lg font-bold text-center ml-2">
-                Reason for Denial
-              </h3>
             </div>
 
-            <p className="text-md font-semibold text-gray-500 text-center mb-6">
-              {deniedReason}
-            </p>
-            <div className="flex justify-end space-x-3 mt-16">
+            <div className="space-y-4 mb-6">
+              {/* Therapist Info */}
+              <div className="flex items-center mb-4">
+                <div className="flex-shrink-0 h-16 w-16">
+                  <img
+                    className="h-16 w-16 rounded-full object-cover"
+                    src={
+                      selectedReservation.coupleTherapistID.photoURL ||
+                      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRAl-XO5gOKiGi0opK2bSoUtnKkyQuTzgQVhQ&s"
+                    }
+                    alt="Therapist"
+                  />
+                </div>
+                <div className="ml-4">
+                  <div className="text-lg font-medium text-gray-900">
+                    {selectedReservation.coupleTherapistID.fullname}
+                  </div>
+                  <div className="text-sm text-gray-500">Couple Therapist</div>
+                </div>
+              </div>
+
+              {/* Session Details */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="text-md font-semibold text-gray-800 mb-3">
+                  Session Information
+                </h4>
+
+                <div className="grid grid-cols-2 gap-y-3">
+                  <div className="text-sm text-gray-600">Title:</div>
+                  <div className="text-sm font-medium">
+                    {selectedReservation.title}
+                  </div>
+
+                  <div className="text-sm text-gray-600">Date:</div>
+                  <div className="text-sm font-medium">
+                    {dayjs(selectedReservation.startTime).format(
+                      "MMM DD, YYYY"
+                    )}
+                  </div>
+
+                  <div className="text-sm text-gray-600">Time:</div>
+                  <div className="text-sm font-medium">
+                    {dayjs(selectedReservation.startTime).format("HH:mm")} -{" "}
+                    {dayjs(selectedReservation.endTime).format("HH:mm")}
+                  </div>
+
+                  <div className="text-sm text-gray-600">Status:</div>
+                  <div>
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${
+                        selectedReservation.status === "confirmed"
+                          ? "bg-green-100 text-green-800"
+                          : selectedReservation.status === "pending"
+                          ? "bg-gray-200 text-gray-800"
+                          : selectedReservation.status === "completed"
+                          ? "bg-blue-100 text-blue-800"
+                          : selectedReservation.status === "deposited"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {selectedReservation.status}
+                    </span>
+                  </div>
+
+                  <div className="text-sm text-gray-600">Price:</div>
+                  <div className="text-sm font-medium">
+                    {selectedReservation.totalPrice.toLocaleString()} VND
+                  </div>
+                </div>
+              </div>
+
+              {/* Denial reason if status is denied */}
+              {selectedReservation.status === "denied" && (
+                <div className="bg-red-50 border-l-4 border-red-400 p-4 mt-4">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg
+                        className="h-5 w-5 text-red-400"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M8.485 3.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 3.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 9a1 1 0 100-2 1 1 0 000 2z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-red-800">
+                        Reason for Denial
+                      </h3>
+                      <div className="mt-2 text-sm text-red-700">
+                        <p>
+                          {selectedReservation.reason || "No reason provided."}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Description if available */}
+              {selectedReservation.description && (
+                <div className="mt-4">
+                  <h4 className="text-md font-semibold text-gray-800 mb-2">
+                    Description
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    {selectedReservation.description}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+              {selectedReservation.status === "confirmed" && (
+                <button
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-150"
+                  onClick={() => {
+                    setShowDetailsModal(false);
+                    handleOpenPayment(selectedReservation);
+                  }}
+                >
+                  Pay Deposit
+                </button>
+              )}
+
+              {selectedReservation.status === "deposited" && (
+                <>
+                  <a
+                    href={
+                      selectedReservation.meetingURL ||
+                      "https://meet.google.com/landing"
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors duration-150"
+                  >
+                    Join Meeting
+                  </a>
+                  <button
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors duration-150"
+                    onClick={() => {
+                      setShowDetailsModal(false);
+                      handleFullPayment(selectedReservation);
+                    }}
+                  >
+                    Pay Remaining Balance
+                  </button>
+                </>
+              )}
+
+              {selectedReservation.status === "completed" && (
+                <button
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors duration-150"
+                  onClick={() => {
+                    setShowDetailsModal(false);
+                    navigateToResults(selectedReservation._id);
+                  }}
+                >
+                  View Results
+                </button>
+              )}
+
+              {selectedReservation.status === "pending" && (
+                <button
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors duration-150"
+                  onClick={() => {
+                    setShowDetailsModal(false);
+                    handleCancel(selectedReservation._id);
+                  }}
+                >
+                  Cancel Reservation
+                </button>
+              )}
+
               <button
-                className="px-4 py-2 bg-gray-300 text-black rounded-md hover:bg-gray-400 transition-colors duration-150"
-                onClick={() => setShowReasonModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                onClick={() => setShowDetailsModal(false)}
               >
                 Close
               </button>

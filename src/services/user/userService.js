@@ -38,4 +38,24 @@ export const userService = {
       throw error;
     }
   },
+
+  inactiveUser: async (data) => {
+    try {
+      const response = await api.put(`/api/v1/users/inactive-user`, data);
+      return response.data;
+    } catch (error) {
+      console.error("Error inactive user:", error);
+      throw error;
+    }
+  },
+
+  activeUser: async (data) => {
+    try {
+      const response = await api.put(`/api/v1/users/active-user`, data);
+      return response.data;
+    } catch (error) {
+      console.error("Error active user:", error);
+      throw error;
+    }
+  }
 };

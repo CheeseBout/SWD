@@ -50,22 +50,19 @@ const { auth } = require("../middlewares/auth.middleware");
  *           schema:
  *             type: object
  *             required:
- *               - userId
  *               - action
+ *               - certificateID
  *             properties:
- *               userId:
- *                 type: string
- *                 description: ID of the user
  *               action:
  *                 type: string
  *                 enum: [approve, reject, issue]
  *                 description: Action to perform on the certificate
- *               courseId:
+ *               certificateID:
  *                 type: string
- *                 description: Required when action is 'issue'
+ *                 description: ID of the certificate to manage
  *               reason:
  *                 type: string
- *                 description: Required when action is 'reject'
+ *                 description: Optional. Only required when action is 'deny'
  *     responses:
  *       200:
  *         description: Certificate managed successfully
@@ -121,6 +118,10 @@ router.post("/manage-certificate", auth, adminController.manageCertificate);
  *       403:
  *         description: Forbidden - Not an admin
  */
-router.get("/certificate-requests", auth, adminController.getAllCertificateRequests);
+router.get(
+  "/certificate-requests",
+  auth,
+  adminController.getAllCertificateRequests
+);
 
 module.exports = router;

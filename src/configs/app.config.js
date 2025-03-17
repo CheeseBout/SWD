@@ -8,6 +8,7 @@ module.exports = {
     accessTokenLife: "1h", // 1 hour
     refreshTokenLife: "7d", // 7 days
   },
+  MOBILE_CLIENT_URL: process.env.MOBILE_CLIENT_URL,
   email: {
     name: "hello",
     host: process.env.EMAIL_HOST ?? "sandbox.smtp.mailtrap.io",

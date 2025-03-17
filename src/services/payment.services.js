@@ -32,7 +32,13 @@ class PaymentService {
   failResCode = "02";
   cancelResCode = "24"; // Thêm mã hủy thanh toán
 
-  async createPaymentUrl(reservationID, phase, totalPrice, platform = "web") {
+  async createPaymentUrl(
+    reservationID,
+    phase,
+    totalPrice,
+    platform = "web",
+    returnUrl = null
+  ) {
     try {
       // Validate inputs
       if (!mongoose.Types.ObjectId.isValid(reservationID)) {
@@ -88,6 +94,8 @@ class PaymentService {
       const expDate = new Date();
       expDate.setMinutes(expDate.getMinutes() + 5);
 
+      console.log("Platform:", platform, "ReturnUrl:", returnUrl);
+
       // Build payment URL using vnpay library
       const paymentUrl = vnpay.buildPaymentUrl({
         vnp_Amount: amount, // The library will multiply by 100
@@ -95,13 +103,13 @@ class PaymentService {
         vnp_TxnRef: transactionCode,
         vnp_OrderInfo: "Thanh toan don hang: " + transactionCode,
         vnp_OrderType: ProductCode.Other,
-        vnp_ReturnUrl: config.VNPay.vnp_ReturnUrl,
+        vnp_ReturnUrl: returnUrl || config.VNPay.vnp_ReturnUrl, // Use provided returnUrl if available
         vnp_Locale: VnpLocale.VN,
         vnp_BankCode: "VNBANK",
         vnp_ExpireDate: dateFormat(expDate),
       });
 
-      // Create transaction record
+      // Create transaction record with returnUrl
       const transaction = new TRANSACTION({
         payment: payment._id,
         phase,
@@ -110,6 +118,7 @@ class PaymentService {
         transactionCode: transactionCode,
         status: "PENDING",
         platform,
+        returnUrl: returnUrl, // Save returnUrl in transaction
       });
 
       await transaction.save();
@@ -242,84 +251,111 @@ class PaymentService {
 
   async validatePaymentReturn(query) {
     try {
-      console.log("Received VNPay return query:", query); // Debug log
-
+      console.log("Received VNPay return query:", query);
       const verify = vnpay.verifyReturnUrl(query);
-      console.log("VNPay verification result:", verify); // Debug log
 
-      // Tìm transaction dựa vào mã giao dịch
       const transaction = await TRANSACTION.findOne({
         transactionCode: query.vnp_TxnRef,
-      });
+      }).lean();
 
-      let redirectUrl = new URL("/payment/result", config.CLIENT_URL);
+      console.log("Transaction found:", transaction);
+
+      // IMPORTANT: Explicitly check platform
+      const platform = transaction?.platform || "web";
+      console.log("Platform detected:", platform);
+      const isMobile = platform === "mobile";
+      const customReturnUrl = transaction?.returnUrl;
+
+      // Create response parameters
+      const responseParams = new URLSearchParams();
+      responseParams.append("vnp_ResponseCode", query.vnp_ResponseCode);
+      responseParams.append("vnp_TxnRef", query.vnp_TxnRef);
+      responseParams.append("platform", platform);
 
       if (!verify.isVerified) {
-        redirectUrl.searchParams.append("status", "failed");
-        redirectUrl.searchParams.append("message", "Invalid signature");
-        return redirectUrl.toString();
+        responseParams.append("status", "failed");
+        responseParams.append("message", "Invalid signature");
+        const url = this.getRedirectUrl(
+          responseParams,
+          isMobile,
+          customReturnUrl
+        );
+        console.log("Redirecting to (verify failed):", url);
+        return url;
       }
 
       if (!transaction) {
-        redirectUrl.searchParams.append("status", "failed");
-        redirectUrl.searchParams.append("message", "Transaction not found");
-        return redirectUrl.toString();
+        responseParams.append("status", "failed");
+        responseParams.append("message", "Transaction not found");
+        const url = this.getRedirectUrl(
+          responseParams,
+          isMobile,
+          customReturnUrl
+        );
+        console.log("Redirecting to (no transaction):", url);
+        return url;
       }
 
-      // Kiểm tra nếu là hủy thanh toán hoặc thanh toán thất bại
-      if (query.vnp_ResponseCode !== "00") {
-        // Đánh dấu giao dịch là đã hủy
-        if (transaction) {
-          transaction.status = "CANCELLED";
-          transaction.paymentMessage =
-            query.vnp_ResponseCode === "24"
-              ? "Payment cancelled by user"
-              : "Payment failed";
-          await transaction.save();
-        }
-
-        redirectUrl.searchParams.append("status", "failed");
-        redirectUrl.searchParams.append(
+      // Handle payment result
+      if (query.vnp_ResponseCode === "00") {
+        responseParams.append("status", "success");
+        responseParams.append("message", "Payment successful");
+      } else {
+        responseParams.append("status", "failed");
+        responseParams.append(
           "message",
           query.vnp_ResponseCode === "24"
             ? "Payment was cancelled"
             : "Payment failed"
         );
-        return redirectUrl.toString();
       }
 
-      // Nếu thanh toán thành công
-      if (query.vnp_ResponseCode === "00") {
-        // Cập nhật trạng thái transaction
-        transaction.status = "PAID";
-        await transaction.save();
-
-        // Cập nhật payment
-        const payment = await PAYMENT.findById(transaction.payment);
-        payment.totalPaid += transaction.amount;
-
-        // Nếu đã thanh toán đủ => COMPLETED
-        if (payment.totalPaid >= payment.totalPrice) {
-          payment.status = "COMPLETED";
-        }
-
-        await payment.save();
-
-        redirectUrl.searchParams.append("status", "success");
-        redirectUrl.searchParams.append("message", "Payment successful");
-      } else {
-        redirectUrl.searchParams.append("status", "failed");
-        redirectUrl.searchParams.append("message", "Payment failed");
-      }
-
-      return redirectUrl.toString();
+      const finalUrl = this.getRedirectUrl(
+        responseParams,
+        isMobile,
+        customReturnUrl
+      );
+      console.log("Final redirect URL:", finalUrl);
+      return finalUrl;
     } catch (error) {
       console.error("Payment validation error:", error);
-      const redirectUrl = new URL("/payment/result", config.CLIENT_URL);
-      redirectUrl.searchParams.append("status", "error");
-      redirectUrl.searchParams.append("message", "Internal server error");
-      return redirectUrl.toString();
+      const errorParams = new URLSearchParams();
+      errorParams.append("status", "error");
+      errorParams.append("message", error.message || "Internal server error");
+      return this.getRedirectUrl(errorParams, false);
     }
+  }
+
+  getRedirectUrl(params, isMobile, customReturnUrl = null) {
+    if (isMobile && customReturnUrl) {
+      console.log("Using custom return URL:", customReturnUrl);
+      return `${customReturnUrl}?${params.toString()}`;
+    }
+
+    if (isMobile) {
+      return `swdmobile://payment/result?${params.toString()}`;
+    }
+
+    return `${config.CLIENT_URL}/payment/result?${params.toString()}`;
+  }
+
+  buildRedirectUrl(params, isMobile) {
+    if (isMobile) {
+      // Use swdmobile:// scheme for mobile
+      const mobileUrl = `swdmobile://payment/result?${params.toString()}`;
+      console.log("Generated mobile URL:", mobileUrl);
+      return mobileUrl;
+    }
+    // Use web URL for browser
+    return `${config.CLIENT_URL}/payment/result?${params.toString()}`;
+  }
+
+  formatRedirectUrl(url, isMobile) {
+    if (isMobile) {
+      // Replace with your mobile app scheme
+      return url.replace(/^https?:\/\/[^/]+/, "swdmobile:");
+    }
+    return url;
   }
 
   async checkPaymentStatusWithVnPay(transactionCode) {

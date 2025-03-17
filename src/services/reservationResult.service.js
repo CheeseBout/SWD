@@ -359,6 +359,49 @@ class ReservationResultService {
       throw new APIError(500, "Error retrieving reservation results");
     }
   }
+
+  async getReservationResultByReservationID(reservationID) {
+    try {
+      if (!mongoose.Types.ObjectId.isValid(reservationID)) {
+        throw new APIError(400, "Invalid reservation ID format");
+      }
+
+      // Get the reservation
+      const reservation = await reservationResultRepo.findReservationById(
+        reservationID
+      );
+      if (!reservation) {
+        throw new APIError(404, "Reservation not found");
+      }
+
+      // Get the result for this reservation, prioritizing 'completed' status results
+      const result = await reservationResultRepo.findOne({
+        reservationID: reservationID,
+        status: "completed", // Only retrieve active results, not deleted ones
+      });
+
+      // If no completed result is found, try to find any result (including deleted)
+      if (!result) {
+        const anyResult = await reservationResultRepo.findOne({
+          reservationID: reservationID,
+        });
+
+        if (!anyResult) {
+          throw new APIError(404, "Reservation result not found");
+        }
+
+        return anyResult;
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Error in getReservationResultByReservationID:", error);
+      if (error instanceof APIError) {
+        throw error;
+      }
+      throw new APIError(500, "Error retrieving reservation result");
+    }
+  }
 }
 
 module.exports = new ReservationResultService();

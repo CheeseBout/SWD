@@ -73,37 +73,22 @@ export const reservationService = {
   },
 
   // Update reservation status
-  async updateReservationStatus(reservationId, status, reason = "") {
-    try {
-      const data = { status };
-      if (reason) data.reason = reason;
+  // async updateReservationStatus(reservationId, status, reason = "") {
+  //   try {
+  //     const data = { status };
+  //     if (reason) data.reason = reason;
 
-      const response = await api.put(
-        `/api/v1/coupletherapist/reservation/${reservationId}`,
-        data
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Error updating reservation status:", error);
-      throw error;
-    }
-  },
+  //     const response = await api.put(
+  //       `/api/v1/coupletherapist/reservation/${reservationId}`,
+  //       data
+  //     );
+  //     return response.data;
+  //   } catch (error) {
+  //     console.error("Error updating reservation status:", error);
+  //     throw error;
+  //   }
+  // },
 
-  // Add/update meeting URL
-  async updateMeetingURL(reservationId, meetingURL) {
-    try {
-      const response = await api.put(
-        `/api/v1/coupletherapist/reservation/${reservationId}`,
-        {
-          meetingURL,
-        }
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Error updating meeting URL:", error);
-      throw error;
-    }
-  },
   async denyReservation(reservationId, reason) {
     try {
       const response = await api.put(
@@ -124,6 +109,17 @@ export const reservationService = {
       return response.data;
     } catch (error) {
       console.error("Error approving reservation:", error);
+      throw error;
+    }
+  },
+  async getReservationById(reservationId) {
+    try {
+      const response = await api.get(
+        `/api/v1/reservation/get-reservation/${reservationId}`
+      );
+      return response?.data?.data;
+    } catch (error) {
+      console.error("Error fetching reservation:", error);
       throw error;
     }
   },

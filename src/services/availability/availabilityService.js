@@ -2,21 +2,22 @@ import { api } from "../apiConfig";
 
 class AvailabilityService {
   // Get all availability slots for the therapist
-  async getTherapistAvailability() {
+  async getTherapistAvailability(therapistId) {
     try {
       // Get the therapistId from localStorage (stored during login)
-      const therapistId = localStorage.getItem("therapistId");
+      // const therapistId = localStorage.getItem("therapistId");
 
-      if (!therapistId) {
-        throw new Error("Therapist ID not found");
-      }
+      // if (!therapistId) {
+      //   throw new Error("Therapist ID not found");
+      // }
 
-      console.log("Getting availability for therapist:", therapistId);
+      // console.log("Getting availability for therapist:", therapistId);
 
       // Return the full response to access data.data.availability structure
-      return await api.get(
+      const response = await api.get(
         `/api/v1/coupletherapist/get-availability/${therapistId}`
       );
+      return response?.data?.data;
     } catch (error) {
       console.error("Error fetching availability:", error);
       throw error;
@@ -62,7 +63,7 @@ class AvailabilityService {
   // Delete an availability slot
   async deleteAvailability(id) {
     try {
-      const response = await api.delete(
+      const response = await api.put(
         `/api/v1/coupletherapist/delete-availability/${id}`
       );
       return response.data;

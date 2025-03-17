@@ -1,13 +1,13 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 import TherapistSidebar from "../../../components/SideBar/TherapistSidebar";
-import { AuthContext } from "../../../contexts/AuthContextObject";
+// import { AuthContext } from "../../../contexts/AuthContextObject";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
-import { api } from "../../../services/apiConfig";
 import { reservationService } from "../../../services/reservation/reservationService";
+import { useNavigate } from "react-router";
 
 export default function TherapistReservations() {
-  const { user } = useContext(AuthContext);
+  // const { user } = useContext(AuthContext);
   const [reservations, setReservations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("");
@@ -18,14 +18,16 @@ export default function TherapistReservations() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
-  const [showMeetingModal, setShowMeetingModal] = useState(false);
-  const [meetingURL, setMeetingURL] = useState("");
-  const therapistId = localStorage.getItem("therapistId");
 
+  const therapistId = localStorage.getItem("therapistId");
+  const navigate = useNavigate();
   useEffect(() => {
     fetchReservations();
   }, [filterStatus, currentPage]);
-
+  const navigateToResults = (reservationId) => {
+    navigate(`/therapist/reservationResult/${reservationId}`);
+    setShowDetailsModal(false);
+  };
   const fetchReservations = async () => {
     try {
       setIsLoading(true);
@@ -57,11 +59,11 @@ export default function TherapistReservations() {
     setShowDetailsModal(true);
   };
 
-  const handleUpdateStatus = async (id, newStatus, price) => {
+  const handleApproveReservation = async (reservationId) => {
     try {
       setIsUpdating(true);
-      await reservationService.approveReservation(id, price);
-      toast.success(`Reservation ${newStatus} successfully`);
+      await reservationService.approveReservation(reservationId);
+      toast.success(`Reservation approve successfully`);
       fetchReservations();
       setShowDetailsModal(false);
     } catch (error) {
@@ -89,30 +91,6 @@ export default function TherapistReservations() {
     } catch (error) {
       console.error("Error cancelling reservation:", error);
       toast.error("Failed to cancel reservation");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleAddMeeting = async () => {
-    if (!selectedReservation || !meetingURL) return;
-
-    try {
-      setIsUpdating(true);
-      await api.put(
-        `/api/v1/coupletherapist/reservation/${selectedReservation._id}`,
-        {
-          meetingURL: meetingURL,
-        }
-      );
-      toast.success("Meeting link added successfully");
-      fetchReservations();
-      setShowMeetingModal(false);
-      setShowDetailsModal(false);
-      setMeetingURL("");
-    } catch (error) {
-      console.error("Error adding meeting URL:", error);
-      toast.error("Failed to add meeting link");
     } finally {
       setIsUpdating(false);
     }
@@ -206,7 +184,7 @@ export default function TherapistReservations() {
                       No reservations found
                     </h3>
                     <p className="text-gray-500 mt-1">
-                      You don't have any reservations with this filter.
+                      You don&apos;t have any reservations with this filter.
                     </p>
                   </div>
                 ) : (
@@ -424,16 +402,7 @@ export default function TherapistReservations() {
                       )} - {dayjs(selectedReservation.endTime).format("h:mm A")}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Status</p>
-                    <span
-                      className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full capitalize ${getStatusBadgeClass(
-                        selectedReservation.status
-                      )}`}
-                    >
-                      {selectedReservation.status}
-                    </span>
-                  </div>
+
                   <div>
                     <p className="text-sm text-gray-500">Price</p>
                     <p className="font-medium">
@@ -445,6 +414,24 @@ export default function TherapistReservations() {
                       <p className="text-sm text-gray-500">Package</p>
                       <p className="font-medium">
                         {selectedReservation.packageID.name}
+                      </p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm text-gray-500">Status</p>
+                    <span
+                      className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full capitalize ${getStatusBadgeClass(
+                        selectedReservation.status
+                      )}`}
+                    >
+                      {selectedReservation.status}
+                    </span>
+                  </div>
+                  {selectedReservation.reason && (
+                    <div className="bg-red-50 p-3 rounded-md">
+                      <p className="text-sm text-gray-500">Reason</p>
+                      <p className="text-red-600">
+                        {selectedReservation.reason}
                       </p>
                     </div>
                   )}
@@ -466,16 +453,7 @@ export default function TherapistReservations() {
                     <p className="text-sm text-gray-500">Session Content</p>
                     <p className="font-medium">{selectedReservation.content}</p>
                   </div>
-                  {selectedReservation.reason && (
-                    <div className="bg-red-50 p-3 rounded-md">
-                      <p className="text-sm text-gray-500">
-                        Cancellation Reason
-                      </p>
-                      <p className="text-red-600">
-                        {selectedReservation.reason}
-                      </p>
-                    </div>
-                  )}
+
                   {selectedReservation.meetingURL && (
                     <div>
                       <p className="text-sm text-gray-500">Meeting Link</p>
@@ -516,41 +494,33 @@ export default function TherapistReservations() {
                   <button
                     className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
                     onClick={() =>
-                      handleUpdateStatus(
-                        selectedReservation._id,
-                        "confirmed",
-                        selectedReservation.totalPrice
-                      )
+                      handleApproveReservation(selectedReservation._id)
                     }
                   >
                     Confirm
                   </button>
                 </>
               )}
-
-              {selectedReservation.status === "confirmed" && (
-                <>
-                  <button
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                    onClick={() => {
-                      setMeetingURL(selectedReservation.meetingURL || "");
-                      setShowMeetingModal(true);
-                      setShowDetailsModal(false);
-                    }}
+              {(selectedReservation.status === "completed" ||
+                selectedReservation.status === "deposited") && (
+                <button
+                  onClick={() => navigateToResults(selectedReservation._id)}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 flex items-center"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 mr-1"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
                   >
-                    {selectedReservation.meetingURL
-                      ? "Update Meeting Link"
-                      : "Add Meeting Link"}
-                  </button>
-                  <button
-                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                    onClick={() =>
-                      handleUpdateStatus(selectedReservation._id, "completed")
-                    }
-                  >
-                    Mark as Completed
-                  </button>
-                </>
+                    <path
+                      fillRule="evenodd"
+                      d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  View Results
+                </button>
               )}
             </div>
           </div>
@@ -595,7 +565,7 @@ export default function TherapistReservations() {
       )}
 
       {/* Meeting URL Modal */}
-      {showMeetingModal && selectedReservation && (
+      {/* {showMeetingModal && selectedReservation && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center bg-black/30 backdrop-blur-sm">
           <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
             <h3 className="text-lg font-bold mb-4">
@@ -633,7 +603,7 @@ export default function TherapistReservations() {
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 }

@@ -83,7 +83,7 @@ export default function YourReservation() {
         userID,
         filterStatus,
         currentPage,
-        10
+        20
       );
 
       setReservations(response.reservations);

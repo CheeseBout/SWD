@@ -5,7 +5,6 @@ import { AuthContext } from "../../contexts/AuthContextObject";
 import {
   ClipboardCheckIcon,
   CalendarIcon,
-  DocumentTextIcon,
   UserCircleIcon,
   MenuAlt2Icon,
   XIcon,
@@ -158,7 +157,7 @@ const TherapistSidebar = () => {
               icon={AcademicCapIcon}
               label="Certificates"
             />
-            <NavItem to="/manage/blogs" icon={PencilAltIcon} label="Blogs" />
+            <NavItem to="/therapist/blogs" icon={PencilAltIcon} label="Blogs" />
           </nav>
         </div>
 

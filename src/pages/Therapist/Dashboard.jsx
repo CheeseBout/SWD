@@ -12,8 +12,7 @@ function Dashboard() {
         const response = await therapistService.getTherapistIdByUserId(
           user._id
         );
-        localStorage.setItem("therapistId", response.data._id);
-        console.log(response);
+        localStorage.setItem("therapistId", response._id);
       } catch (error) {
         console.error("Error fetching therapist ID:", error);
       }

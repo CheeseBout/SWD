@@ -108,4 +108,43 @@ export const authService = {
       throw error;
     }
   },
+
+  verifyEmail: async (email, token) => {
+    try {
+      const response = await api.post("/api/v1/auth/verify-email", {
+        email,
+        emailVerificationToken: token,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error verifying email:", error);
+      throw error;
+    }
+  },
+
+  resendVerification: async (email) => {
+    try {
+      const response = await api.post("/api/v1/auth/send-verify-email", {
+        email,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error resending verification:", error);
+      throw error;
+    }
+  },
+
+  resetPassword: async (token, newPassword, email) => {
+    try {
+      const response = await api.post("/api/v1/auth/reset-password", {
+        resetToken: token,
+        password: newPassword,
+        email,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      throw error;
+    }
+  },
 };

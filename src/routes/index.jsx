@@ -4,7 +4,7 @@ import App from "../App";
 import { Suspense, lazy } from "react";
 import PropTypes from "prop-types";
 import ProtectedRoute from "../components/ProtectedRoute/ProtectedRoute";
-
+import VerifyEmail from "../pages/VerifyEmail";
 const Topics = lazy(() => import("../pages/Topics"));
 const Quizzes = lazy(() => import("../pages/Quiz/Quizzes"));
 const TopicDetail = lazy(() => import("../pages/Topics/TopicDetail"));
@@ -57,7 +57,10 @@ const CertificateRequest = lazy(() =>
 const QuizManagement = lazy(() => import("../pages/Admin/QuizzesManagement"));
 const TopicManagement = lazy(() => import("../pages/Admin/TopicsManagement"));
 const UserManagement = lazy(() => import("../pages/Admin/UsersManagement"));
-const QuestionManagement = lazy(() => import("../pages/Admin/QuestionsManagement"));
+const QuestionManagement = lazy(() =>
+  import("../pages/Admin/QuestionsManagement")
+);
+const ResetPassword = lazy(() => import("../pages/ResetPassword"));
 const LazyLoad = ({ children }) => (
   <Suspense fallback={<div></div>}>{children}</Suspense>
 );
@@ -76,6 +79,15 @@ export function AppRoutes() {
           element={
             <LazyLoad>
               <LoginPage />
+            </LazyLoad>
+          }
+        />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route
+          path="/reset-password"
+          element={
+            <LazyLoad>
+              <ResetPassword />
             </LazyLoad>
           }
         />

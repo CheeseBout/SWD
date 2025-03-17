@@ -34,4 +34,41 @@ export const questionService = {
     );
     return response.data;
   },
+
+  getAllQuestionBanks: async () => {
+    const response = await api.get("/api/v1/questions/get-all-question-banks");
+    return response.data;
+  },
+
+  createQuestionBank: async (questionBank) => {
+    const response = await api.post(
+      "/api/v1/questions/create-question-bank",
+      questionBank
+    );
+    return response.data;
+  },
+
+  activeQuestionBank: async (questionBank) => {
+    const response = await api.put(
+      "/api/v1/questions/activate-question-bank",
+      questionBank
+    );
+    return response.data;
+  },
+
+  deleteQuestionBank: async (questionBank) => {
+    const response = await api.put(
+      "/api/v1/questions/delete-question-bank",
+      questionBank
+    );
+    return response.data;
+  },
+
+  updateQuestionBank: async (questionBank) => {
+    const response = await api.put(
+      "/api/v1/questions/update-question-bank",
+      questionBank
+    );
+    return response.data;
+  },
 };

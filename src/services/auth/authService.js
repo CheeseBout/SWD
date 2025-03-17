@@ -8,8 +8,6 @@ export const authService = {
         password,
       });
 
-      localStorage.setItem("accessToken", response.data.token);
-
       return response.data;
     } catch (error) {
       console.error("Login error:", error);
@@ -94,6 +92,19 @@ export const authService = {
       return response.data;
     } catch (error) {
       console.error("Google disconnection error:", error);
+      throw error;
+    }
+  },
+
+  createCertificateRequest: async (data) => {
+    try {
+      const response = await api.post(
+        "/api/v1/auth/update-expert-profile",
+        data
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error creating certificate request:", error);
       throw error;
     }
   },

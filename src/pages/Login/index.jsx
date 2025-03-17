@@ -34,6 +34,17 @@ const LoginPage = () => {
     try {
       const response = await authService.login(data.email, data.password);
       const { accessToken, refreshToken } = response.data.tokens;
+      const userData = response.data.user;
+
+      if (!userData.isActive) {
+        setError("This account has been deactivated. Please contact support for assistance.");
+        return;
+      }
+
+      if (!userData.isVerified && userData.role !== "admin") {
+        setError("Your account is not verified. Please verify your email to continue.");
+        return;
+      }
 
       await login(accessToken);
 

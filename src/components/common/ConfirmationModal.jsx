@@ -8,6 +8,7 @@ const ConfirmationModal = ({
   cancelText,
   onConfirm,
   confirmButtonClass,
+  confirmDisabled = false,
 }) => {
   return (
     <>
@@ -16,7 +17,7 @@ const ConfirmationModal = ({
         <div className="modal-box">
           <h3 className="text-lg font-bold mb-3">{title}</h3>
           <p className="text-gray-600 mb-6">{message}</p>
-          
+
           <div className="flex justify-end space-x-3">
             <label
               htmlFor={id}
@@ -32,12 +33,15 @@ const ConfirmationModal = ({
               className={`px-4 py-2 text-white rounded-md ${
                 confirmButtonClass || "bg-blue-600 hover:bg-blue-700"
               }`}
+              disabled={confirmDisabled}
             >
               {confirmText || "Confirm"}
             </button>
           </div>
         </div>
-        <label className="modal-backdrop" htmlFor={id}>Close</label>
+        <label className="modal-backdrop" htmlFor={id}>
+          Close
+        </label>
       </div>
     </>
   );
@@ -51,6 +55,7 @@ ConfirmationModal.propTypes = {
   cancelText: PropTypes.string,
   onConfirm: PropTypes.func.isRequired,
   confirmButtonClass: PropTypes.string,
+  confirmDisabled: PropTypes.bool,
 };
 
 export default ConfirmationModal;

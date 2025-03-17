@@ -6,7 +6,8 @@ const TopicForm = ({
   onSubmit,
   onCancel,
   isSubmitting,
-  submitButtonText
+  submitButtonText,
+  formSubmitSuccess = false
 }) => {
   const [formData, setFormData] = useState({
     name: "",
@@ -23,6 +24,16 @@ const TopicForm = ({
       });
     }
   }, [initialData]);
+
+  useEffect(() => {
+    if (formSubmitSuccess && !initialData) {
+      setFormData({
+        name: "",
+        description: "",
+        imageUrl: ""
+      });
+    }
+  }, [formSubmitSuccess, initialData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -117,7 +128,8 @@ TopicForm.propTypes = {
   onSubmit: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
   isSubmitting: PropTypes.bool,
-  submitButtonText: PropTypes.string
+  submitButtonText: PropTypes.string,
+  formSubmitSuccess: PropTypes.bool
 };
 
 export default TopicForm;

@@ -19,7 +19,6 @@ export default function BlogCreate() {
     setIsSubmitting(true);
     setError(null);
 
-    // Validate required fields
     if (!blogData.title || !blogData.slug) {
       setError("Title and slug are required fields");
       setIsSubmitting(false);
@@ -28,21 +27,21 @@ export default function BlogCreate() {
     }
 
     try {
-      // Ensure all required fields are present
       if (!blogData.postDate) {
-        blogData.postDate = new Date().toISOString().split('T')[0];
+        blogData.postDate = new Date().toISOString().split("T")[0];
       }
 
-      // Let the service directly handle the content without modifying it here
       console.log("Submitting blog data:", JSON.stringify(blogData, null, 2));
-      
+
       const response = await blogService.createBlog(blogData);
       toast.success("Blog created successfully");
       navigate("/manage/blogs");
     } catch (error) {
       console.error("Error creating blog:", error);
-      // Display a more user-friendly error message
-      const errorMsg = error.message || "Failed to create blog. Please check all required fields and try again.";
+
+      const errorMsg =
+        error.message ||
+        "Failed to create blog. Please check all required fields and try again.";
       setError(errorMsg);
       toast.error(errorMsg);
     } finally {
@@ -60,8 +59,16 @@ export default function BlogCreate() {
         <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
           <div className="flex">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              <svg
+                className="h-5 w-5 text-red-500"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
             <div className="ml-3">

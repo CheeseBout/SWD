@@ -53,6 +53,7 @@ const CertificateRequest = lazy(() =>
 const QuizManagement = lazy(() => import("../pages/Admin/QuizzesManagement"));
 const TopicManagement = lazy(() => import("../pages/Admin/TopicsManagement"));
 const UserManagement = lazy(() => import("../pages/Admin/UsersManagement"));
+const QuestionManagement = lazy(() => import("../pages/Admin/QuestionsManagement"));
 const LazyLoad = ({ children }) => (
   <Suspense fallback={<div></div>}>{children}</Suspense>
 );
@@ -362,6 +363,14 @@ export function AppRoutes() {
             element={
               <LazyLoad>
                 <UserManagement />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="questions"
+            element={
+              <LazyLoad>
+                <QuestionManagement />
               </LazyLoad>
             }
           />

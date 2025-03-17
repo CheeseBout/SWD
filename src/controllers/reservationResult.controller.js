@@ -83,6 +83,16 @@ class ReservationResultController {
       )
     );
   });
+
+  getReservationResultByReservationID = catchAsync(async (req, res) => {
+    return OK(
+      res,
+      "Reservation result retrieved successfully",
+      await reservationResultService.getReservationResultByReservationID(
+        req.params.reservationID
+      )
+    );
+  });
 }
 
 module.exports = new ReservationResultController();

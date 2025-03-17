@@ -28,6 +28,7 @@ const reservationResultSchema = new mongoose.Schema(
     status: {
       type: String,
       required: true,
+      enum: ["pending", "deleted", "final_completed"],
     },
     deleteReason: {
       type: String,

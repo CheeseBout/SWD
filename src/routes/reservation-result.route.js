@@ -177,6 +177,33 @@ const { auth } = require("../middlewares/auth.middleware");
 
 /**
  * @swagger
+ * /reservation-result/get-reservation-result/reservation/{reservationID}:
+ *   get:
+ *     summary: Get a reservation result by reservation ID
+ *     description: Retrieves the therapy session result associated with a specific reservation
+ *     tags: [Reservation Results]
+ *     parameters:
+ *       - in: path
+ *         name: reservationID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the reservation to find results for
+ *     responses:
+ *       200:
+ *         description: Reservation result retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ReservationResultResponse'
+ *       400:
+ *         description: Invalid reservation ID format
+ *       404:
+ *         description: Reservation not found or no result exists for this reservation
+ */
+
+/**
+ * @swagger
  * /reservation-result/update-reservation-result/{reservationResultID}:
  *   put:
  *     summary: Update a reservation result (Therapist or Admin only)
@@ -382,6 +409,11 @@ router.post(
 router.get(
   "/get-reservation-result/:reservationResultID",
   reservationResultController.getReservationResult
+);
+
+router.get(
+  "/get-reservation-result/reservation/:reservationID",
+  reservationResultController.getReservationResultByReservationID
 );
 
 router.put(

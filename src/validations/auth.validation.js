@@ -22,6 +22,11 @@ const resetPasswordValidation = {
       .message(
         "Password must be at least 8 characters, including uppercase, lowercase, number and symbol"
       ),
+    resetToken: Joi.string().required(),
+    email: Joi.string()
+      .required()
+      .pattern(/^[a-zA-Z0-9._%+-]+@gmail\.com$/)
+      .message("Email must be a valid Gmail address"),
   }),
 };
 
@@ -75,9 +80,20 @@ const updateExpertProfileValidation = {
   }),
 };
 
+const emailVerificationValidation = {
+  body: Joi.object().keys({
+    email: Joi.string()
+      .required()
+      .pattern(/^[a-zA-Z0-9._%+-]+@gmail\.com$/)
+      .message("Email must be a valid Gmail address"),
+    emailVerificationToken: Joi.string().required(),
+  }),
+};
+
 module.exports = {
   forgotPasswordValidation,
   resetPasswordValidation,
   updateExpertProfileValidation,
   changePasswordValidation,
+  emailVerificationValidation,
 };

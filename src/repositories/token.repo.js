@@ -14,6 +14,21 @@ class TokenRepository {
     });
   }
 
+  async createEmailVerificationToken(userId) {
+    return await TOKEN.create({
+      userID: userId,
+      expiryDate: new Date(
+        Date.now() + ms(appConfig.JWT.emailVerificationLife)
+      ),
+    });
+  }
+
+  async findEmailVerificationToken(token) {
+    return await TOKEN.findOne({
+      emailVerificationToken: token,
+    }).populate("userID");
+  }
+
   async updateLoginToken(userId) {
     return await TOKEN.findOneAndUpdate(
       { userID: userId },
@@ -25,8 +40,25 @@ class TokenRepository {
     );
   }
 
-  async findAndUpdatePasswordResetToken(filter, update) {
-    return await TOKEN.findOne(filter).populate("userID");
+  async findAndUpdatePasswordResetToken(filter) {
+    // Add debugging information
+    console.log("Finding password reset token with filter:", filter);
+
+    const token = await TOKEN.findOne(filter).populate("userID");
+
+    console.log(
+      "Token search result:",
+      token
+        ? {
+            found: true,
+            userID: token.userID?._id,
+            expiryDate: token.passwordResetExpires,
+            token: token.passwordResetToken.substring(0, 10) + "...",
+          }
+        : "Not found"
+    );
+
+    return token;
   }
 
   async deleteToken(tokenId) {
@@ -73,9 +105,9 @@ class TokenRepository {
     return await TOKEN.create(tokenData);
   }
 
-  async findTokenByResetToken(hashedToken) {
+  async findTokenByResetToken(plainToken) {
     return await TOKEN.findOne({
-      passwordResetToken: hashedToken,
+      passwordResetToken: plainToken, // Use plain token, not hashed
       passwordResetExpires: { $gt: Date.now() },
     }).populate("userID");
   }

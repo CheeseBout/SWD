@@ -7,6 +7,7 @@ module.exports = {
     secretKey: process.env.JWT_KEY,
     accessTokenLife: "1h", // 1 hour
     refreshTokenLife: "7d", // 7 days
+    emailVerificationLife: "10m", // 10 minutes
   },
   MOBILE_CLIENT_URL: process.env.MOBILE_CLIENT_URL,
   email: {

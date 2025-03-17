@@ -25,45 +25,33 @@ const errorConverter = (err, req, res, next) => {
 };
 
 const errorHandler = (err, req, res, next) => {
-  try {
-    let { statusCode, message } = err;
+  // Log the error for debugging
+  console.error("ERROR DETAILS:", {
+    originalUrl: req.originalUrl,
+    method: req.method,
+    statusCode: err.statusCode || err.status,
+    message: err.message,
+    stack: err.stack,
+    name: err.name,
+    isOperational: err.isOperational,
+  });
 
-    // Ensure statusCode is a valid HTTP status code
-    statusCode =
-      statusCode &&
-      Number.isInteger(statusCode) &&
-      statusCode >= 100 &&
-      statusCode < 600
-        ? statusCode
-        : httpStatus.INTERNAL_SERVER_ERROR;
+  // Ensure a valid status code is set (fallback to 500 if none)
+  const statusCode = err.statusCode || err.status || 500;
 
-    // Ensure message is a string
-    if (typeof message !== "string") {
-      message = "Internal Server Error";
-    }
+  // Prepare the response
+  let response = {
+    status: "error",
+    message: err.message || "Internal Server Error",
+  };
 
-    // Set a default response object
-    const response = {
-      code: statusCode,
-      message,
-    };
-
-    // Add developer details in development mode
-    if (process.env.NODE_ENV === "development") {
-      response.stack = err.stack;
-      response.details = err.errors || err.details || undefined;
-    }
-
-    // Send response
-    res.status(statusCode).json(response);
-  } catch (handlerError) {
-    // Last resort error handler to prevent application crash
-    console.error("Error in the error handler itself:", handlerError);
-    res.status(500).json({
-      code: 500,
-      message: "Internal server error occurred while processing the error",
-    });
+  // Add stack trace in development
+  if (process.env.NODE_ENV === "development") {
+    response.stack = err.stack;
   }
+
+  // Send the response
+  res.status(statusCode).json(response);
 };
 
 // Thêm một error handler toàn cục cho những lỗi không xử lý được

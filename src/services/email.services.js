@@ -27,16 +27,14 @@ class EmailService {
   };
 
   sendVerificationEmail = async ({ email, emailVerificationToken }) => {
-    const user = await userRepo.getByEmail({
-      email,
-    });
+    const user = await userRepo.getByEmail(email);
 
     if (!user) {
       throw new APIError(400, "User not found");
     }
 
     try {
-      const verificationLink = `http://localhost:5173/verify-email?token=${emailVerificationToken}`;
+      const verificationLink = `http://localhost:5173/verify-email?token=${emailVerificationToken}&email=${email}`;
       const verificationHTML = `
         <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px;">
           <h2 style="color: #007bff;">Email Verification</h2>
@@ -60,7 +58,11 @@ class EmailService {
   };
 
   sendResetPassword = async ({ email, resetToken }) => {
-    const resetLink = `http://localhost:5173/reset-password?token=${resetToken}`;
+    // Send the original token (not hashed) to the user
+    const resetLink = `http://localhost:5173/reset-password?token=${resetToken}&email=${email}`;
+
+    console.log("Reset link generated:", resetLink);
+
     const resetHTML = `
       <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px;">
         <h2 style="color: #dc3545;">Password Reset Request</h2>

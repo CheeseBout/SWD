@@ -13,6 +13,7 @@ const {
   resetPasswordValidation,
   updateExpertProfileValidation,
   changePasswordValidation,
+  emailVerificationValidation, // Added new validation
 } = require("../validations/auth.validation");
 const { auth } = require("../middlewares/auth.middleware");
 const { google } = require("googleapis");
@@ -430,10 +431,40 @@ router.post(
   validate(emailValidation),
   authController.sendVerifyEmail
 );
+
+/**
+ * @swagger
+ * /auth/verify-email:
+ *   post:
+ *     summary: Verify user email
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *               - email
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: Verification token sent to email
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Email verified successfully
+ *       400:
+ *         description: Invalid token or email
+ *       401:
+ *         description: Unauthorized
+ */
 router.post(
   "/verify-email",
-  auth,
-  validate(emailValidation),
+  validate(emailVerificationValidation), // Change to use the new validation
   authController.verifyEmail
 );
 

@@ -1,7 +1,7 @@
 const USER = require("../models/user.model");
 
 class UserRepo {
-  async getByEmail(email) {
+  async getByEmail({ email }) {
     return await USER.findOne({ email });
   }
   async getByID(userID) {

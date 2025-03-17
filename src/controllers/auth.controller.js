@@ -113,26 +113,55 @@ class AuthController {
   });
 
   verifyEmail = catchAsync(async (req, res) => {
-    const { token } = req.query;
-    const { email } = req.body;
-    const result = await authServices.verifyEmail({ email, token });
+    const { emailVerificationToken, email } = req.body;
+
+    const result = await authServices.verifyEmail({
+      email,
+      token: emailVerificationToken,
+    });
+
     return OK(res, "Success", result);
   });
 
   forgotPassword = catchAsync(async (req, res) => {
     const { email } = req.body;
+
+    console.log("Forgot password request for email:", email);
+
     const result = await authServices.forgotPassword({ email });
-    return OK(res, "Success", result);
+
+    return OK(res, "Password reset email sent successfully", { email });
   });
 
   resetPassword = catchAsync(async (req, res) => {
     const { resetToken, email, password } = req.body;
-    const result = await authServices.resetPassword({
-      resetToken,
+
+    // Add debug logging
+    console.log("Reset password request received in controller:", {
+      tokenLength: resetToken?.length,
+      tokenPrefix: resetToken?.substring(0, 10) + "...",
       email,
-      password,
+      hasPassword: !!password,
     });
-    return OK(res, "Success", result);
+
+    try {
+      const result = await authServices.resetPassword({
+        resetToken,
+        email,
+        password,
+      });
+
+      return OK(res, "Password reset successfully", { email: result.email });
+    } catch (error) {
+      console.error("Password reset failed:", error.message);
+
+      // Add proper error status code for API error handling
+      if (!error.status && !error.statusCode) {
+        error.statusCode = 400;
+      }
+
+      throw error;
+    }
   });
 
   changePassword = catchAsync(async (req, res) => {
@@ -157,7 +186,7 @@ class AuthController {
 
     const updatedProfile = await authServices.updateTherapistProfile(userId, {
       description,
-      category, 
+      category,
     });
 
     return OK(res, "Therapist profile updated successfully", updatedProfile);

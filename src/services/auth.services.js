@@ -50,10 +50,12 @@ class AuthService {
         isVerified: false,
       });
 
+      //send verification email
+      await this.sendVerifyEmail({ email });
+
       if (!user._id) {
         throw new APIError(500, "Failed to create user");
       }
-
       // Create initial token after user is created successfully
       await tokenRepo.createInitialToken(user._id);
       if (role === "couple_therapist") {
@@ -240,31 +242,45 @@ class AuthService {
     }
   }
 
-  async login({ email, password }) {
-    const user = await authRepo.findUserByEmail(email);
+  async login(credentials) {
+    if (!credentials?.email || !credentials?.password) {
+      throw new APIError(400, "Email and password are required");
+    }
+
+    const user = await authRepo.findUserByEmail(credentials.email);
     if (!user) {
       throw new APIError(400, "User not found");
     }
 
-    const isPasswordMatch = await bcrypt.compare(password, user.password);
+    const isPasswordMatch = await bcrypt.compare(
+      credentials.password,
+      user.password
+    );
     if (!isPasswordMatch) {
       throw new APIError(400, "Email or password is incorrect");
     }
 
-    // Cập nhật login token
+    console.log("Email", credentials.email);
+
+    if (user && user.isVerified === false) {
+      this.sendVerifyEmail({ email: credentials.email });
+    }
+
+    // Update login token
     await tokenRepo.updateLoginToken(user._id);
 
-    // Tạo auth tokens
+    // Generate auth tokens
     const tokens = await tokenServices.generateAuthToken(user._id.toString());
 
-    // Kiểm tra Google authorization
-    const googleCreds = await tokenRepo.findTokenWithGoogleCreds(user._id);
+    // Check Google authorization
+    const googleTokens = await tokenRepo.findTokenWithGoogleCreds(user._id);
     const needsGoogleAuth =
-      !googleCreds?.access_token ||
-      googleCreds.access_token === "NEED_GOOGLE_AUTH";
+      !googleTokens?.access_token ||
+      googleTokens.access_token === "NEED_GOOGLE_AUTH";
 
     return {
       tokens,
+      user,
       googleAuth: {
         required: needsGoogleAuth,
         authUrl: "/api/v1/auth/login/google",
@@ -278,51 +294,74 @@ class AuthService {
       throw new APIError(404, "User not found");
     }
 
+    // Generate a random token without hashing
     const resetToken = crypto.randomBytes(32).toString("hex");
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(resetToken)
-      .digest("hex");
 
+    console.log("Generated reset token:", resetToken);
+
+    // Clear any existing reset tokens for this user first
+    await TOKEN.updateMany(
+      { userID: user._id },
+      { $unset: { passwordResetToken: "", passwordResetExpires: "" } }
+    );
+
+    // Store the plain token directly in the database
     await tokenRepo.createPasswordResetToken({
       userID: user._id,
-      passwordResetToken: hashedToken,
+      passwordResetToken: resetToken, // Store plain token, no hashing
       passwordResetExpires: new Date(Date.now() + 10 * 60 * 1000),
       expiryDate: new Date(Date.now() + 10 * 60 * 1000),
     });
 
-    await emailServices.sendResetPassword({ email, hashedToken });
-    return { resetToken: hashedToken };
+    // Send the plain token to the user
+    await emailServices.sendResetPassword({ email, resetToken });
+
+    return { message: "Password reset email sent successfully" };
   }
 
   async resetPassword({ resetToken, email, password }) {
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(resetToken)
-      .digest("hex");
+    // Add logging to debug the issue
+    console.log("Reset password request received:", {
+      resetToken: resetToken?.substring(0, 10) + "...", // Show part of the token for debugging
+      email,
+      passwordLength: password?.length,
+    });
 
-    const tokenDoc = await tokenRepo.findAndUpdatePasswordResetToken({
-      passwordResetToken: hashedToken,
+    // Important: Use the imported USER constant instead of relying on mongoose.model('User')
+    const user = await USER.findOne({ email });
+    if (!user) {
+      throw new APIError(404, "User not found");
+    }
+
+    // Find token without using populate to avoid the model registration issues
+    const tokenDoc = await TOKEN.findOne({
+      userID: user._id,
+      passwordResetToken: resetToken,
       passwordResetExpires: { $gt: Date.now() },
     });
 
-    if (!tokenDoc || tokenDoc.userID.email !== email) {
+    console.log("Token document found:", tokenDoc ? "Yes" : "No");
+
+    if (!tokenDoc) {
       throw new APIError(400, "Invalid or expired reset token");
     }
 
-    const user = tokenDoc.userID;
+    // Update user password
     user.password = password;
     await user.save();
 
+    // Delete the token to prevent reuse
     await tokenRepo.deleteToken(tokenDoc._id);
 
-    return user;
+    // Return success with minimal user info
+    return {
+      email: user.email,
+      message: "Password reset successful",
+    };
   }
 
   async sendVerifyEmail({ email }) {
-    const user = await userRepo.getByEmail({
-      email,
-    });
+    const user = await userRepo.getByEmail({ email });
 
     if (!user) {
       throw new APIError(400, "User not found");
@@ -332,10 +371,20 @@ class AuthService {
       throw new APIError(400, "User has already verified");
     }
 
-    const emailVerificationToken = crypto.createHash("sha256").digest("hex");
+    const emailVerificationToken = crypto.randomBytes(32).toString("hex");
 
-    user.emailVerificationToken = emailVerificationToken;
-    await user.save();
+    // Create email verification token
+    await TOKEN.findOneAndUpdate(
+      { userID: user._id },
+      {
+        emailVerificationToken: emailVerificationToken,
+        expiryDate: new Date(
+          Date.now() + ms(appConfig.JWT.emailVerificationLife)
+        ),
+        updatedAt: new Date(),
+      },
+      { upsert: true }
+    );
 
     await emailServices.sendVerificationEmail({
       email,
@@ -344,9 +393,7 @@ class AuthService {
   }
 
   async verifyEmail({ email, token }) {
-    const user = await userRepo.getByEmail({
-      email,
-    });
+    const user = await userRepo.getByEmail({ email });
 
     if (!user) {
       throw new APIError(400, "User not found");
@@ -356,12 +403,21 @@ class AuthService {
       throw new APIError(400, "Email is already verified");
     }
 
-    if (user.emailVerificationToken !== token || !user.emailVerificationToken) {
-      throw new APIError(400, "Invalid verification token");
+    // Find token document directly
+    const tokenDoc = await TOKEN.findOne({
+      userID: user._id,
+      emailVerificationToken: token,
+    });
+
+    if (!tokenDoc) {
+      throw new APIError(400, "Invalid or expired verification token");
     }
 
     user.isVerified = true;
-    user.emailVerificationToken = undefined;
+    // Ensure address exists to avoid validation errors
+    // if (!user.address) {
+    //   user.address = "None";
+    // }
     await user.save();
 
     return user;

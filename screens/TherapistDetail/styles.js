@@ -143,11 +143,11 @@ export const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 15,
     color: "#333",
+    flex: 1,
   },
   reviewDate: {
     fontSize: 12,
     color: "#777",
-    marginLeft: "auto",
   },
   ratingContainer: {
     flexDirection: "row",
@@ -157,6 +157,26 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     color: "#555",
     lineHeight: 20,
+  },
+  emptyReviewsContainer: {
+    alignItems: "center",
+    paddingVertical: 30,
+    backgroundColor: "#f9f9f9",
+    borderRadius: 10,
+  },
+  emptyReviewsText: {
+    fontSize: 15,
+    color: "#666",
+    marginTop: 10,
+  },
+  loadingContainer: {
+    alignItems: "center",
+    paddingVertical: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: "#666",
   },
   buttonContainer: {
     padding: 20,

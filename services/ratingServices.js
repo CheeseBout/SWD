@@ -6,12 +6,18 @@ const ratingServices = {
   submitRating: async (ratingData) => {
     try {
       const tokens = await getTokens();
+      console.log(
+        "Submitting rating with data:",
+        JSON.stringify(ratingData, null, 2)
+      );
+
+      // Make sure we're using the correct endpoint and format based on your API
       const response = await apiClient.post("/rating", ratingData, {
         headers: {
           Authorization: `Bearer ${tokens.accessToken}`,
         },
       });
-      console.log("Rating submission response:", response.data);
+      console.log("Rating submission response:", JSON.stringify(response.data));
       return response.data;
     } catch (error) {
       console.error("Error submitting rating:", error);
@@ -23,40 +29,49 @@ const ratingServices = {
   getRatingsByTherapistId: async (therapistId) => {
     try {
       const tokens = await getTokens();
-      const response = await apiClient.get(
-        `/ratings/therapist/${therapistId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${tokens.accessToken}`,
-          },
-        }
-      );
+      console.log(`Fetching ratings for therapist: ${therapistId}`);
+
+      const response = await apiClient.get(`/rating/therapist/${therapistId}`, {
+        headers: {
+          Authorization: `Bearer ${tokens.accessToken}`,
+        },
+      });
+
+      console.log("Therapist ratings response:", response.status);
       return response.data;
     } catch (error) {
       console.error(
         `Error fetching ratings for therapist ${therapistId}:`,
         error
       );
-      throw error;
+      return { status: "error", data: [] };
     }
   },
 
-  // Kiểm tra người dùng đã đánh giá reservation chưa
-  checkRatingForReservation: async (reservationId) => {
+  // Kiểm tra người dùng đã đánh giá therapist cho reservation này chưa
+  checkRatingForReservation: async (coupleTherapistID) => {
     try {
       const tokens = await getTokens();
+      console.log(`Checking rating for reservation: ${coupleTherapistID}`);
+
+      // Adjust endpoint to match your API structure
       const response = await apiClient.get(
-        `/rating/${reservationId}`,
+        `/rating/check/${coupleTherapistID}`,
         {
           headers: {
             Authorization: `Bearer ${tokens.accessToken}`,
           },
         }
       );
+
+      console.log(
+        "Rating check response:",
+        JSON.stringify(response.data, null, 2)
+      );
       return response.data;
     } catch (error) {
       console.error(
-        `Error checking rating for reservation ${reservationId}:`,
+        `Error checking rating for reservation ${coupleTherapistID}:`,
         error
       );
       return { hasRated: false };

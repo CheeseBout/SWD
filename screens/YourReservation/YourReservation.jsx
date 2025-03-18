@@ -14,6 +14,7 @@ import { styles } from "./styles";
 import reservationServices from "../../services/reservationServices";
 import paymentServices from "../../services/paymentServices";
 import ratingServices from "../../services/ratingServices";
+import reservationResultServices from "../../services/reservationResultServices";
 import { useFocusEffect } from "@react-navigation/native";
 
 export default function YourReservation({ route, navigation }) {
@@ -22,12 +23,15 @@ export default function YourReservation({ route, navigation }) {
   const [loading, setLoading] = useState(false);
   const [hasRated, setHasRated] = useState(false);
   const [checkingRating, setCheckingRating] = useState(false);
+  const [reservationResult, setReservationResult] = useState(null);
+  const [showResult, setShowResult] = useState(false);
 
   // Thêm hook để lắng nghe focus
   useFocusEffect(
     useCallback(() => {
       console.log("Screen focused - fetching updated reservation details");
       fetchReservationDetails();
+      fetchReservationResult();
       checkIfRated();
       return () => {
         // cleanup if needed
@@ -41,9 +45,9 @@ export default function YourReservation({ route, navigation }) {
       const response = await reservationServices.getReservationById(
         reservation._id
       );
+
       if (response && response.status === "success") {
         setReservation(response.data);
-        // Update reservation state with new data
         console.log("Reservation details updated:", response.data);
       }
     } catch (error) {
@@ -53,14 +57,49 @@ export default function YourReservation({ route, navigation }) {
     }
   };
 
+  const fetchReservationResult = async () => {
+    try {
+      const resultResponse =
+        await reservationResultServices.getReservationResult(reservation._id);
+
+      console.log("Reservation result response received:", resultResponse);
+
+      if (resultResponse?.status === 200 && resultResponse?.data) {
+        setReservationResult(resultResponse.data);
+        console.log(
+          "Reservation result data:",
+          JSON.stringify(resultResponse.data, null, 2)
+        );
+
+        // Sửa điều kiện ở đây: kiểm tra status "final_completed"
+        setShowResult(resultResponse.data.status === "final_completed");
+        console.log("Result status:", resultResponse.data.status);
+        console.log(
+          "Should show result:",
+          resultResponse.data.status === "final_completed"
+        );
+      } else {
+        console.log("No valid reservation result data found");
+        setReservationResult(null);
+        setShowResult(false);
+      }
+    } catch (error) {
+      console.error("Error fetching reservation result:", error);
+      setReservationResult(null);
+      setShowResult(false);
+    }
+  };
+
   // Thêm function kiểm tra xem đã đánh giá chưa
   const checkIfRated = async () => {
     try {
       setCheckingRating(true);
       const response = await ratingServices.checkRatingForReservation(
-        reservation._id
+        reservation.coupleTherapistID._id
       );
-      setHasRated(response.hasRated || false);
+      if (response.data) {
+        setHasRated(true);
+      }
     } catch (error) {
       console.error("Error checking rating status:", error);
     } finally {
@@ -107,9 +146,20 @@ export default function YourReservation({ route, navigation }) {
   const handlePressPayment = async (phase) => {
     try {
       setLoading(true);
+      console.log("Reservation to pay:", reservation);
+
+      // Chuyển đổi totalPrice sang số nguyên và đảm bảo không phải là 0
+      const totalPrice = parseInt(reservation.totalPrice) || 0;
+
+      if (totalPrice <= 0) {
+        Alert.alert("Error", "Invalid price amount. Please contact support.");
+        setLoading(false);
+        return;
+      }
+
       const response = await paymentServices.createPaymentUrl({
         reservationID: reservation._id,
-        totalPrice: reservation.totalPrice,
+        totalPrice: totalPrice, // Đảm bảo gửi dạng số
         phase: phase,
         platform: "mobile",
       });
@@ -194,6 +244,54 @@ export default function YourReservation({ route, navigation }) {
       reservation: reservation,
       therapist: reservation.coupleTherapistID,
     });
+  };
+
+  // New function to render the session result
+  const renderSessionResult = () => {
+    // Thêm logging để debug
+    console.log("Rendering session result:", {
+      showResult,
+      resultStatus: reservationResult?.status,
+      hasResult: !!reservationResult,
+    });
+
+    if (!showResult || !reservationResult) return null;
+
+    return (
+      <View style={styles.resultSection}>
+        <Text style={styles.resultTitle}>Session Summary</Text>
+
+        <View style={styles.resultDetail}>
+          <Text style={styles.resultSubtitle}>Session Notes</Text>
+          <Text style={styles.resultText}>
+            {reservationResult.sessionSummary}
+          </Text>
+        </View>
+
+        <View style={styles.resultDetail}>
+          <Text style={styles.resultSubtitle}>Issues Identified</Text>
+          {reservationResult.issuesIdentified?.map((issue, index) => (
+            <Text key={index} style={styles.resultBullet}>
+              • {issue}
+            </Text>
+          ))}
+        </View>
+
+        <View style={styles.resultDetail}>
+          <Text style={styles.resultSubtitle}>Therapist Recommendations</Text>
+          <Text style={styles.resultText}>
+            {reservationResult.therapistRecommendations}
+          </Text>
+        </View>
+
+        <View style={styles.resultDetail}>
+          <Text style={styles.resultSubtitle}>Homework</Text>
+          <Text style={styles.resultText}>
+            {reservationResult.homeworkAssignment}
+          </Text>
+        </View>
+      </View>
+    );
   };
 
   if (loading) {
@@ -354,18 +452,6 @@ export default function YourReservation({ route, navigation }) {
           </TouchableOpacity>
         )}
 
-        {reservation.status === "completed" && (
-          <TouchableOpacity
-            style={styles.confirmButton}
-            onPress={() => {
-              handlePressPayment("FINAL");
-            }}
-          >
-            <Ionicons name="cash-outline" size={20} color="#fff" />
-            <Text style={styles.cancelButtonText}>Pay The Final</Text>
-          </TouchableOpacity>
-        )}
-
         {reservation.status === "pending" && (
           <>
             <TouchableOpacity
@@ -379,7 +465,7 @@ export default function YourReservation({ route, navigation }) {
         )}
 
         {/* Thêm nút đánh giá cho trạng thái thanh toán FINAL */}
-        {reservation.status === "finished" && !hasRated && !checkingRating && (
+        {reservation.status === "completed" && !hasRated && !checkingRating && (
           <TouchableOpacity
             style={styles.rateButton}
             onPress={handleRateTherapist}
@@ -389,7 +475,7 @@ export default function YourReservation({ route, navigation }) {
           </TouchableOpacity>
         )}
 
-        {reservation.status === "finished" && hasRated && (
+        {reservation.status === "completed" && hasRated && (
           <View style={styles.ratedBadge}>
             <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
             <Text style={styles.ratedText}>
@@ -398,7 +484,8 @@ export default function YourReservation({ route, navigation }) {
           </View>
         )}
 
-        {reservation.status === "paid" && (
+        {/* Show Pay Final button only when there's a result with status "pending" */}
+        {reservationResult && reservationResult.status === "pending" && (
           <TouchableOpacity
             style={styles.confirmButton}
             onPress={() => {
@@ -409,6 +496,9 @@ export default function YourReservation({ route, navigation }) {
             <Text style={styles.cancelButtonText}>Pay The Final</Text>
           </TouchableOpacity>
         )}
+
+        {/* Show results section only when showResult is true (which requires status === "final_completed") */}
+        {showResult && reservationResult && renderSessionResult()}
       </ScrollView>
     </SafeAreaView>
   );

@@ -18,6 +18,7 @@ import reservationServices from "../../services/reservationServices";
 import packageServices from "../../services/packageServices";
 import { useFocusEffect } from "@react-navigation/native";
 import Toast from "react-native-toast-message";
+import ratingServices from "../../services/ratingServices";
 
 export default function TherapistDetailScreen({ route, navigation }) {
   const [activeTab, setActiveTab] = useState(1);
@@ -27,6 +28,8 @@ export default function TherapistDetailScreen({ route, navigation }) {
   const [therapistAvailability, setTherapistAvailability] = useState(null);
   const { userInfo } = useAuth();
   const [selectedPackage, setSelectedPackage] = useState(null);
+  const [ratings, setRatings] = useState([]);
+  const [loadingRatings, setLoadingRatings] = useState(false);
 
   // New state for booking modal
   const [bookingModalVisible, setBookingModalVisible] = useState(false);
@@ -82,6 +85,9 @@ export default function TherapistDetailScreen({ route, navigation }) {
               setSelectedPackage(packageList[0]);
             }
           }
+
+          // Fetch therapist ratings
+          fetchTherapistRatings();
         } catch (error) {
           console.log("Error while fetching data", error);
         }
@@ -90,6 +96,25 @@ export default function TherapistDetailScreen({ route, navigation }) {
       return () => {}; // cleanup function (if needed)
     }, [therapist._id])
   );
+
+  // New function to fetch therapist ratings
+  const fetchTherapistRatings = async () => {
+    try {
+      setLoadingRatings(true);
+      const response = await ratingServices.getRatingsByTherapistId(
+        therapist._id
+      );
+      console.log("Therapist ratings:", JSON.stringify(response, null, 2));
+
+      if (response && response.status === 200 && response.data) {
+        setRatings(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching therapist ratings:", error);
+    } finally {
+      setLoadingRatings(false);
+    }
+  };
 
   const renderStars = (rating) => {
     const stars = [];
@@ -175,6 +200,20 @@ export default function TherapistDetailScreen({ route, navigation }) {
     });
 
     return `${date} • ${startTime} - ${endTime}`;
+  };
+
+  const formatRatingDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+    return `${Math.floor(diffDays / 365)} years ago`;
   };
 
   const handleBookingSubmit = async () => {
@@ -341,43 +380,44 @@ export default function TherapistDetailScreen({ route, navigation }) {
           <View>
             <Text style={styles.sectionTitle}>Reviews</Text>
 
-            <View style={styles.reviewContainer}>
-              <View style={styles.reviewHeader}>
-                <Image
-                  source={{
-                    uri: "https://randomuser.me/api/portraits/women/22.jpg",
-                  }}
-                  style={styles.reviewerImage}
-                />
-                <Text style={styles.reviewerName}>Jane Doe</Text>
-                <Text style={styles.reviewDate}>2 weeks ago</Text>
+            {loadingRatings ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color="#4a6ee0" />
+                <Text style={styles.loadingText}>Loading reviews...</Text>
               </View>
-              {renderStars(5)}
-              <Text style={styles.reviewText}>
-                Dr. {therapist.userInfo?.fullname?.split(" ")[1]} was incredibly
-                helpful during our sessions. Their insights and advice really
-                transformed my relationship. Highly recommended!
-              </Text>
-            </View>
-
-            <View style={styles.reviewContainer}>
-              <View style={styles.reviewHeader}>
-                <Image
-                  source={{
-                    uri: "https://randomuser.me/api/portraits/men/43.jpg",
-                  }}
-                  style={styles.reviewerImage}
-                />
-                <Text style={styles.reviewerName}>John Smith</Text>
-                <Text style={styles.reviewDate}>1 month ago</Text>
+            ) : ratings.length > 0 ? (
+              ratings.map((rating, index) => (
+                <View key={index} style={styles.reviewContainer}>
+                  <View style={styles.reviewHeader}>
+                    <Image
+                      source={{
+                        uri:
+                          rating.userID.photoURL ||
+                          (rating.userID.gender === "Male"
+                            ? "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEz1ve3QQhGM3EKWe1dDjnQAOqyMv0RUEcnw&s"
+                            : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTxrd4dsitg-Rhwx0aUZsGjzqkZn34JbVC9-w&s"),
+                      }}
+                      style={styles.reviewerImage}
+                    />
+                    <Text style={styles.reviewerName}>
+                      {rating.userID.fullname}
+                    </Text>
+                    <Text style={styles.reviewDate}>
+                      {formatRatingDate(rating.createdAt)}
+                    </Text>
+                  </View>
+                  {renderStars(rating.rate)}
+                  {rating.content && (
+                    <Text style={styles.reviewText}>{rating.content}</Text>
+                  )}
+                </View>
+              ))
+            ) : (
+              <View style={styles.emptyReviewsContainer}>
+                <Ionicons name="star-outline" size={40} color="#ccc" />
+                <Text style={styles.emptyReviewsText}>No reviews yet</Text>
               </View>
-              {renderStars(4.5)}
-              <Text style={styles.reviewText}>
-                Professional, attentive, and insightful. Our couples therapy
-                sessions have made a significant positive impact on our
-                communication.
-              </Text>
-            </View>
+            )}
           </View>
         );
       case 3:

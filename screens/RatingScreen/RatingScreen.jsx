@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -12,13 +12,51 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./styles";
 import ratingServices from "../../services/ratingServices";
+import { useAuth } from "../../context/AuthContext";
 
 export default function RatingScreen({ route, navigation }) {
   const { reservation, therapist } = route.params;
+  const { userInfo } = useAuth();
 
   const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState("");
+  const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    console.log("RatingScreen - Reservation:", reservation._id);
+    console.log("RatingScreen - Therapist:", therapist._id);
+    console.log("RatingScreen - User:", userInfo?.data?.user?._id);
+
+    // Check if user has already rated this therapist for this reservation
+    checkExistingRating();
+  }, []);
+
+  const checkExistingRating = async () => {
+    try {
+      setLoading(true);
+      const response = await ratingServices.checkRatingForReservation(
+        therapist._id
+      );
+
+      console.log("Rating check response:", response);
+
+      // Chỉ hiển thị thông báo đã đánh giá nếu response có hasRated = true
+      // và có dữ liệu trong response
+      if (response && response.hasRated === true && response.data) {
+        Alert.alert(
+          "Already Rated",
+          "You have already submitted a rating for this session.",
+          [{ text: "OK", onPress: () => navigation.goBack() }]
+        );
+      } else {
+        console.log("No rating found, user can submit rating");
+      }
+    } catch (error) {
+      console.error("Error checking existing rating:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmitRating = async () => {
     if (rating < 1) {
@@ -29,21 +67,28 @@ export default function RatingScreen({ route, navigation }) {
     setLoading(true);
 
     try {
+      // Format the rating data according to your API requirements
       const ratingData = {
+        userID: reservation.userID._id,
         coupleTherapistID: therapist._id,
-        reservationID: reservation._id,
-        rating: rating,
-        comment: comment.trim(),
+        reservationID: reservation._id, // Include reservation ID
+        rate: rating, // Make sure field name matches API expectation
+        content: content.trim(),
       };
+
+      console.log("Submitting rating:", JSON.stringify(ratingData, null, 2));
 
       const response = await ratingServices.submitRating(ratingData);
 
-      if (response && response.status === "success") {
+      if (response && (response.status === 200 || response.status === 201)) {
         Alert.alert("Success", "Thank you for your feedback!", [
           { text: "OK", onPress: () => navigation.goBack() },
         ]);
       } else {
-        Alert.alert("Error", "Failed to submit your rating");
+        Alert.alert(
+          "Error",
+          response?.message || "Failed to submit your rating"
+        );
       }
     } catch (error) {
       console.error("Error submitting rating:", error);
@@ -53,6 +98,7 @@ export default function RatingScreen({ route, navigation }) {
     }
   };
 
+  // ...rest of the component remains the same...
   const renderStars = () => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
@@ -79,20 +125,18 @@ export default function RatingScreen({ route, navigation }) {
         >
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Rate Your Experience</Text>
+        <Text style={styles.headerTitle}>Rate Your Therapist</Text>
       </View>
 
       <View style={styles.content}>
         <View style={styles.therapistSection}>
-          {therapist.userInfo.photoURL && (
+          {therapist.photoURL && (
             <Image
-              source={{ uri: therapist.userInfo.photoURL }}
+              source={{ uri: therapist.photoURL }}
               style={styles.therapistImage}
             />
           )}
-          <Text style={styles.therapistName}>
-            {therapist.userInfo.fullname}
-          </Text>
+          <Text style={styles.therapistName}>{therapist.fullname}</Text>
         </View>
 
         <Text style={styles.ratingLabel}>How was your session?</Text>
@@ -119,8 +163,8 @@ export default function RatingScreen({ route, navigation }) {
           multiline={true}
           numberOfLines={5}
           placeholder="What did you like? What could be improved?"
-          value={comment}
-          onChangeText={setComment}
+          value={content}
+          onChangeText={setContent}
         />
 
         <TouchableOpacity

@@ -41,6 +41,7 @@ export default function ReservationsScreen({ navigation }) {
       if (response && response.status === 200) {
         // Update to use the new response format where reservations are in data.reservations
         setReservations(response.data.reservations || []);
+        console.log("Gọi rồi nè");
       } else {
         setError("Failed to load reservations");
       }

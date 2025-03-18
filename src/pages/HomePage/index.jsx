@@ -5,7 +5,7 @@ import GoogleCallback from "../Login/GoogleCallbackHandler";
 import { useContext, useEffect, useState } from "react";
 import { therapistService } from "../../services/api";
 import { AuthContext } from "../../contexts/AuthContextObject";
-import { VerificationModal } from "@components/VerificationModal";
+import { VerificationModal } from "../../components/VerificationModal";
 
 export function HomePage() {
   const params = new URLSearchParams(window.location.search);
@@ -23,11 +23,23 @@ export function HomePage() {
         const response = await therapistService.getTherapistIdByUserId(
           user._id
         );
-        setTherapistData(response.data);
-        console.log("Therapist data:", response);
 
-        if (response.data && response.data.isUpdatedInformation === false) {
-          setShowVerificationModal(true);
+        // Log the entire response to see its structure
+        console.log("Full API response:", JSON.stringify(response));
+
+        // Check if the response has a data property
+        if (response && response.data) {
+          setTherapistData(response.data);
+          console.log("Therapist data set:", response.data);
+
+          // Force convert to boolean to handle any type issues
+          const shouldShowModal = response.data.isUpdatedInformation === false;
+          console.log("Is isUpdatedInformation false?", shouldShowModal);
+
+          if (shouldShowModal) {
+            console.log("Setting showVerificationModal to TRUE");
+            setShowVerificationModal(true);
+          }
         }
       } catch (error) {
         console.error("Error fetching therapist data:", error);
@@ -41,6 +53,12 @@ export function HomePage() {
     setShowVerificationModal(false);
   };
 
+  // For debugging
+  useEffect(() => {
+    console.log("Current showVerificationModal state:", showVerificationModal);
+    console.log("Current therapist data:", therapistData);
+  }, [showVerificationModal, therapistData]);
+
   return (
     <>
       <HomeHero />
@@ -48,8 +66,9 @@ export function HomePage() {
       <FeaturedTherapists />
       {hasGoogleToken && <GoogleCallback />}
 
-      {showVerificationModal && user && (
-        <VerificationModal onClose={handleCloseModal} userId={user._id} />
+      {/* Remove debug elements and show proper modal */}
+      {therapistData && therapistData.isUpdatedInformation === false && (
+        <VerificationModal onClose={handleCloseModal} userId={user?._id} />
       )}
     </>
   );

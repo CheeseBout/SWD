@@ -46,22 +46,26 @@ export default function TherapistDetail() {
         setUser(userResponse.data.user);
 
         // Fetch availability - API returns data nested under data.availability
-        const availabilityResponse = await therapistService.getAvailability(
-          therapistId
-        );
-        console.log("Raw availability data:", availabilityResponse);
-
-        // Make sure we're setting the correct part of the response
-        if (
-          availabilityResponse.data &&
-          availabilityResponse.data.availability
-        ) {
-          setAvailabilities(availabilityResponse.data.availability);
-        } else {
-          console.error(
-            "Unexpected availability response structure:",
-            availabilityResponse
+        try {
+          const availabilityResponse = await therapistService.getAvailability(
+            therapistId
           );
+          console.log("Raw availability data:", availabilityResponse);
+
+          // Make sure we're setting the correct part of the response
+          if (
+            availabilityResponse.data &&
+            availabilityResponse.data.availability
+          ) {
+            setAvailabilities(availabilityResponse.data.availability);
+          } else {
+            console.log("No availability data structure found in response");
+            setAvailabilities([]);
+          }
+        } catch (availabilityError) {
+          console.log("Error fetching availability:", availabilityError);
+          // Don't set error state, just set availabilities to empty array
+          setAvailabilities([]);
         }
       } catch (err) {
         setError("Failed to load therapist details. Please try again.");
@@ -110,12 +114,13 @@ export default function TherapistDetail() {
   }
 
   // Extract data
-  const displayCertificates = showAllCertificates
-    ? therapist.certificates
-    : therapist.certificates.slice(0, 2);
   const verifiedCertificates = therapist.certificates.filter(
-    (cert) => cert.isCertificateVerified || cert.status === "approved"
+    (cert) => cert.status === "approved"
   );
+
+  const displayCertificates = showAllCertificates
+    ? verifiedCertificates
+    : verifiedCertificates.slice(0, 2);
 
   // Calculate age from DOB
   const dob = new Date(user.dob);
@@ -238,37 +243,19 @@ export default function TherapistDetail() {
             ))}
           </div>
         ) : (
-          <div>
-            <div className="bg-yellow-50 border rounded-xl p-6 text-yellow-800 flex">
-              <div className="flex-shrink-0 bg-yellow-100 p-2 rounded-full">
-                <ClockIcon className="h-6 w-6 text-yellow-600" />
-              </div>
-              <div className="ml-4">
-                <h3 className="font-medium text-yellow-800">
-                  No available time slots
-                </h3>
-                <p className="mt-1 text-yellow-700">
-                  There are currently no available time slots. Please check back
-                  later or contact the therapist directly to discuss scheduling
-                  options.
-                </p>
-              </div>
+          <div className="bg-blue-50 border rounded-xl p-6 text-gray-800 flex">
+            <div className="flex-shrink-0 bg-blue-100 p-2 rounded-full">
+              <CalendarIcon className="h-6 w-6 text-blue-600" />
             </div>
-
-            {/* Debug information for development */}
-            <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-              <h4 className="text-lg font-semibold text-gray-700">
-                Debug Information
-              </h4>
-              <p className="text-sm text-gray-600">
-                Raw availability count:{" "}
-                {availabilities ? availabilities.length : 0}
+            <div className="ml-4">
+              <h3 className="font-medium text-gray-800">
+                No availability schedule set
+              </h3>
+              <p className="mt-1 text-gray-600">
+                This therapist hasn't set up their availability calendar yet.
+                Please check back later or contact the therapist directly to
+                discuss scheduling options.
               </p>
-              <div className="mt-2 text-xs text-gray-600">
-                <pre className="overflow-auto max-h-40 bg-gray-200 p-3 rounded">
-                  {JSON.stringify(availabilities, null, 2)}
-                </pre>
-              </div>
             </div>
           </div>
         )}
@@ -283,10 +270,13 @@ export default function TherapistDetail() {
             options or request a custom appointment time.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to={`/book/${therapist._id}`} className="btn btn-primary">
-              <CalendarIcon className="h-5 w-5 mr-2" />
-              View All Available Times
-            </Link>
+            <button
+              className="btn btn-primary"
+              onClick={() => setActiveTab("about")}
+            >
+              <UserIcon className="h-5 w-5 mr-2" />
+              View Therapist Profile
+            </button>
           </div>
         </div>
       </div>
@@ -609,7 +599,7 @@ export default function TherapistDetail() {
                 Professional Certifications
               </h2>
 
-              {therapist.certificates.length > 0 ? (
+              {verifiedCertificates.length > 0 ? (
                 <>
                   <div className="space-y-6">
                     {displayCertificates.map((certificate) => (
@@ -626,18 +616,10 @@ export default function TherapistDetail() {
                                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                               />
                               <div className="absolute top-2 right-2">
-                                {certificate.status === "approved" ||
-                                certificate.isCertificateVerified ? (
-                                  <span className="flex items-center text-white bg-green-500 px-3 py-1 rounded-full text-sm shadow-md">
-                                    <CheckCircleIcon className="h-4 w-4 mr-1" />
-                                    Verified
-                                  </span>
-                                ) : (
-                                  <span className="flex items-center text-white bg-yellow-500 px-3 py-1 rounded-full text-sm shadow-md">
-                                    <ClockIcon className="h-4 w-4 mr-1" />
-                                    Pending
-                                  </span>
-                                )}
+                                <span className="flex items-center text-white bg-green-500 px-3 py-1 rounded-full text-sm shadow-md">
+                                  <CheckCircleIcon className="h-4 w-4 mr-1" />
+                                  Verified
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -682,7 +664,7 @@ export default function TherapistDetail() {
                     ))}
                   </div>
 
-                  {therapist.certificates.length > 2 && (
+                  {verifiedCertificates.length > 2 && (
                     <button
                       onClick={() =>
                         setShowAllCertificates(!showAllCertificates)
@@ -691,7 +673,7 @@ export default function TherapistDetail() {
                     >
                       {showAllCertificates
                         ? "Show Less"
-                        : `Show All Certificates (${therapist.certificates.length})`}
+                        : `Show All Certificates (${verifiedCertificates.length})`}
                       <ChevronDownIcon
                         className={`h-5 w-5 ml-2 transform transition-transform ${
                           showAllCertificates ? "rotate-180" : ""
@@ -703,7 +685,7 @@ export default function TherapistDetail() {
               ) : (
                 <div className="bg-yellow-50 border-l-4 border-yellow-400 p-5 rounded-r-lg">
                   <p className="text-yellow-800">
-                    This therapist has no certificates yet.
+                    This therapist has no verified certificates yet.
                   </p>
                 </div>
               )}

@@ -8,8 +8,15 @@ export function FeaturedTherapists() {
 
   useEffect(() => {
     const fetchTherapists = async () => {
-      const response = await therapistService.getAllTherapists();
-      setTherapists(response.data);
+      try {
+        const response = await therapistService.getAllTherapists();
+        console.log("Therapists response:", response);
+        if (response?.data) {
+          setTherapists(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching therapists:", error);
+      }
     };
     fetchTherapists();
   }, []);
@@ -35,37 +42,44 @@ export function FeaturedTherapists() {
             >
               <figure className="px-4 pt-4">
                 <img
-                  src={therapist.userInfo.photoURL}
-                  alt={therapist.userInfo.fullname}
+                  src={
+                    therapist.userInfo?.photoURL ||
+                    "https://via.placeholder.com/150"
+                  }
+                  alt={therapist.userInfo?.fullname || "Therapist"}
                   className="rounded-xl w-full h-48 object-cover"
                 />
               </figure>
               <div className="card-body">
                 <h3 className="card-title text-xl font-semibold">
-                  {therapist.userInfo.fullname}
+                  {therapist.userInfo?.fullname || "Unnamed Therapist"}
                 </h3>
                 <p className="text-sm text-gray-600">
-                  {therapist.certificates.length > 0
-                    ? therapist.certificates[0].category
+                  {therapist.certificates && therapist.certificates.length > 0
+                    ? therapist.certificates.find(
+                        (cert) => cert.status === "approved"
+                      )?.category || "General Therapist"
                     : "General Therapist"}
                 </p>
-                <div className="badge badge-primary">{therapist.category}</div>
+                <div className="badge badge-primary">
+                  {therapist.category || "General"}
+                </div>
 
                 <div className="flex items-center mt-2">
                   <div className="flex items-center">
                     <StarIcon className="h-5 w-5 text-yellow-400" />
                     <span className="ml-1 font-semibold">
-                      {therapist.rating}
+                      {therapist.averageRating || 0}
                     </span>
                   </div>
                   <span className="text-sm text-gray-500 ml-2">
-                    ({therapist.reviewCount} reviews)
+                    ({therapist.ratingCount || 0} reviews)
                   </span>
                 </div>
 
                 <div className="mt-2">
                   <span className="text-sm font-medium text-green-600">
-                    {therapist.availability.length > 0
+                    {therapist.availability && therapist.availability.length > 0
                       ? "Available"
                       : "Contact for availability"}
                   </span>

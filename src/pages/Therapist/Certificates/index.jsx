@@ -74,7 +74,6 @@ export default function TherapistCertificates() {
         ...formData,
         issuedDate: dayjs(formData.issuedDate).toISOString(),
         expiryDate: dayjs(formData.expiryDate).toISOString(),
-        therapistId,
       };
 
       await certificateServices.createCertificate(payload);
@@ -112,6 +111,7 @@ export default function TherapistCertificates() {
       case "pending":
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
       case "rejected":
+      case "denied":
         return "bg-red-100 text-red-800 border-red-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
@@ -240,15 +240,18 @@ export default function TherapistCertificates() {
                             </div>
                           </div>
 
-                          {certificate.reason && (
+                          {(certificate.reason || certificate.denialReason) && (
                             <div className="mt-3 p-2 bg-red-50 text-red-700 text-xs rounded">
                               <p className="font-medium">Rejection reason:</p>
-                              <p>{certificate.reason}</p>
+                              <p>
+                                {certificate.denialReason || certificate.reason}
+                              </p>
                             </div>
                           )}
 
                           <div className="mt-4 pt-3 border-t border-gray-100">
-                            {certificate.isCertificateVerified ? (
+                            {certificate.isCertificateVerified ||
+                            certificate.status === "approved" ? (
                               <div className="flex items-center text-green-600">
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"

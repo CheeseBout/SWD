@@ -11,10 +11,13 @@ import {
   FaUser,
   FaCalendarAlt,
   FaChevronRight,
+  FaMapMarkerAlt,
+  FaUserTag,
 } from "react-icons/fa";
 
 const schema = yup.object({
   fullname: yup.string().required("Full name is required"),
+  username: yup.string().required("Username is required"),
   email: yup
     .string()
     .email("Invalid email address")
@@ -23,6 +26,7 @@ const schema = yup.object({
     .string()
     .min(8, "Password must be at least 8 characters")
     .required("Password is required"),
+  address: yup.string().required("Address is required"),
   confirmPassword: yup
     .string()
     .oneOf([yup.ref("password"), null], "Passwords must match")
@@ -32,6 +36,7 @@ const schema = yup.object({
     .required("Date of birth is required")
     .max(new Date(), "Date cannot be in the future"),
   gender: yup.string().required("Gender is required"),
+  role: yup.string().required("Role is required"),
 });
 
 export default function RegisterPage() {
@@ -121,6 +126,30 @@ export default function RegisterPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                Username
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaUserTag className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  className={`w-full pl-10 pr-3 py-3 border ${
+                    errors.username ? "border-red-300" : "border-gray-300"
+                  } rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  placeholder="johndoe123"
+                  {...register("username")}
+                />
+              </div>
+              {errors.username && (
+                <p className="mt-2 text-sm text-red-600">
+                  {errors.username.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email Address
               </label>
               <div className="relative">
@@ -139,6 +168,30 @@ export default function RegisterPage() {
               {errors.email && (
                 <p className="mt-2 text-sm text-red-600">
                   {errors.email.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Address
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaMapMarkerAlt className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  className={`w-full pl-10 pr-3 py-3 border ${
+                    errors.address ? "border-red-300" : "border-gray-300"
+                  } rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  placeholder="123 Main St, City"
+                  {...register("address")}
+                />
+              </div>
+              {errors.address && (
+                <p className="mt-2 text-sm text-red-600">
+                  {errors.address.message}
                 </p>
               )}
             </div>
@@ -188,6 +241,27 @@ export default function RegisterPage() {
                   </p>
                 )}
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Role
+              </label>
+              <select
+                className={`w-full py-3 px-3 border ${
+                  errors.role ? "border-red-300" : "border-gray-300"
+                } rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                {...register("role")}
+              >
+                <option value="">Select role</option>
+                <option value="member">Member</option>
+                <option value="couple_therapist">Couple Therapist</option>
+              </select>
+              {errors.role && (
+                <p className="mt-2 text-sm text-red-600">
+                  {errors.role.message}
+                </p>
+              )}
             </div>
 
             <div>

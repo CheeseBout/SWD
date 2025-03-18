@@ -80,21 +80,13 @@ class AuthController {
   });
 
   updateExpertProfile = catchAsync(async (req, res) => {
-    const {
-      title,
-      issuedDate,
-      expiryDate,
-      documentURL,
-      description,
-      category,
-    } = req.body;
+    const { title, issuedDate, expiryDate, documentURL, category } = req.body;
     const userId = req.user._id;
     const result = await authServices.updateExpertProfile(userId, {
       title,
       issuedDate,
       expiryDate,
       documentURL,
-      description,
       category,
     });
     return OK(res, "Expert profile updated successfully", result);

@@ -12,6 +12,7 @@ const appConfig = require("../configs/app.config");
 const userRepo = require("../repositories/user.repo");
 const { OAuth2Client } = require("google-auth-library");
 const { getAuthURL } = require("../configs/googleAuth.config");
+const coupleTherapistRepo = require("../repositories/coupleTherapist.repo");
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -70,7 +71,7 @@ class AuthService {
 
   async updateExpertProfile(
     userId,
-    { title, issuedDate, expiryDate, documentURL, description, category }
+    { title, issuedDate, expiryDate, documentURL, category }
   ) {
     const user = await authRepo.findUserById(userId);
     if (!user || user.role !== "couple_therapist") {
@@ -82,8 +83,12 @@ class AuthService {
       throw new APIError(400, "Expert profile not found");
     }
 
+    const coupleTherapistId =
+      await coupleTherapistRepo.getCoupleTherapistIdByUserId(userId);
+    console.log("coupleTherapistId", coupleTherapistId);
     const certificate = await authRepo.createCertificate({
       title,
+      coupleTherapistID: coupleTherapistId,
       issuedDate,
       expiryDate,
       documentURL,
@@ -107,7 +112,6 @@ class AuthService {
 
     return await authRepo.updateTherapistProfile(userId, {
       $push: { certificates: therapistCertificate },
-      description,
     });
   }
 

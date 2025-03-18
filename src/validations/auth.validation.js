@@ -60,22 +60,9 @@ const changePasswordValidation = {
 const updateExpertProfileValidation = {
   body: Joi.object().keys({
     title: Joi.string().required(),
-    issuedDate: Joi.string()
-      .pattern(/^([0-2][0-9]|3[0-1])\/(0[1-9]|1[0-2])\/\d{4}$/)
-      .required()
-      .messages({
-        "string.pattern.base": "Date must be in the format DD/MM/YYYY",
-      }),
-
-    expiryDate: Joi.string()
-      .pattern(/^([0-2][0-9]|3[0-1])\/(0[1-9]|1[0-2])\/\d{4}$/)
-      .required()
-      .messages({
-        "string.pattern.base": "Date must be in the format DD/MM/YYYY",
-      }),
-
+    issuedDate: Joi.string().required(),
+    expiryDate: Joi.string().required(),
     documentURL: Joi.string().uri().required(),
-    description: Joi.string().required(),
     category: Joi.string().required(),
   }),
 };

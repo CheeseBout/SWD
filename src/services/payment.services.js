@@ -19,6 +19,8 @@ const reservationsRepo = require("../repositories/reservations.repo");
 const APIError = require("../utils/ApiError");
 const packageServices = require("./package.services");
 const RESERVATION = require("../models/reservation.model");
+const emailService = require("./email.services");
+const USER = require("../models/user.model");
 
 const vnpay = new VNPay({
   tmnCode: config.VNPay.vnp_TmnCode,
@@ -242,11 +244,164 @@ class PaymentService {
       console.log(
         `Payment ${payment._id} updated. New status: ${payment.status}`
       );
+
+      // Send email notification after successful payment
+      await this.sendPaymentSuccessEmail(payment, transaction);
+
       return true;
     } catch (error) {
       console.error("Error updating payment:", error);
       return false;
     }
+  }
+
+  // Get user email from reservation
+  async getUserEmailFromReservation(reservationId) {
+    try {
+      const reservation = await RESERVATION.findById(reservationId);
+      if (!reservation || !reservation.user) {
+        console.error(
+          `Reservation not found or user not associated: ${reservationId}`
+        );
+        return null;
+      }
+
+      const user = await USER.findById(reservation.user);
+      if (!user || !user.email) {
+        console.error(
+          `User not found or email not available for reservation: ${reservationId}`
+        );
+        return null;
+      }
+
+      return {
+        email: user.email,
+        name: user.fullname || user.email.split("@")[0],
+        reservationData: reservation,
+      };
+    } catch (error) {
+      console.error("Error getting user email from reservation:", error);
+      return null;
+    }
+  }
+
+  // Send email notification for successful payment
+  async sendPaymentSuccessEmail(payment, transaction) {
+    try {
+      // Get reservation and user details
+      const reservation = await RESERVATION.findById(payment.reservation)
+        .populate("package")
+        .populate("therapist");
+
+      if (!reservation) {
+        console.error(`Reservation not found for payment: ${payment._id}`);
+        return false;
+      }
+
+      const userInfo = await this.getUserEmailFromReservation(
+        payment.reservation
+      );
+      if (!userInfo || !userInfo.email) {
+        console.error(
+          `Could not find user email for payment notification: ${payment._id}`
+        );
+        return false;
+      }
+
+      // Format payment amount
+      const formattedAmount =
+        transaction.amount.toLocaleString("vi-VN") + " VND";
+
+      // Get session details for email
+      const packageName = reservation.package
+        ? reservation.package.name
+        : "Marriage Counseling Session";
+      const therapistName = reservation.therapist
+        ? reservation.therapist.fullname
+        : "your therapist";
+      const sessionTime = reservation.startTime
+        ? new Date(reservation.startTime).toLocaleString("vi-VN")
+        : "scheduled time";
+
+      // Determine if this is the deposit or final payment
+      const isDeposit = transaction.phase === "DEPOSIT";
+      const isComplete = payment.totalPaid >= payment.totalPrice;
+
+      // Create email subject and content
+      const subject = isDeposit
+        ? `Deposit Payment Successful - Marriage Counseling Session`
+        : `Final Payment Successful - Marriage Counseling Session`;
+
+      // Create HTML content for email based on payment phase
+      const emailHtml = this.createPaymentEmailTemplate({
+        userName: userInfo.name,
+        packageName,
+        therapistName,
+        sessionTime,
+        amount: formattedAmount,
+        isDeposit,
+        isComplete,
+        remainingAmount: isDeposit
+          ? (payment.totalPrice - payment.totalPaid).toLocaleString("vi-VN") +
+            " VND"
+          : "0 VND",
+      });
+
+      // Send the email
+      await emailService.sendEmail(
+        userInfo.email,
+        subject,
+        `Your payment of ${formattedAmount} for ${packageName} has been successfully processed.`,
+        emailHtml
+      );
+
+      console.log(`Payment notification email sent to ${userInfo.email}`);
+      return true;
+    } catch (error) {
+      console.error("Failed to send payment success email:", error);
+      return false;
+    }
+  }
+
+  // Create HTML template for payment notification email
+  createPaymentEmailTemplate({
+    userName,
+    packageName,
+    therapistName,
+    sessionTime,
+    amount,
+    isDeposit,
+    isComplete,
+    remainingAmount,
+  }) {
+    const title = isDeposit
+      ? "Deposit Payment Successful"
+      : "Final Payment Successful";
+    const status = isComplete ? "Payment Completed" : "Deposit Received";
+
+    return `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+        <h2 style="color: #28a745; text-align: center;">${title}</h2>
+        <div style="margin: 20px 0; padding: 15px; background-color: #d4edda; border-radius: 4px;">
+          <p style="margin: 10px 0;">Dear ${userName},</p>
+          <p style="margin: 10px 0;">Your payment of <strong>${amount}</strong> for your marriage counseling session has been successfully processed.</p>
+          <p style="margin: 10px 0;"><strong>Service:</strong> ${packageName}</p>
+          <p style="margin: 10px 0;"><strong>Therapist:</strong> ${therapistName}</p>
+          <p style="margin: 10px 0;"><strong>Session Time:</strong> ${sessionTime}</p>
+          <p style="margin: 10px 0;"><strong>Payment Status:</strong> ${status}</p>
+          ${
+            isDeposit
+              ? `<p style="margin: 10px 0;"><strong>Remaining Balance:</strong> ${remainingAmount}</p>`
+              : ""
+          }
+        </div>
+        ${
+          isDeposit
+            ? `<p style="color: #666; font-size: 14px; text-align: center;">Please remember to complete the final payment before your session.</p>`
+            : `<p style="color: #666; font-size: 14px; text-align: center;">Thank you for your payment. We look forward to helping you in your session.</p>`
+        }
+      </div>
+    `;
   }
 
   async validatePaymentReturn(query) {

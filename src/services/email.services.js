@@ -27,7 +27,7 @@ class EmailService {
   };
 
   sendVerificationEmail = async ({ email, emailVerificationToken }) => {
-    const user = await userRepo.getByEmail(email);
+    const user = await userRepo.getByEmail({ email });
 
     if (!user) {
       throw new APIError(400, "User not found");

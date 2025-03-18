@@ -1,5 +1,6 @@
 const APIError = require("../utils/ApiError");
 const questionsRepo = require("../repositories/questions.repo");
+const optionsRepo = require("../repositories/options.repo");
 
 class QuestionsBankService {
   async createQuestionBank(req) {
@@ -172,6 +173,18 @@ class QuestionsBankService {
         questionBank: requestBody.questionBank,
       });
 
+      const newOptions = await optionsRepo.createOption({
+        questionID: newQuestion._id,
+        options: requestBody.options,
+      });
+
+      console.log("New options", newOptions);
+
+      //push new options to options in the questions object
+      await questionsRepo.updateQuestionOptions(newQuestion._id, {
+        options: newOptions.options,
+      });
+
       const updatedQuestionBank = await questionsRepo.addQuestionToBank(
         requestBody.questionBank,
         newQuestion._id
@@ -180,6 +193,7 @@ class QuestionsBankService {
       return {
         data: newQuestion,
         questionBank: updatedQuestionBank,
+        options: newOptions,
       };
     } catch (error) {
       if (error.name === "CastError") {

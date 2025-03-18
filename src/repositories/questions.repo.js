@@ -27,6 +27,14 @@ class QuestionsRepository {
     );
   }
 
+  async updateQuestionOptions(questionId, { options }) {
+    return await QUESTIONS.findByIdAndUpdate(
+      questionId,
+      { options },
+      { new: true }
+    );
+  }
+
   async updateQuestionStatus(questionId, status) {
     return await QUESTIONS.findByIdAndUpdate(
       questionId,

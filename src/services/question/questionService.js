@@ -27,12 +27,15 @@ export const questionService = {
     return response.data;
   },
 
-  deleteQuestion: async (question) => {
-    const response = await api.put(
-      "/api/v1/questions/delete-question",
-      question
-    );
-    return response.data;
+  deleteQuestion: async (data) => {
+    console.log("Sending delete request with data:", data);
+    try {
+      const response = await api.put("/api/v1/questions/delete-question", data);
+      return response.data;
+    } catch (error) {
+      console.error("Delete question error details:", error.response?.data);
+      throw error;
+    }
   },
 
   getAllQuestionBanks: async () => {
@@ -86,22 +89,6 @@ export const questionService = {
     const response = await api.post("/api/v1/options/create-option", option);
     return response.data;
   },
-  
-  createOptionsForQuestion: async (questionID, options) => {
-    // Format the payload exactly as the API expects
-    const payload = {
-      questionId: questionID,  // Changed from questionID to questionId
-      options
-    };
-    console.log("Options API payload:", JSON.stringify(payload));
-    
-    // Try a different endpoint path that might be correct
-    const response = await api.post("/api/v1/options/create-question-options", payload);
-    
-    // Log the response for debugging
-    console.log("Options API response:", response.data);
-    return response.data;
-  },
 
   updateOption: async (option) => {
     const response = await api.put("/api/v1/options/update", option);
@@ -111,5 +98,53 @@ export const questionService = {
   deleteOption: async () => {
     const response = await api.delete("/api/v1/options/delete");
     return response.data;
+  },
+
+  getQuestionsByTopic: async (topicId) => {
+    try {
+      const response = await questionService.getAllQuestionBanks();
+
+      const questionBanks = response?.data?.data || [];
+      const topicQuestionBanks = questionBanks.filter(
+        (bank) => bank.topic === topicId && bank.status === "active"
+      );
+
+      const questionIds = topicQuestionBanks.flatMap(
+        (bank) => bank.questions || []
+      );
+
+      if (questionIds.length === 0) {
+        return { data: { questions: [] } };
+      }
+
+      const questionPromises = questionIds.map(async (qId) => {
+        try {
+          if (typeof qId === "object" && qId !== null && qId._id) {
+            return qId;
+          }
+
+          const questionData = await questionService.getQuestionById(qId);
+          return questionData.data || null;
+        } catch (err) {
+          console.error(`Error fetching question with ID ${qId}:`, err);
+          return null;
+        }
+      });
+
+      const questions = await Promise.all(questionPromises);
+      const validQuestions = questions.filter((q) => q !== null);
+
+      const formattedQuestions = validQuestions.map((q) => ({
+        _id: q._id,
+        questionText: q.questionContent || q.question || "Unknown question",
+        options: q.options || [],
+        type: q.type || "multiple-choice",
+      }));
+
+      return { data: { questions: formattedQuestions } };
+    } catch (error) {
+      console.error("Error getting questions by topic:", error);
+      throw error;
+    }
   },
 };

@@ -11,6 +11,7 @@ import {
   UserGroupIcon,
   MenuAlt2Icon,
   XIcon,
+  ShoppingBagIcon, // Add this new icon for Package Management
 } from "@heroicons/react/outline";
 
 const AdminSideBar = () => {
@@ -157,6 +158,11 @@ const AdminSideBar = () => {
                   label="User Management"
                 />
                 <NavItem
+                  to="/admin/packages"
+                  icon={ShoppingBagIcon}
+                  label="Package Management"
+                />
+                <NavItem
                   to="/manage/blogs"
                   icon={ClipboardCheckIcon}
                   label="Blog Management"
@@ -167,7 +173,7 @@ const AdminSideBar = () => {
                   label="Topic Management"
                 />
                 <NavItem
-                  to="/admin/questions"
+                  to="/admin/question-banks"
                   icon={QuestionMarkCircleIcon}
                   label="Question Management"
                 />

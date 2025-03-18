@@ -1,78 +1,100 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { quizService } from "../../services/api";
+import { useNavigate } from "react-router-dom";
+import { packageService } from "../../services/api";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { toast } from "react-toastify";
 import AdminSideBar from "../../components/Sidebar/AdminSidebar";
 import {
-  PlusIcon,
   PencilAltIcon,
   SearchIcon,
   FilterIcon,
   EyeIcon,
-  DocumentTextIcon,
   LockOpenIcon,
   LockClosedIcon,
 } from "@heroicons/react/outline";
 
-export default function QuizzesManagement() {
-  const [quizzes, setQuizzes] = useState([]);
-  const [filteredQuizzes, setFilteredQuizzes] = useState([]);
+export default function PackagesManagement() {
+  const [packages, setPackages] = useState([]);
+  const [filteredPackages, setFilteredPackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [currentQuiz, setCurrentQuiz] = useState(null);
+  const [currentPackage, setCurrentPackage] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [therapistFilter, setTherapistFilter] = useState("");
+  const [therapists, setTherapists] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const quizzesPerPage = 8;
+  const packagesPerPage = 8;
+
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchQuizzes = async () => {
+    const fetchPackages = async () => {
       try {
         setLoading(true);
-        const response = await quizService.getAllQuizzes();
-        let quizData = [];
+        const response = await packageService.getAllPackages();
+        let packageData = [];
 
-        if (response?.data?.quizzes) {
-          quizData = response.data.quizzes;
-        } else if (response?.quizzes) {
-          quizData = response.quizzes;
+        if (response?.data) {
+          packageData = response.data;
         } else if (Array.isArray(response)) {
-          quizData = response;
+          packageData = response;
         } else {
-          throw new Error("Invalid quiz data format");
+          console.error("Unexpected response format:", response);
+          throw new Error("Invalid package data format");
         }
 
-        quizData.sort((a, b) => {
-          const dateA = new Date(a.lastEdited || a.createdAt || a.created_at);
-          const dateB = new Date(b.lastEdited || b.createdAt || b.created_at);
+        packageData.sort((a, b) => {
+          const dateA = new Date(a.updatedAt || a.createdAt);
+          const dateB = new Date(b.updatedAt || b.createdAt);
           return dateB - dateA;
         });
 
-        setQuizzes(quizData);
-        setFilteredQuizzes(quizData);
+        setPackages(packageData);
+        setFilteredPackages(packageData);
+
+        const uniqueTherapists = [];
+        const therapistIds = new Set();
+
+        packageData.forEach((pkg) => {
+          if (
+            pkg.coupleTherapistID &&
+            !therapistIds.has(pkg.coupleTherapistID._id)
+          ) {
+            therapistIds.add(pkg.coupleTherapistID._id);
+            uniqueTherapists.push({
+              id: pkg.coupleTherapistID._id,
+              name:
+                pkg.coupleTherapistID.userID?.fullname || "Unknown Therapist",
+            });
+          }
+        });
+
+        setTherapists(uniqueTherapists);
       } catch (err) {
-        console.error("Error fetching quizzes:", err);
-        setError("Failed to load quizzes. Please try again later.");
+        console.error("Error fetching packages:", err);
+        setError("Failed to load packages. Please try again later.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchQuizzes();
+    fetchPackages();
   }, [refreshTrigger]);
 
   useEffect(() => {
-    let results = quizzes;
+    let results = packages;
 
     if (searchTerm) {
       results = results.filter(
-        (quiz) =>
-          quiz.quizName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (quiz.quizDescription &&
-            quiz.quizDescription
+        (pkg) =>
+          pkg.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (pkg.description &&
+            pkg.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (pkg.coupleTherapistID?.userID?.fullname &&
+            pkg.coupleTherapistID.userID.fullname
               .toLowerCase()
               .includes(searchTerm.toLowerCase()))
       );
@@ -80,24 +102,32 @@ export default function QuizzesManagement() {
 
     if (statusFilter !== "all") {
       results = results.filter(
-        (quiz) => quiz.status.toLowerCase() === statusFilter.toLowerCase()
+        (pkg) =>
+          (statusFilter === "active" && pkg.isActive) ||
+          (statusFilter === "inactive" && !pkg.isActive)
       );
     }
 
-    setFilteredQuizzes(results);
+    if (therapistFilter) {
+      results = results.filter(
+        (pkg) => pkg.coupleTherapistID?._id === therapistFilter
+      );
+    }
+
+    setFilteredPackages(results);
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, quizzes]);
+  }, [searchTerm, statusFilter, therapistFilter, packages]);
 
-  const indexOfLastQuiz = currentPage * quizzesPerPage;
-  const indexOfFirstQuiz = indexOfLastQuiz - quizzesPerPage;
-  const currentQuizzes = filteredQuizzes.slice(
-    indexOfFirstQuiz,
-    indexOfLastQuiz
+  const indexOfLastPackage = currentPage * packagesPerPage;
+  const indexOfFirstPackage = indexOfLastPackage - packagesPerPage;
+  const currentPackages = filteredPackages.slice(
+    indexOfFirstPackage,
+    indexOfLastPackage
   );
-  const totalPages = Math.ceil(filteredQuizzes.length / quizzesPerPage);
+  const totalPages = Math.ceil(filteredPackages.length / packagesPerPage);
 
-  const handleToggleStatus = (quiz) => {
-    setCurrentQuiz(quiz);
+  const handleToggleStatus = (pkg) => {
+    setCurrentPackage(pkg);
     document.getElementById("toggle_status_modal").showModal();
   };
 
@@ -105,26 +135,40 @@ export default function QuizzesManagement() {
     try {
       setLoading(true);
 
-      if (currentQuiz.status === "active") {
-        await quizService.deleteQuiz({ quizId: currentQuiz._id });
-        toast.success("Quiz deactivated successfully");
+      const updateData = {
+        packageId: currentPackage._id,
+        isActive: !currentPackage.isActive,
+      };
+
+      if (currentPackage.isActive) {
+        await packageService.softDeletePackage(currentPackage._id);
+        toast.success("Package deactivated successfully");
       } else {
-        await quizService.activateQuiz({ quizId: currentQuiz._id });
-        toast.success("Quiz activated successfully");
+        await packageService.updatePackage(currentPackage._id, updateData);
+        toast.success("Package activated successfully");
       }
 
       setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
-      console.error("Error updating quiz status:", err);
+      console.error("Error updating package status:", err);
       toast.error(
         `Failed to ${
-          currentQuiz.status === "active" ? "deactivate" : "activate"
-        } quiz`
+          currentPackage.isActive ? "deactivate" : "activate"
+        } package`
       );
     } finally {
       setLoading(false);
       document.getElementById("toggle_status_modal").close();
     }
+  };
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "VND",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(price);
   };
 
   const handleSearch = (e) => {
@@ -133,6 +177,10 @@ export default function QuizzesManagement() {
 
   const handleStatusFilter = (e) => {
     setStatusFilter(e.target.value);
+  };
+
+  const handleTherapistFilter = (e) => {
+    setTherapistFilter(e.target.value);
   };
 
   const Pagination = () => {
@@ -177,14 +225,14 @@ export default function QuizzesManagement() {
     );
   };
 
-  if (loading && quizzes.length === 0)
+  if (loading && packages.length === 0)
     return (
       <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
         <AdminSideBar />
         <div className="flex-1 p-6 md:p-8 flex items-center justify-center">
           <div className="text-center">
             <LoadingSpinner size="lg" />
-            <p className="mt-4 text-gray-600">Loading quizzes...</p>
+            <p className="mt-4 text-gray-600">Loading packages...</p>
           </div>
         </div>
       </div>
@@ -215,10 +263,10 @@ export default function QuizzesManagement() {
       <div className="flex-1 p-4 md:p-8 overflow-y-auto">
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Quizzes Management
+            Packages Management
           </h1>
           <p className="text-gray-600">
-            Create, edit and manage your assessment quizzes
+            Manage and monitor service packages offered by therapists
           </p>
         </header>
 
@@ -232,7 +280,7 @@ export default function QuizzesManagement() {
               value={searchTerm}
               onChange={handleSearch}
               className="input input-bordered w-full pl-10"
-              placeholder="Search quizzes..."
+              placeholder="Search packages..."
             />
           </div>
 
@@ -251,40 +299,40 @@ export default function QuizzesManagement() {
             </select>
           </div>
 
-          <div className="flex justify-start lg:justify-end">
-            <Link
-              to="/admin/quizzes/create"
-              className="btn btn-primary w-full lg:w-auto"
+          <div className="relative rounded-md shadow-sm">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FilterIcon className="h-5 w-5 text-gray-400" />
+            </div>
+            <select
+              value={therapistFilter}
+              onChange={handleTherapistFilter}
+              className="select select-bordered w-full pl-10"
             >
-              <PlusIcon className="h-5 w-5" />
-              Add New Quiz
-            </Link>
+              <option value="">All Therapists</option>
+              {therapists.map((therapist) => (
+                <option key={therapist.id} value={therapist.id}>
+                  {therapist.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="stat bg-white shadow-sm rounded-lg">
-            <div className="stat-title">Total Quizzes</div>
-            <div className="stat-value">{quizzes.length}</div>
+            <div className="stat-title">Total Packages</div>
+            <div className="stat-value">{packages.length}</div>
           </div>
           <div className="stat bg-white shadow-sm rounded-lg">
             <div className="stat-title">Active</div>
             <div className="stat-value text-green-600">
-              {
-                quizzes.filter(
-                  (quiz) => (quiz.status || "").toLowerCase() === "active"
-                ).length
-              }
+              {packages.filter((pkg) => pkg.isActive).length}
             </div>
           </div>
           <div className="stat bg-white shadow-sm rounded-lg">
             <div className="stat-title">Inactive</div>
             <div className="stat-value text-gray-600">
-              {
-                quizzes.filter(
-                  (quiz) => (quiz.status || "").toLowerCase() === "inactive"
-                ).length
-              }
+              {packages.filter((pkg) => !pkg.isActive).length}
             </div>
           </div>
         </div>
@@ -295,7 +343,7 @@ export default function QuizzesManagement() {
           </div>
         )}
 
-        {!loading && filteredQuizzes.length === 0 ? (
+        {!loading && filteredPackages.length === 0 ? (
           <div className="bg-white shadow-md rounded-lg p-8 text-center">
             <div className="flex flex-col items-center justify-center py-12">
               <div className="bg-gray-100 rounded-full p-6 mb-4">
@@ -310,38 +358,35 @@ export default function QuizzesManagement() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={1}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    d="M20 7l-8-4-8 4m16 0l-8 4m-8-4l8 4m8 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"
                   />
                 </svg>
               </div>
               <h3 className="text-xl font-medium text-gray-900 mb-2">
-                No quizzes found
+                No packages found
               </h3>
-              {searchTerm || statusFilter !== "all" ? (
+              {searchTerm || statusFilter !== "all" || therapistFilter ? (
                 <p className="text-gray-600 mb-6">
                   Try adjusting your search or filter criteria
                 </p>
               ) : (
                 <p className="text-gray-600 mb-6">
-                  Get started by creating your first quiz
+                  No therapist packages are available in the system
                 </p>
               )}
               <div className="flex flex-wrap gap-4 justify-center">
-                {(searchTerm || statusFilter !== "all") && (
+                {(searchTerm || statusFilter !== "all" || therapistFilter) && (
                   <button
                     onClick={() => {
                       setSearchTerm("");
                       setStatusFilter("all");
+                      setTherapistFilter("");
                     }}
                     className="btn btn-outline"
                   >
                     Clear Filters
                   </button>
                 )}
-                <Link to="/admin/quizzes/create" className="btn btn-primary">
-                  <PlusIcon className="h-5 w-5 mr-2" />
-                  Create New Quiz
-                </Link>
               </div>
             </div>
           </div>
@@ -352,16 +397,19 @@ export default function QuizzesManagement() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Quiz Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                      Description
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                      Last Edited
+                      Package Name
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Questions
+                      Therapist
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Price
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Discount
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Commission
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
@@ -372,96 +420,115 @@ export default function QuizzesManagement() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {currentQuizzes.map((quiz) => (
+                  {currentPackages.map((pkg) => (
                     <tr
-                      key={quiz._id}
+                      key={pkg._id}
                       className="hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-md flex items-center justify-center mr-3">
-                            {quiz.imageUrl ? (
-                              <img
-                                src={quiz.imageUrl}
-                                alt=""
-                                className="h-10 w-10 object-cover rounded-md"
-                                onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.src =
-                                    "https://via.placeholder.com/40x40?text=Quiz";
-                                }}
-                              />
-                            ) : (
-                              <DocumentTextIcon className="h-6 w-6 text-gray-400" />
-                            )}
-                          </div>
                           <div>
                             <div className="text-sm font-medium text-gray-900 line-clamp-1">
-                              {quiz.quizName}
+                              {pkg.name}
+                            </div>
+                            <div className="text-xs text-gray-500 line-clamp-1">
+                              {pkg.description}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 hidden lg:table-cell">
-                        <div className="text-sm text-gray-500 line-clamp-2">
-                          {quiz.quizDescription || "No description"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 hidden md:table-cell">
-                        <div className="text-sm text-gray-500">
-                          {new Date(
-                            quiz.lastEdited || quiz.createdAt || quiz.created_at
-                          ).toLocaleDateString("en-GB")}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-8 w-8 rounded-full overflow-hidden bg-gray-100">
+                            {pkg.coupleTherapistID?.userID?.photoURL ? (
+                              <img
+                                src={pkg.coupleTherapistID.userID.photoURL}
+                                alt=""
+                                className="h-full w-full object-cover"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src =
+                                    "https://via.placeholder.com/40x40?text=T";
+                                }}
+                              />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center bg-blue-100 text-blue-800 font-medium">
+                                {pkg.coupleTherapistID?.userID?.fullname?.[0] ||
+                                  "T"}
+                              </div>
+                            )}
+                          </div>
+                          <div className="ml-3">
+                            <div className="text-sm font-medium text-gray-900">
+                              {pkg.coupleTherapistID?.userID?.fullname ||
+                                "Unknown Therapist"}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {pkg.coupleTherapistID?.userID?.email || ""}
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900">
-                          {quiz.questions?.length || 0}
+                          {formatPrice(pkg.price)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">
+                          {pkg.discount}%
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">
+                          {pkg.comissionFee}%{pkg.commissionFee}%
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <span
                           className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            quiz.status === "active"
+                            pkg.isActive
                               ? "bg-green-100 text-green-800"
                               : "bg-gray-100 text-gray-800"
                           }`}
                         >
-                          {quiz.status || "Inactive"}
+                          {pkg.isActive ? "Active" : "Inactive"}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end space-x-2">
-                          <a
-                            href={`/quizzes/${quiz._id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            onClick={() =>
+                              navigate(`/admin/packages/detail/${pkg._id}`)
+                            }
                             className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
-                            title="View quiz"
+                            title="View package details"
                           >
                             <EyeIcon className="h-5 w-5" />
-                          </a>
-                          <Link
-                            to={`/admin/quizzes/edit/${quiz._id}`}
+                          </button>
+                          <button
+                            onClick={() =>
+                              navigate(`/admin/packages/edit/${pkg._id}`)
+                            }
                             className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
-                            title="Edit quiz"
+                            title="Edit package"
                           >
                             <PencilAltIcon className="h-5 w-5" />
-                          </Link>
+                          </button>
                           <button
-                            onClick={() => handleToggleStatus(quiz)}
+                            onClick={() => handleToggleStatus(pkg)}
                             className={`p-1 rounded ${
-                              quiz.status === "active"
+                              pkg.isActive
                                 ? "text-red-600 hover:text-red-900 hover:bg-red-50"
                                 : "text-green-600 hover:text-green-900 hover:bg-green-50"
                             }`}
                             title={
-                              quiz.status === "active"
-                                ? "Deactivate quiz"
-                                : "Activate quiz"
+                              pkg.isActive
+                                ? "Deactivate package"
+                                : "Activate package"
                             }
                           >
-                            {quiz.status === "active" ? (
+                            {pkg.isActive ? (
                               <LockClosedIcon className="h-5 w-5" />
                             ) : (
                               <LockOpenIcon className="h-5 w-5" />
@@ -479,11 +546,11 @@ export default function QuizzesManagement() {
 
             <div className="px-6 py-4 border-t bg-gray-50">
               <div className="text-sm text-gray-500">
-                Showing {indexOfFirstQuiz + 1}-
-                {Math.min(indexOfLastQuiz, filteredQuizzes.length)} of{" "}
-                {filteredQuizzes.length} quizzes
-                {(searchTerm || statusFilter !== "all") && (
-                  <span> (filtered from {quizzes.length} total quizzes)</span>
+                Showing {indexOfFirstPackage + 1}-
+                {Math.min(indexOfLastPackage, filteredPackages.length)} of{" "}
+                {filteredPackages.length} packages
+                {(searchTerm || statusFilter !== "all" || therapistFilter) && (
+                  <span> (filtered from {packages.length} total packages)</span>
                 )}
               </div>
             </div>
@@ -493,15 +560,15 @@ export default function QuizzesManagement() {
         <dialog id="toggle_status_modal" className="modal">
           <div className="modal-box">
             <h3 className="text-lg font-bold">
-              {currentQuiz?.status === "active"
-                ? "Deactivate Quiz"
-                : "Activate Quiz"}
+              {currentPackage?.isActive
+                ? "Deactivate Package"
+                : "Activate Package"}
             </h3>
             <p className="py-4">
-              {currentQuiz
+              {currentPackage
                 ? `Are you sure you want to ${
-                    currentQuiz.status === "active" ? "deactivate" : "activate"
-                  } "${currentQuiz?.quizName}"?`
+                    currentPackage.isActive ? "deactivate" : "activate"
+                  } "${currentPackage?.name}"?`
                 : ""}
             </p>
             <div className="modal-action">
@@ -511,12 +578,12 @@ export default function QuizzesManagement() {
               <button
                 onClick={confirmToggleStatus}
                 className={`btn btn-sm ${
-                  currentQuiz?.status === "active"
+                  currentPackage?.isActive
                     ? "bg-red-600 hover:bg-red-700"
                     : "bg-green-600 hover:bg-green-700"
                 } text-white`}
               >
-                {currentQuiz?.status === "active" ? "Deactivate" : "Activate"}
+                {currentPackage?.isActive ? "Deactivate" : "Activate"}
               </button>
             </div>
           </div>

@@ -15,6 +15,18 @@ const coupleTherapistSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    ratingCount: {
+      type: Number,
+      default: 0,
+    },
+    ratingSum: {
+      type: Number,
+      default: 0,
+    },
+    averageRating: {
+      type: Number,
+      default: 0,
+    },
     certificates: [
       {
         certificateID: {
@@ -64,6 +76,14 @@ const coupleTherapistSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Thêm middleware để tự động tính toán averageRating khi lưu
+coupleTherapistSchema.pre("save", function (next) {
+  if (this.ratingCount > 0) {
+    this.averageRating = this.ratingSum / this.ratingCount;
+  }
+  next();
+});
 
 const COUPLETHERAPIST = mongoose.model(
   "CoupleTherapist",

@@ -83,6 +83,125 @@ class EmailService {
     );
   };
 
+  async sendPaymentNotification({
+    email,
+    name,
+    therapistName,
+    amount,
+    date,
+    phase,
+    isComplete,
+    sessionDate,
+    transactionCode,
+  }) {
+    const subject = isComplete
+      ? "Payment Completed - Thank You!"
+      : `Payment Confirmation - ${
+          phase === "DEPOSIT" ? "Deposit" : "Final Payment"
+        }`;
+
+    let phaseDescription;
+    if (phase === "DEPOSIT") {
+      phaseDescription = "Initial Deposit";
+    } else if (phase === "FINAL") {
+      phaseDescription = "Final Payment";
+    } else {
+      phaseDescription = "Payment";
+    }
+
+    const html = `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 0; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+        <!-- Header -->
+        <div style="background-color: #4CAF50; color: white; padding: 20px; text-align: center; border-top-left-radius: 5px; border-top-right-radius: 5px;">
+          <h1 style="margin: 0; font-size: 24px;">Payment Receipt</h1>
+          <p style="margin: 5px 0 0 0;">Thank you for your payment</p>
+        </div>
+        
+        <!-- Receipt Body -->
+        <div style="padding: 30px; background-color: white;">
+          <div style="border-bottom: 1px solid #eee; padding-bottom: 20px; margin-bottom: 20px;">
+            <p>Dear <strong>${name}</strong>,</p>
+            <p>Your ${phaseDescription.toLowerCase()} has been successfully processed.</p>
+          </div>
+          
+          <!-- Payment Details Table -->
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+            <tr>
+              <td style="padding: 10px; border-bottom: 1px solid #eee; width: 40%;"><strong>Transaction ID:</strong></td>
+              <td style="padding: 10px; border-bottom: 1px solid #eee;"><code style="background-color: #f4f4f4; padding: 3px 5px; border-radius: 3px;">${transactionCode}</code></td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Amount:</strong></td>
+              <td style="padding: 10px; border-bottom: 1px solid #eee; font-size: 18px; color: #4CAF50;">$${amount}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Date:</strong></td>
+              <td style="padding: 10px; border-bottom: 1px solid #eee;">${date}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Payment Type:</strong></td>
+              <td style="padding: 10px; border-bottom: 1px solid #eee;">${phaseDescription}</td>
+            </tr>
+            <tr>
+              <td style="padding: 10px; border-bottom: 1px solid #eee;"><strong>Payment Status:</strong></td>
+              <td style="padding: 10px; border-bottom: 1px solid #eee;">
+                <span style="color: ${
+                  isComplete ? "#4CAF50" : "#FF9800"
+                }; font-weight: bold;">
+                  ${
+                    isComplete ? "Completed" : "Partial - More Payment Required"
+                  }
+                </span>
+              </td>
+            </tr>
+          </table>
+          
+          <!-- Session Details -->
+          <div style="background-color: #f9f9f9; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
+            <h2 style="margin-top: 0; font-size: 18px; color: #333;">Session Details</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0;"><strong>Therapist:</strong></td>
+                <td style="padding: 8px 0;">${therapistName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0;"><strong>Session Date:</strong></td>
+                <td style="padding: 8px 0;">${sessionDate}</td>
+              </tr>
+            </table>
+          </div>
+          
+          ${
+            isComplete
+              ? `<div style="background-color: #e8f5e9; padding: 15px; border-left: 4px solid #4CAF50; margin: 20px 0;">
+              <p style="margin: 0; color: #2E7D32;"><strong>Your service is now fully paid.</strong> We look forward to seeing you at your session.</p>
+            </div>`
+              : `<div style="background-color: #fff8e1; padding: 15px; border-left: 4px solid #FFC107; margin: 20px 0;">
+              <p style="margin: 0; color: #FF8F00;"><strong>Reminder:</strong> A remaining balance must be paid before your session. Please complete your payment to confirm your booking.</p>
+            </div>`
+          }
+          
+          <p>If you have any questions about your payment or services, please don't hesitate to contact our support team.</p>
+          <p>Thank you for choosing our services.</p>
+          <p style="margin-bottom: 0;">Best regards,<br>Marriage Counseling Team</p>
+        </div>
+        
+        <!-- Footer -->
+        <div style="background-color: #f4f4f4; padding: 15px; text-align: center; color: #777; font-size: 12px; border-bottom-left-radius: 5px; border-bottom-right-radius: 5px;">
+          <p style="margin: 0;">Please keep this email for your records.</p>
+          <p style="margin: 5px 0 0 0;">&copy; ${new Date().getFullYear()} Marriage Counseling Services. All rights reserved.</p>
+        </div>
+      </div>
+    `;
+
+    await this.sendEmail(
+      email,
+      subject,
+      `Payment Receipt - Transaction ID: ${transactionCode}`,
+      html
+    );
+  }
+
   async sendCertificateStatus({
     email,
     certificateTitle,

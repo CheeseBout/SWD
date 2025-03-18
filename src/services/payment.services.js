@@ -19,8 +19,8 @@ const reservationsRepo = require("../repositories/reservations.repo");
 const APIError = require("../utils/ApiError");
 const packageServices = require("./package.services");
 const RESERVATION = require("../models/reservation.model");
-const emailService = require("./email.services");
-const USER = require("../models/user.model");
+const emailServices = require("./email.services");
+const userRepo = require("../repositories/user.repo");
 
 const vnpay = new VNPay({
   tmnCode: config.VNPay.vnp_TmnCode,
@@ -63,55 +63,96 @@ class PaymentService {
         );
       }
 
-      // Use the totalPrice parameter directly without recalculating the discount
+      // Ensure totalPrice is a valid number
+      if (isNaN(totalPrice) || totalPrice <= 0) {
+        throw new APIError(400, `Invalid total price: ${totalPrice}`);
+      }
+
+      console.log(
+        `Creating payment with totalPrice: ${totalPrice}, phase: ${phase}`
+      );
+
       // Find or create payment record
       let payment = await PAYMENT.findOne({ reservation: reservationID });
       if (!payment) {
         payment = new PAYMENT({
           reservation: new mongoose.Types.ObjectId(reservationID),
-          totalPrice: totalPrice, // Use the total price directly
+          totalPrice: totalPrice,
           totalPaid: 0,
           status: "PENDING",
         });
         await payment.save();
       } else {
-        // Update existing payment record with the provided price
-        payment.totalPrice = totalPrice; // Use the provided total price
+        // Update existing payment record
+        payment.totalPrice = totalPrice;
         await payment.save();
       }
 
-      // Calculate payment amount
-      const amount =
-        phase === "DEPOSIT"
-          ? Math.round(payment.totalPrice * 0.5)
-          : Math.round(payment.totalPrice - payment.totalPaid);
+      console.log(
+        `Payment record: totalPrice=${payment.totalPrice}, totalPaid=${payment.totalPaid}`
+      );
 
-      console.log("Amount to pay:", amount, "VND"); // Log for debugging
+      // Calculate payment amount - use direct approach
+      let amount;
+
+      if (phase === "DEPOSIT") {
+        // 50% deposit
+        amount = Math.round(totalPrice * 0.5);
+      } else if (phase === "FINAL") {
+        // For final payment, calculate remaining amount
+        const remainingAmount = totalPrice - payment.totalPaid;
+        amount = Math.round(remainingAmount);
+
+        // If totalPaid is equal to totalPrice, something is wrong
+        if (payment.totalPaid >= totalPrice) {
+          throw new APIError(400, "Payment is already complete");
+        }
+      } else {
+        // For any other case, use full amount
+        amount = Math.round(totalPrice);
+      }
+
+      // Extra safety check
+      if (amount <= 0) {
+        throw new APIError(
+          400,
+          `Cannot process payment with zero or negative amount (${amount}). Please check your payment configuration.`
+        );
+      }
+
+      console.log(`Final amount to be charged: ${amount}`);
 
       // Generate transaction code with platform identifier
       const timestamp = moment().format("HHmmss");
       const transactionCode = `${platform}_${timestamp}`;
 
-      // Create expiration date (5 minutes from now)
+      // Create expiration date
       const expDate = new Date();
       expDate.setMinutes(expDate.getMinutes() + 5);
 
-      console.log("Platform:", platform, "ReturnUrl:", returnUrl);
-
       // Build payment URL using vnpay library
       const paymentUrl = vnpay.buildPaymentUrl({
-        vnp_Amount: amount, // The library will multiply by 100
-        vnp_IpAddr: "52.151.214.177", // Azure host IP
+        vnp_Amount: amount,
+        vnp_IpAddr: "52.151.214.177",
         vnp_TxnRef: transactionCode,
         vnp_OrderInfo: "Thanh toan don hang: " + transactionCode,
         vnp_OrderType: ProductCode.Other,
-        vnp_ReturnUrl: returnUrl || config.VNPay.vnp_ReturnUrl, // Use provided returnUrl if available
+        vnp_ReturnUrl: returnUrl || config.VNPay.vnp_ReturnUrl,
         vnp_Locale: VnpLocale.VN,
         vnp_BankCode: "VNBANK",
         vnp_ExpireDate: dateFormat(expDate),
       });
 
-      // Create transaction record with returnUrl
+      // Debug: Extract the amount from the generated URL
+      try {
+        const paymentUrlObj = new URL(paymentUrl);
+        const urlAmount = paymentUrlObj.searchParams.get("vnp_Amount");
+        console.log(`Amount in payment URL: ${urlAmount}`);
+      } catch (e) {
+        console.log("Could not parse URL for debugging");
+      }
+
+      // Create transaction record
       const transaction = new TRANSACTION({
         payment: payment._id,
         phase,
@@ -120,13 +161,17 @@ class PaymentService {
         transactionCode: transactionCode,
         status: "PENDING",
         platform,
-        returnUrl: returnUrl, // Save returnUrl in transaction
+        returnUrl: returnUrl,
       });
 
       await transaction.save();
+      console.log(
+        `Transaction created: ID=${transaction._id}, amount=${amount}`
+      );
 
       return { paymentUrl, transaction };
     } catch (error) {
+      console.error("Error in createPaymentUrl:", error);
       throw new Error("Error processing payment: " + error.message);
     }
   }
@@ -146,6 +191,11 @@ class PaymentService {
         return IpnOrderNotFound;
       }
 
+      console.log(
+        "VNPay IPN - Transaction found:",
+        JSON.stringify(transaction)
+      );
+
       // Kiểm tra trạng thái giao dịch
       if (
         verify.vnp_TransactionStatus === this.failResCode ||
@@ -161,13 +211,17 @@ class PaymentService {
         return InpOrderAlreadyConfirmed;
       }
 
-      // Sửa lại so sánh số tiền
-      // Lấy số tiền từ VNPay (đã bao gồm việc nhân với 100)
+      // Fix amount comparison logic - VNPay amounts are multiplied by 100
       const vnpAmount = parseInt(verify.vnp_Amount);
-      // Số tiền trong DB (chưa nhân với 100)
-      const dbAmount = transaction.amount;
+      const dbAmount = transaction.amount * 100; // Multiply by 100 to match VNPay format
 
-      // So sánh số tiền (cần nhân dbAmount với 100 để so sánh)
+      console.log("Amount comparison:", {
+        vnpAmount,
+        dbAmount,
+        transactionAmount: transaction.amount,
+        isMatch: vnpAmount === dbAmount,
+      });
+
       if (vnpAmount !== dbAmount) {
         console.log("Amount mismatch:", vnpAmount, "vs", dbAmount);
         return IpnInvalidAmount;
@@ -188,12 +242,78 @@ class PaymentService {
         payment.status =
           payment.totalPaid >= payment.totalPrice ? "COMPLETED" : "IN_PROGRESS";
         await payment.save();
+
+        // Send payment notification email
+        try {
+          const reservation = await RESERVATION.findById(payment.reservation)
+            .populate("client")
+            .populate("therapist");
+
+          if (reservation) {
+            // Send notification to client
+            await this.sendPaymentNotification({
+              transaction,
+              payment,
+              reservation,
+              isComplete: payment.status === "COMPLETED",
+            });
+          }
+        } catch (emailError) {
+          console.error(
+            "Error sending payment notification email:",
+            emailError
+          );
+          // Don't fail the transaction just because email failed
+        }
       }
 
       return IpnSuccess;
     } catch (error) {
       console.error(error);
       return IpnUnknownError;
+    }
+  }
+
+  // New method to send payment notification
+  async sendPaymentNotification({
+    transaction,
+    payment,
+    reservation,
+    isComplete,
+  }) {
+    try {
+      // Get client info
+      const client = reservation.client;
+      const therapist = reservation.therapist;
+
+      if (!client || !therapist) {
+        console.error(
+          "Missing client or therapist info for payment notification"
+        );
+        return;
+      }
+
+      // Format date
+      const paymentDate = moment().format("MMMM Do YYYY, h:mm:ss a");
+
+      // Send notification to client
+      await emailServices.sendPaymentNotification({
+        email: client.email,
+        name: client.fullName || client.username,
+        therapistName: therapist.fullName || therapist.username,
+        amount: transaction.amount,
+        date: paymentDate,
+        phase: transaction.phase,
+        isComplete: isComplete,
+        sessionDate: reservation.appointmentDate
+          ? moment(reservation.appointmentDate).format("MMMM Do YYYY")
+          : "Scheduled session",
+        transactionCode: transaction.transactionCode, // Add transaction code
+      });
+
+      console.log(`Payment notification email sent to client: ${client.email}`);
+    } catch (error) {
+      console.error("Error in sendPaymentNotification:", error);
     }
   }
 
@@ -238,6 +358,8 @@ class PaymentService {
       // Xác định trạng thái mới của payment
       if (payment.totalPaid >= payment.totalPrice) {
         payment.status = "COMPLETED";
+      } else {
+        payment.status = "IN_PROGRESS";
       }
 
       await payment.save();
@@ -245,163 +367,11 @@ class PaymentService {
         `Payment ${payment._id} updated. New status: ${payment.status}`
       );
 
-      // Send email notification after successful payment
-      await this.sendPaymentSuccessEmail(payment, transaction);
-
       return true;
     } catch (error) {
       console.error("Error updating payment:", error);
       return false;
     }
-  }
-
-  // Get user email from reservation
-  async getUserEmailFromReservation(reservationId) {
-    try {
-      const reservation = await RESERVATION.findById(reservationId);
-      if (!reservation || !reservation.user) {
-        console.error(
-          `Reservation not found or user not associated: ${reservationId}`
-        );
-        return null;
-      }
-
-      const user = await USER.findById(reservation.user);
-      if (!user || !user.email) {
-        console.error(
-          `User not found or email not available for reservation: ${reservationId}`
-        );
-        return null;
-      }
-
-      return {
-        email: user.email,
-        name: user.fullname || user.email.split("@")[0],
-        reservationData: reservation,
-      };
-    } catch (error) {
-      console.error("Error getting user email from reservation:", error);
-      return null;
-    }
-  }
-
-  // Send email notification for successful payment
-  async sendPaymentSuccessEmail(payment, transaction) {
-    try {
-      // Get reservation and user details
-      const reservation = await RESERVATION.findById(payment.reservation)
-        .populate("package")
-        .populate("therapist");
-
-      if (!reservation) {
-        console.error(`Reservation not found for payment: ${payment._id}`);
-        return false;
-      }
-
-      const userInfo = await this.getUserEmailFromReservation(
-        payment.reservation
-      );
-      if (!userInfo || !userInfo.email) {
-        console.error(
-          `Could not find user email for payment notification: ${payment._id}`
-        );
-        return false;
-      }
-
-      // Format payment amount
-      const formattedAmount =
-        transaction.amount.toLocaleString("vi-VN") + " VND";
-
-      // Get session details for email
-      const packageName = reservation.package
-        ? reservation.package.name
-        : "Marriage Counseling Session";
-      const therapistName = reservation.therapist
-        ? reservation.therapist.fullname
-        : "your therapist";
-      const sessionTime = reservation.startTime
-        ? new Date(reservation.startTime).toLocaleString("vi-VN")
-        : "scheduled time";
-
-      // Determine if this is the deposit or final payment
-      const isDeposit = transaction.phase === "DEPOSIT";
-      const isComplete = payment.totalPaid >= payment.totalPrice;
-
-      // Create email subject and content
-      const subject = isDeposit
-        ? `Deposit Payment Successful - Marriage Counseling Session`
-        : `Final Payment Successful - Marriage Counseling Session`;
-
-      // Create HTML content for email based on payment phase
-      const emailHtml = this.createPaymentEmailTemplate({
-        userName: userInfo.name,
-        packageName,
-        therapistName,
-        sessionTime,
-        amount: formattedAmount,
-        isDeposit,
-        isComplete,
-        remainingAmount: isDeposit
-          ? (payment.totalPrice - payment.totalPaid).toLocaleString("vi-VN") +
-            " VND"
-          : "0 VND",
-      });
-
-      // Send the email
-      await emailService.sendEmail(
-        userInfo.email,
-        subject,
-        `Your payment of ${formattedAmount} for ${packageName} has been successfully processed.`,
-        emailHtml
-      );
-
-      console.log(`Payment notification email sent to ${userInfo.email}`);
-      return true;
-    } catch (error) {
-      console.error("Failed to send payment success email:", error);
-      return false;
-    }
-  }
-
-  // Create HTML template for payment notification email
-  createPaymentEmailTemplate({
-    userName,
-    packageName,
-    therapistName,
-    sessionTime,
-    amount,
-    isDeposit,
-    isComplete,
-    remainingAmount,
-  }) {
-    const title = isDeposit
-      ? "Deposit Payment Successful"
-      : "Final Payment Successful";
-    const status = isComplete ? "Payment Completed" : "Deposit Received";
-
-    return `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
-        <h2 style="color: #28a745; text-align: center;">${title}</h2>
-        <div style="margin: 20px 0; padding: 15px; background-color: #d4edda; border-radius: 4px;">
-          <p style="margin: 10px 0;">Dear ${userName},</p>
-          <p style="margin: 10px 0;">Your payment of <strong>${amount}</strong> for your marriage counseling session has been successfully processed.</p>
-          <p style="margin: 10px 0;"><strong>Service:</strong> ${packageName}</p>
-          <p style="margin: 10px 0;"><strong>Therapist:</strong> ${therapistName}</p>
-          <p style="margin: 10px 0;"><strong>Session Time:</strong> ${sessionTime}</p>
-          <p style="margin: 10px 0;"><strong>Payment Status:</strong> ${status}</p>
-          ${
-            isDeposit
-              ? `<p style="margin: 10px 0;"><strong>Remaining Balance:</strong> ${remainingAmount}</p>`
-              : ""
-          }
-        </div>
-        ${
-          isDeposit
-            ? `<p style="color: #666; font-size: 14px; text-align: center;">Please remember to complete the final payment before your session.</p>`
-            : `<p style="color: #666; font-size: 14px; text-align: center;">Thank you for your payment. We look forward to helping you in your session.</p>`
-        }
-      </div>
-    `;
   }
 
   async validatePaymentReturn(query) {
@@ -413,7 +383,25 @@ class PaymentService {
         transactionCode: query.vnp_TxnRef,
       }).lean();
 
-      console.log("Transaction found:", transaction);
+      console.log("Transaction found:", JSON.stringify(transaction, null, 2));
+
+      if (transaction) {
+        // Get payment details for logging
+        const payment = await PAYMENT.findById(transaction.payment).lean();
+        console.log("Related payment:", JSON.stringify(payment, null, 2));
+
+        // Log amount details for debugging
+        const vnpAmountFromQuery = query.vnp_Amount
+          ? parseInt(query.vnp_Amount)
+          : "not provided";
+        console.log("Amount comparison:", {
+          amountInTransaction: transaction.amount,
+          amountInVnpay: vnpAmountFromQuery,
+          totalPriceInPayment: payment ? payment.totalPrice : "unknown",
+          totalPaidInPayment: payment ? payment.totalPaid : "unknown",
+          phase: transaction.phase,
+        });
+      }
 
       // IMPORTANT: Explicitly check platform
       const platform = transaction?.platform || "web";

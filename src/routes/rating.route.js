@@ -197,8 +197,92 @@ const { auth } = require("../middlewares/auth.middleware");
  *         description: Rating not found
  */
 
+/**
+ * @swagger
+ * /rating/therapist/{therapistId}:
+ *   get:
+ *     summary: Get all ratings for a specific therapist
+ *     tags: [Ratings]
+ *     parameters:
+ *       - in: path
+ *         name: therapistId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the therapist
+ *     responses:
+ *       200:
+ *         description: List of therapist ratings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "success"
+ *                 message:
+ *                   type: string
+ *                   example: "Therapist ratings retrieved successfully"
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Rating'
+ *       400:
+ *         description: Missing therapist ID parameter
+ *       404:
+ *         description: No ratings found for this therapist
+ */
+
+/**
+ * @swagger
+ * /rating/check/{coupleTherapistID}:
+ *   get:
+ *     summary: Check if ratings exist for a specific therapist
+ *     tags: [Ratings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: coupleTherapistID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the therapist
+ *     responses:
+ *       200:
+ *         description: Rating check results
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "success"
+ *                 message:
+ *                   type: string
+ *                   example: "Rating check completed"
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Rating'
+ *       400:
+ *         description: Error checking rating
+ *       401:
+ *         description: Authentication required
+ *       403:
+ *         description: Permission denied
+ */
+
 router.post("/", auth, ratingController.createRating);
 router.get("/", ratingController.getAllRating);
+router.get("/therapist/:therapistId", ratingController.getRatingByTherapistId);
+router.get(
+  "/check/:coupleTherapistID",
+  auth,
+  ratingController.checkRatingForReservation
+);
 router.get("/:ratingId", ratingController.getRatingById);
 router.put("/:ratingId", auth, ratingController.updateRating);
 router.delete("/:ratingId", auth, ratingController.deleteRating);

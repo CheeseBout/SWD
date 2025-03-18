@@ -8,7 +8,7 @@ const ratingSchema = mongoose.Schema(
     },
     coupleTherapistID: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Reservation",
+      ref: "CoupleTherapist",
       require: true,
     },
     content: {

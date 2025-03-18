@@ -2,15 +2,62 @@ const ratingRepo = require("../repositories/rating.repo");
 const APIError = require("../utils/ApiError");
 
 class RatingService {
-  createRating = async (rating) => {
-    if (req.user.role !== "member") {
-      throw new APIError(403, "Permission denied");
+  createRating = async (req, rating) => {
+    if (!req || !req.user) {
+      throw new APIError(403, "Permission denied: User not authenticated");
     }
+
+    console.log("req.user.role", req.user.role);
+
+    if (req.user.role !== "member") {
+      throw new APIError(403, "Permission denied: Insufficient privileges");
+    }
+
     const duplicate = await ratingRepo.checkDuplicate(rating);
     if (duplicate) throw new APIError(400, "Duplicate rating");
-    return await ratingRepo.create(rating);
+
+    // Tạo rating mới
+    const newRating = await ratingRepo.create(rating);
+
+    // Cập nhật rating cho therapist
+    await ratingRepo.updateRatingToTherapist(
+      newRating.coupleTherapistID,
+      newRating.rate
+    );
+
+    return newRating;
   };
 
+  checkRatingForReservation = async (req, coupleTherapistID) => {
+    try {
+      console.log("Looking for ratings with therapist ID:", coupleTherapistID);
+
+      if (!coupleTherapistID) {
+        throw new Error("Missing coupleTherapistID parameter");
+      }
+
+      // Kiểm tra và log ID người dùng hiện tại nếu có
+      const userID = req && req.user ? req.user.id : null;
+      console.log("Current user ID:", userID);
+
+      const ratings = await ratingRepo.checkRatingForReservation(
+        coupleTherapistID
+      );
+      console.log("Ratings found:", ratings);
+
+      return ratings;
+    } catch (error) {
+      console.error("Error in service:", error);
+      throw new APIError(
+        400,
+        "Error checking rating for reservation: " + error.message
+      );
+    }
+  };
+
+  getRatingByTherapistId = async (therapistId) => {
+    return await ratingRepo.getRatingByTherapistId(therapistId);
+  };
   getAllRating = async () => {
     return await ratingRepo.getAll();
   };
@@ -19,19 +66,43 @@ class RatingService {
     return await ratingRepo.getById(ratingID);
   };
 
-  updateRating = async (ratingID, rating) => {
-    if (req.user.role !== "member") {
-      throw new APIError(403, "Permission denied");
+  updateRating = async (req, ratingID, rating) => {
+    if (!req || !req.user) {
+      throw new APIError(403, "Permission denied: User not authenticated");
     }
+
+    if (req.user.role !== "member") {
+      throw new APIError(403, "Permission denied: Insufficient privileges");
+    }
+
+    const existing = await ratingRepo.getById(ratingID);
+    if (!existing) throw new APIError(404, "Rating not found");
+
+    // Check if the user owns this rating or has admin rights
+    if (
+      existing.userID.toString() !== req.user.id &&
+      req.user.role !== "admin"
+    ) {
+      throw new APIError(403, "You can only edit your own ratings");
+    }
+
     const duplicate = await ratingRepo.checkDuplicate(rating);
-    if (duplicate) throw new APIError(400, "Duplicate rating");
+    if (duplicate && duplicate._id.toString() !== ratingID) {
+      throw new APIError(400, "Duplicate rating");
+    }
+
     return await ratingRepo.update(ratingID, rating);
   };
 
-  deleteRating = async (ratingID) => {
-    if (req.user.role !== "member") {
-      throw new APIError(403, "Permission denied");
+  deleteRating = async (req, ratingID) => {
+    if (!req || !req.user) {
+      throw new APIError(403, "Permission denied: User not authenticated");
     }
+
+    if (req.user.role !== "member") {
+      throw new APIError(403, "Permission denied: Insufficient privileges");
+    }
+
     return await ratingRepo.delete(ratingID);
   };
 }

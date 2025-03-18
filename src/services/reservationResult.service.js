@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const APIError = require("../utils/ApiError");
 const PAYMENT = require("../models/payment.model");
 const TRANSACTION = require("../models/transaction.model");
+const reservationsRepo = require("../repositories/reservations.repo");
 
 class ReservationResultService {
   async createReservationResult(req) {
@@ -295,6 +296,17 @@ class ReservationResultService {
                   `Updated reservation result ${results[i]._id} to final_completed`
                 );
               }
+
+              const updatedReservation = await reservationsRepo.updateById(
+                results[i].reservationID,
+                { status: "completed" }
+              );
+
+              if (updatedReservation) {
+                console.log(
+                  `Updated reservation ${results[i].reservationID} to completed`
+                );
+              }
             } else {
               console.log(
                 `Reservation ${results[i].reservationID} final payment not confirmed, status remains pending`
@@ -309,11 +321,6 @@ class ReservationResultService {
           }
         }
       }
-
-      // Remove the test code
-      // const reservationID = "67d3fd87dd2a67772d18805d";
-      // const asd = await this.checkReservationResultFinal(reservationID);
-      // console.log("Check final result:", asd);
 
       return {
         results,
@@ -407,6 +414,18 @@ class ReservationResultService {
                 results[i] = updatedResult; // Update in our results array
                 console.log(
                   `Updated reservation result ${results[i]._id} to final_completed`
+                );
+              }
+
+              // Also update the reservation status to completed
+              const updatedReservation = await reservationsRepo.updateById(
+                results[i].reservationID,
+                { status: "completed" }
+              );
+
+              if (updatedReservation) {
+                console.log(
+                  `Updated reservation ${results[i].reservationID} to completed`
                 );
               }
             } else {

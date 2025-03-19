@@ -12,7 +12,7 @@ class CoupleTherapistServices {
       const verifiedTherapist = therapists.filter(
         (therapist) =>
           therapist.certificates.filter(
-            (certificate) => certificate.isCertificateVerified === true
+            (certificate) => certificate.status === "approved"
           ).length > 0
       );
 
@@ -36,7 +36,7 @@ class CoupleTherapistServices {
   }
 
   async getCoupleTherapistById(coupleTherapistId) {
-    const data = await COUPLETHERAPIST.findOne({ _id: coupleTherapistId });
+    const data = await therapistRepo.getCoupleTherapistById(coupleTherapistId);
 
     if (!data) {
       throw new APIError(400, "Couple therapist not found");

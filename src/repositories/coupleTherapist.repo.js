@@ -139,6 +139,12 @@ class TherapistRepo {
   async getCoupleTherapistIdByUserId(userId) {
     return await COUPLETHERAPIST.findOne({ userID: userId });
   }
+
+  async getCoupleTherapistById(coupleTherapistId) {
+    return await COUPLETHERAPIST.findOne({
+      _id: coupleTherapistId,
+    }).populate("certificates");
+  }
 }
 
 module.exports = new TherapistRepo();

@@ -78,7 +78,7 @@ class AdminServices {
       }
 
       const updatedCertificate =
-        await certificateRepository.createCertificateDenial(
+        await certificateRepository.updateCertificateDenial(
           certificateID,
           reason,
           req.user._id
@@ -113,8 +113,6 @@ class AdminServices {
 
     return await certificateRepository.getAllCertificateRequests();
   }
-
-
 }
 
 module.exports = new AdminServices();

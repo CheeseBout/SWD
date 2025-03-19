@@ -148,6 +148,9 @@ class PaymentService {
         const paymentUrlObj = new URL(paymentUrl);
         const urlAmount = paymentUrlObj.searchParams.get("vnp_Amount");
         console.log(`Amount in payment URL: ${urlAmount}`);
+        console.log(
+          `Creating payment with return url: ${config.VNPay.vnp_ReturnUrl}`
+        );
       } catch (e) {
         console.log("Could not parse URL for debugging");
       }

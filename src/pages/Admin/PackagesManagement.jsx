@@ -5,7 +5,9 @@ import LoadingSpinner from "../../components/common/LoadingSpinner";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { toast } from "react-toastify";
 import AdminSideBar from "../../components/Sidebar/AdminSidebar";
+import PackageForm from "../../components/Admin/PackageForm";
 import {
+  PlusIcon,
   PencilAltIcon,
   SearchIcon,
   FilterIcon,
@@ -27,6 +29,7 @@ export default function PackagesManagement() {
   const [therapists, setTherapists] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const packagesPerPage = 8;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
 
@@ -183,6 +186,57 @@ export default function PackagesManagement() {
     setTherapistFilter(e.target.value);
   };
 
+  const handleCreatePackage = () => {
+    document.getElementById("create_package_modal").showModal();
+  };
+
+  const handleEditPackage = (pkg) => {
+    setCurrentPackage(pkg);
+    document.getElementById("edit_package_modal").showModal();
+  };
+
+  const handleCancelCreate = () => {
+    document.getElementById("create_package_modal").close();
+  };
+
+  const handleCancelEdit = () => {
+    document.getElementById("edit_package_modal").close();
+  };
+
+  const handleSubmitCreate = async (formData) => {
+    try {
+      setIsSubmitting(true);
+      await packageService.createPackage(formData);
+      toast.success("Package created successfully");
+      document.getElementById("create_package_modal").close();
+      setRefreshTrigger((prev) => prev + 1);
+    } catch (err) {
+      console.error("Error creating package:", err);
+      toast.error("Failed to create package");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmitEdit = async (formData) => {
+    try {
+      setIsSubmitting(true);
+      const updateData = {
+        ...formData,
+        packageId: currentPackage._id,
+      };
+      await packageService.updatePackage(currentPackage._id, updateData);
+      toast.success("Package updated successfully");
+      document.getElementById("edit_package_modal").close();
+      setRefreshTrigger((prev) => prev + 1);
+    } catch (err) {
+      console.error("Error updating package:", err);
+      toast.error("Failed to update package");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const Pagination = () => {
     return (
       <div className="flex justify-center mt-6">
@@ -270,7 +324,7 @@ export default function PackagesManagement() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
           <div className="relative rounded-md shadow-sm">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <SearchIcon className="h-5 w-5 text-gray-400" />
@@ -315,6 +369,16 @@ export default function PackagesManagement() {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="flex justify-start lg:justify-end">
+            <button
+              onClick={handleCreatePackage}
+              className="btn btn-primary w-full lg:w-auto"
+            >
+              <PlusIcon className="h-5 w-5 mr-2" />
+              Add New Package
+            </button>
           </div>
         </div>
 
@@ -387,6 +451,13 @@ export default function PackagesManagement() {
                     Clear Filters
                   </button>
                 )}
+                <button
+                  onClick={handleCreatePackage}
+                  className="btn btn-primary"
+                >
+                  <PlusIcon className="h-5 w-5 mr-2" />
+                  Create New Package
+                </button>
               </div>
             </div>
           </div>
@@ -498,18 +569,7 @@ export default function PackagesManagement() {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end space-x-2">
                           <button
-                            onClick={() =>
-                              navigate(`/admin/packages/detail/${pkg._id}`)
-                            }
-                            className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
-                            title="View package details"
-                          >
-                            <EyeIcon className="h-5 w-5" />
-                          </button>
-                          <button
-                            onClick={() =>
-                              navigate(`/admin/packages/edit/${pkg._id}`)
-                            }
+                            onClick={() => handleEditPackage(pkg)}
                             className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
                             title="Edit package"
                           >
@@ -585,6 +645,41 @@ export default function PackagesManagement() {
               >
                 {currentPackage?.isActive ? "Deactivate" : "Activate"}
               </button>
+            </div>
+          </div>
+          <form method="dialog" className="modal-backdrop">
+            <button>close</button>
+          </form>
+        </dialog>
+
+        <dialog id="create_package_modal" className="modal">
+          <div className="modal-box max-w-2xl">
+            <h3 className="font-bold text-lg">Create New Package</h3>
+            <div className="py-4">
+              <PackageForm
+                onSubmit={handleSubmitCreate}
+                onCancel={handleCancelCreate}
+                submitButtonText="Create Package"
+                isSubmitting={isSubmitting}
+              />
+            </div>
+          </div>
+          <form method="dialog" className="modal-backdrop">
+            <button>close</button>
+          </form>
+        </dialog>
+
+        <dialog id="edit_package_modal" className="modal">
+          <div className="modal-box max-w-2xl">
+            <h3 className="font-bold text-lg">Edit Package</h3>
+            <div className="py-4">
+              <PackageForm
+                initialData={currentPackage}
+                onSubmit={handleSubmitEdit}
+                onCancel={handleCancelEdit}
+                submitButtonText="Update Package"
+                isSubmitting={isSubmitting}
+              />
             </div>
           </div>
           <form method="dialog" className="modal-backdrop">

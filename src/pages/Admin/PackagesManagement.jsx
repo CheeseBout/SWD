@@ -70,7 +70,9 @@ export default function PackagesManagement() {
             uniqueTherapists.push({
               id: pkg.coupleTherapistID._id,
               name:
-                pkg.coupleTherapistID.userID?.fullname || "Unknown Therapist",
+                pkg.coupleTherapistID.userID?.fullname ||
+                pkg.coupleTherapistID.userInfo?.fullname ||
+                "Unknown Therapist",
             });
           }
         });
@@ -187,16 +189,18 @@ export default function PackagesManagement() {
   };
 
   const handleCreatePackage = () => {
+    setCurrentPackage(null);
     document.getElementById("create_package_modal").showModal();
   };
 
   const handleEditPackage = (pkg) => {
-    setCurrentPackage(pkg);
+    setCurrentPackage({ ...pkg });
     document.getElementById("edit_package_modal").showModal();
   };
 
   const handleCancelCreate = () => {
     document.getElementById("create_package_modal").close();
+    setCurrentPackage(null);
   };
 
   const handleCancelEdit = () => {
@@ -511,9 +515,13 @@ export default function PackagesManagement() {
                       <td className="px-6 py-4">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-8 w-8 rounded-full overflow-hidden bg-gray-100">
-                            {pkg.coupleTherapistID?.userID?.photoURL ? (
+                            {pkg.coupleTherapistID?.userID?.photoURL ||
+                            pkg.coupleTherapistID?.userInfo?.photoURL ? (
                               <img
-                                src={pkg.coupleTherapistID.userID.photoURL}
+                                src={
+                                  pkg.coupleTherapistID.userID?.photoURL ||
+                                  pkg.coupleTherapistID.userInfo?.photoURL
+                                }
                                 alt=""
                                 className="h-full w-full object-cover"
                                 onError={(e) => {
@@ -525,6 +533,8 @@ export default function PackagesManagement() {
                             ) : (
                               <div className="h-full w-full flex items-center justify-center bg-blue-100 text-blue-800 font-medium">
                                 {pkg.coupleTherapistID?.userID?.fullname?.[0] ||
+                                  pkg.coupleTherapistID?.userInfo
+                                    ?.fullname?.[0] ||
                                   "T"}
                               </div>
                             )}
@@ -532,10 +542,13 @@ export default function PackagesManagement() {
                           <div className="ml-3">
                             <div className="text-sm font-medium text-gray-900">
                               {pkg.coupleTherapistID?.userID?.fullname ||
+                                pkg.coupleTherapistID?.userInfo?.fullname ||
                                 "Unknown Therapist"}
                             </div>
                             <div className="text-xs text-gray-500">
-                              {pkg.coupleTherapistID?.userID?.email || ""}
+                              {pkg.coupleTherapistID?.userID?.email ||
+                                pkg.coupleTherapistID?.userInfo?.email ||
+                                ""}
                             </div>
                           </div>
                         </div>
@@ -552,7 +565,7 @@ export default function PackagesManagement() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900">
-                          {pkg.comissionFee}%{pkg.commissionFee}%
+                          {pkg.comissionFee ? `${pkg.comissionFee}%` : "0%"}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -657,6 +670,7 @@ export default function PackagesManagement() {
             <h3 className="font-bold text-lg">Create New Package</h3>
             <div className="py-4">
               <PackageForm
+                initialData={null}
                 onSubmit={handleSubmitCreate}
                 onCancel={handleCancelCreate}
                 submitButtonText="Create Package"

@@ -4,14 +4,7 @@ import { therapistService } from "../../services/api";
 import LoadingSpinner from "../common/LoadingSpinner";
 
 const PackageForm = ({
-  initialData = {
-    name: "",
-    description: "",
-    price: 0,
-    discount: 0,
-    comissionFee: 0,
-    coupleTherapistID: "",
-  },
+  initialData = null,
   onSubmit,
   onCancel,
   submitButtonText = "Save Package",
@@ -32,19 +25,38 @@ const PackageForm = ({
   const [hasInitialized, setHasInitialized] = useState(false);
 
   useEffect(() => {
-    if (initialData && !hasInitialized) {
+    setHasInitialized(false);
+  }, [initialData]);
+
+  useEffect(() => {
+    if (!hasInitialized) {
       try {
-        setFormData({
-          name: String(initialData.name || ""),
-          description: String(initialData.description || ""),
-          price: Number(initialData.price || 0),
-          discount: Number(initialData.discount || 0),
-          comissionFee: Number(initialData.comissionFee || 0),
-          coupleTherapistID: String(initialData.coupleTherapistID || ""),
-        });
+        if (initialData) {
+          setFormData({
+            name: String(initialData.name || ""),
+            description: String(initialData.description || ""),
+            price: Number(initialData.price || 0),
+            discount: Number(initialData.discount || 0),
+            comissionFee: Number(initialData.comissionFee || 0),
+            coupleTherapistID:
+              typeof initialData.coupleTherapistID === "object" &&
+              initialData.coupleTherapistID?._id
+                ? initialData.coupleTherapistID._id
+                : String(initialData.coupleTherapistID || ""),
+          });
+        } else {
+          setFormData({
+            name: "",
+            description: "",
+            price: 0,
+            discount: 0,
+            comissionFee: 0,
+            coupleTherapistID: "",
+          });
+        }
         setHasInitialized(true);
       } catch (error) {
-        console.error("Error setting initial form data:", error);
+        console.error("Error setting form data:", error);
       }
     }
   }, [initialData, hasInitialized]);
@@ -91,13 +103,13 @@ const PackageForm = ({
     try {
       let therapistsData = [];
 
-      if (
+      if (response?.data && Array.isArray(response.data)) {
+        therapistsData = response.data;
+      } else if (
         response?.data?.therapists &&
         Array.isArray(response.data.therapists)
       ) {
         therapistsData = response.data.therapists;
-      } else if (response?.data && Array.isArray(response.data)) {
-        therapistsData = response.data;
       } else if (response?.therapists && Array.isArray(response.therapists)) {
         therapistsData = response.therapists;
       } else if (Array.isArray(response)) {
@@ -108,11 +120,13 @@ const PackageForm = ({
         .filter((t) => t !== null && t !== undefined)
         .map((t) => ({
           id:
-            t.id ||
             t._id ||
+            t.id ||
             `therapist-${Math.random().toString(36).substr(2, 9)}`,
           fullName: extractName(t),
-          expertise: t.expertise || t.category || "",
+          expertise: t.category || "",
+          email: t.userInfo?.email || t.userID?.email || "",
+          photoURL: t.userInfo?.photoURL || t.userID?.photoURL || "",
         }));
     } catch (err) {
       console.error("Error extracting therapists:", err);
@@ -122,6 +136,8 @@ const PackageForm = ({
 
   const extractName = (therapist) => {
     if (!therapist) return "Unnamed Therapist";
+
+    if (therapist.userInfo?.fullname) return therapist.userInfo.fullname;
 
     if (therapist.fullName) return therapist.fullName;
     if (therapist.name) return therapist.name;
@@ -388,6 +404,7 @@ const PackageForm = ({
               >
                 {therapist.fullName || "Unnamed Therapist"}
                 {therapist.expertise ? ` (${therapist.expertise})` : ""}
+                {therapist.email ? ` - ${therapist.email}` : ""}
               </option>
             ))
           ) : (

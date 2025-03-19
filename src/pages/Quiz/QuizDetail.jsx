@@ -1,13 +1,13 @@
-import { useState, useEffect, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { quizService } from '../../services/api';
-import QuizHeader from '../../components/Quiz/QuizHeader';
-import QuestionCard from '../../components/Questions/QuestionCard';
-import WarningMessage from '../../components/Quiz/WarningMessage';
-import QuizResults from '../../components/Quiz/QuizResults';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
-import ErrorMessage from '../../components/common/ErrorMessage';
-import { AuthContext } from '../../contexts/AuthContextObject';
+import { useState, useEffect, useContext } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { quizService } from "../../services/api";
+import QuizHeader from "../../components/Quiz/QuizHeader";
+import QuestionCard from "../../components/Questions/QuestionCard";
+import WarningMessage from "../../components/Quiz/WarningMessage";
+import QuizResults from "../../components/Quiz/QuizResults";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
+import ErrorMessage from "../../components/common/ErrorMessage";
+import { AuthContext } from "../../contexts/AuthContextObject";
 
 export default function QuizDetail() {
   const [quiz, setQuiz] = useState(null);
@@ -30,23 +30,23 @@ export default function QuizDetail() {
         if (response.status === 200 && response.data.quiz) {
           setQuiz(response.data.quiz);
           const initialAnswers = {};
-          response.data.quiz.questions.forEach(q => {
-            initialAnswers[q._id] = '';
+          response.data.quiz.questions.forEach((q) => {
+            initialAnswers[q._id] = "";
           });
           setUserAnswers(initialAnswers);
         } else {
           throw new Error("Quiz not found");
         }
       } catch (error) {
-        console.error('Error fetching quiz:', error);
-        setError('Failed to load quiz. Please try again later.');
+        console.error("Error fetching quiz:", error);
+        setError("Failed to load quiz. Please try again later.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchQuiz();
-    
+
     // Check for saved temporary results when component mounts
     if (isAuthenticated && id) {
       const tempResults = quizService.getTemporaryResults();
@@ -55,35 +55,33 @@ export default function QuizDetail() {
       }
     }
   }, [id, isAuthenticated]);
-  
+
   // Effect to handle showing saved results when user logs in
   useEffect(() => {
     if (isAuthenticated && pendingSavedResult) {
       // Set the saved score and mark as submitted to show results
       setTotalScore(pendingSavedResult.score);
       setSubmitted(true);
-      
+
       // Remove the temporary result once it's displayed
       quizService.clearTemporaryResult(id);
-      
+
       // Optional: Submit the result to backend now that user is logged in
-      quizService.submitQuizResult(
-        pendingSavedResult.quizId, 
-        pendingSavedResult.score, 
-        pendingSavedResult.answers
-      ).catch(err => console.error("Error submitting saved result", err));
-      
+      quizService
+        .submitQuizResult(pendingSavedResult.answers, pendingSavedResult.quizId)
+        .catch((err) => console.error("Error submitting saved result", err));
+
       // Show modal with delay to ensure component is ready
       setTimeout(() => {
-        document.getElementById('quiz_results_modal').checked = true;
+        document.getElementById("quiz_results_modal").checked = true;
       }, 100);
     }
   }, [isAuthenticated, pendingSavedResult, id]);
 
   const handleAnswerSelect = (questionId, optionId) => {
-    setUserAnswers(prev => ({
+    setUserAnswers((prev) => ({
       ...prev,
-      [questionId]: optionId
+      [questionId]: optionId,
     }));
   };
 
@@ -91,87 +89,101 @@ export default function QuizDetail() {
     if (!isFormComplete()) {
       setShowWarning(true);
       setTimeout(() => {
-        document.getElementById('warning-message')?.scrollIntoView({ 
-          behavior: 'smooth',
-          block: 'center'
+        document.getElementById("warning-message")?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
         });
       }, 100);
       return;
     }
-    
+
     let score = 0;
     let totalPossibleScore = 0;
 
-    quiz.questions.forEach(question => {
+    quiz.questions.forEach((question) => {
       const selectedOptionId = userAnswers[question._id];
-      const selectedOption = question.options.find(opt => opt._id === selectedOptionId);
-      
+      const selectedOption = question.options.find(
+        (opt) => opt._id === selectedOptionId
+      );
+
       if (selectedOption) {
         score += selectedOption.score;
       }
-      
-      const maxScore = Math.max(...question.options.map(opt => opt.score));
+
+      const maxScore = Math.max(...question.options.map((opt) => opt.score));
       totalPossibleScore += maxScore;
     });
 
     const percentage = Math.round((score / totalPossibleScore) * 100);
     const scoreText = `${percentage}%`;
     setTotalScore(scoreText);
-    
+
+    // Format answers as an array of objects with questionID and optionID
+    const formattedAnswers = Object.entries(userAnswers).map(
+      ([questionID, optionID]) => ({
+        questionID,
+        optionID,
+      })
+    );
+
     // Save result differently based on authentication status
     if (isAuthenticated) {
-      // If authenticated, try to submit to backend
-      quizService.submitQuizResult(id, scoreText, userAnswers)
-        .catch(err => console.error("Error submitting quiz result", err));
+      // If authenticated, send the formatted answers array directly with quiz ID
+      quizService
+        .submitQuizResult(formattedAnswers, id)
+        .catch((err) => console.error("Error submitting quiz result", err));
     } else {
       // If not authenticated, save to local storage
-      quizService.saveTemporaryResult(id, scoreText, userAnswers);
+      quizService.saveTemporaryResult(id, scoreText, formattedAnswers);
     }
-    
+
     setSubmitted(true);
     setShowWarning(false);
 
     window.scrollTo(0, 0);
-    document.body.style.overflow = 'hidden';
-    
+    document.body.style.overflow = "hidden";
+
     setTimeout(() => {
-      document.getElementById('quiz_results_modal').checked = true;
+      document.getElementById("quiz_results_modal").checked = true;
     }, 0);
   };
 
   const handleCloseResults = () => {
-    document.body.style.overflow = 'auto';
-    
-    document.getElementById('quiz_results_modal').checked = false;
-    
+    document.body.style.overflow = "auto";
+
+    document.getElementById("quiz_results_modal").checked = false;
+
     setTimeout(() => {
       setSubmitted(false);
     }, 100);
   };
 
   const isFormComplete = () => {
-    return quiz?.questions.every(q => userAnswers[q._id]);
+    return quiz?.questions.every((q) => userAnswers[q._id]);
   };
 
   const getUnansweredCount = () => {
     if (!quiz?.questions) return 0;
-    return quiz.questions.filter(q => !userAnswers[q._id]).length;
+    return quiz.questions.filter((q) => !userAnswers[q._id]).length;
   };
 
   if (loading) return <LoadingSpinner />;
-  if (error) return <ErrorMessage error={error} onBack={() => navigate('/quizzes')} />;
-  if (!quiz) return <ErrorMessage message="Quiz not found" onBack={() => navigate('/quizzes')} />;
+  if (error)
+    return <ErrorMessage error={error} onBack={() => navigate("/quizzes")} />;
+  if (!quiz)
+    return (
+      <ErrorMessage
+        message="Quiz not found"
+        onBack={() => navigate("/quizzes")}
+      />
+    );
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="container mx-auto px-4">
         <QuizHeader quiz={quiz} />
 
-        {showWarning && (
-          <WarningMessage 
-            count={getUnansweredCount()} 
-          />
-        )}
+        {showWarning && <WarningMessage count={getUnansweredCount()} />}
 
         <div className="max-w-4xl mx-auto mt-8 space-y-6">
           {quiz.questions?.map((question, index) => (
@@ -191,7 +203,9 @@ export default function QuizDetail() {
             <div>
               {!isFormComplete() && (
                 <span className="text-sm text-gray-500">
-                  {getUnansweredCount()} {getUnansweredCount() === 1 ? 'question' : 'questions'} left to answer
+                  {getUnansweredCount()}{" "}
+                  {getUnansweredCount() === 1 ? "question" : "questions"} left
+                  to answer
                 </span>
               )}
             </div>
@@ -205,9 +219,9 @@ export default function QuizDetail() {
         )}
 
         {submitted && (
-          <QuizResults 
-            score={totalScore} 
-            isAuthenticated={isAuthenticated} 
+          <QuizResults
+            score={totalScore}
+            isAuthenticated={isAuthenticated}
             onClose={handleCloseResults}
           />
         )}

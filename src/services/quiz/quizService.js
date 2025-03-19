@@ -45,13 +45,12 @@ export const quizService = {
     }
   },
 
-  submitQuizResult: async (quizId, score, answers) => {
+  submitQuizResult: async (answers, quizId) => {
     try {
-      const response = await api.post("/api/v1/quiz-results", {
-        quizId,
-        score,
-        answers,
-      });
+      const response = await api.post(
+        `/api/v1/options/select-option/${quizId}`,
+        answers
+      );
       return response.data;
     } catch (error) {
       console.error("Error submitting quiz result:", error);

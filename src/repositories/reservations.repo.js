@@ -1,4 +1,5 @@
 const COUPLETHERAPIST_AVAILABILITY = require("../models/coupleTherapistAvailability.model");
+const RESERVATIONRESULT = require("../models/reservation-result.model");
 const RESERVATION = require("../models/reservation.model");
 const USER = require("../models/user.model");
 
@@ -23,24 +24,48 @@ class ReservationRepo {
       .populate("packageID", "name price");
 
     // Transform the data to have the therapist's user info at the coupleTherapistID level
-    const transformedReservations = reservations.map((reservation) => {
-      const reservationObj = reservation.toObject();
+    const transformedReservations = await Promise.all(
+      reservations.map(async (reservation) => {
+        const reservationObj = reservation.toObject();
 
-      // If coupleTherapistID has a populated userID with data
-      if (
-        reservationObj.coupleTherapistID &&
-        reservationObj.coupleTherapistID.userID
-      ) {
-        // Restructure to move user properties up to coupleTherapistID level
-        reservationObj.coupleTherapistID = {
-          _id: reservationObj.coupleTherapistID._id,
-          fullname: reservationObj.coupleTherapistID.userID.fullname,
-          photoURL: reservationObj.coupleTherapistID.userID.photoURL,
-        };
-      }
+        // If coupleTherapistID has a populated userID with data
+        if (
+          reservationObj.coupleTherapistID &&
+          reservationObj.coupleTherapistID.userID
+        ) {
+          // Restructure to move user properties up to coupleTherapistID level
+          reservationObj.coupleTherapistID = {
+            _id: reservationObj.coupleTherapistID._id,
+            fullname: reservationObj.coupleTherapistID.userID.fullname,
+            photoURL: reservationObj.coupleTherapistID.userID.photoURL,
+          };
+        }
 
-      return reservationObj;
-    });
+        // Find the associated reservation result
+        const reservationResult = await RESERVATIONRESULT.findOne({
+          reservationID: reservation._id,
+        });
+
+        console.log("Reservation result:", reservationResult);
+
+        // Add reservation result information if it exists
+        if (reservationResult) {
+          reservationObj.reservationResult = {
+            _id: reservationResult._id,
+            status: reservationResult.status,
+            // sessionSummary: reservationResult.sessionSummary,
+            // issuesIdentified: reservationResult.issuesIdentified,
+            // therapistRecommendations:
+            //   reservationResult.therapistRecommendations,
+            // homeworkAssignment: reservationResult.homeworkAssignment,
+          };
+        } else {
+          reservationObj.reservationResult = null;
+        }
+
+        return reservationObj;
+      })
+    );
 
     const total = await RESERVATION.countDocuments(filter);
 

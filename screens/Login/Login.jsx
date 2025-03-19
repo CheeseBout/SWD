@@ -131,26 +131,57 @@ export const LoginScreen = ({ navigation }) => {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
+      console.log("Starting Google login process");
       const result = await signInWithGoogle();
+      console.log("Google login result:", JSON.stringify(result, null, 2));
 
       if (result && result.backendResponse) {
         const { data } = result.backendResponse;
+        console.log("Backend response data:", JSON.stringify(data, null, 2));
 
-        // Tách và lưu tokens riêng
-        if (data.tokens) {
-          await saveTokens(data.tokens);
+        // Fix: Handle the correct response structure
+        if (data.accessToken && data.refreshToken && data.user) {
+          // Structure matches the logged data
+          const tokens = {
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken,
+          };
 
-          // Lưu thông tin user không bao gồm tokens
+          console.log("Saving tokens:", JSON.stringify(tokens, null, 2));
+          await saveTokens(tokens);
+
+          // Create user info structure expected by the app
           const userInfo = {
             data: {
               user: data.user,
             },
-            message: data.message,
-            status: data.status,
+            message: "Google login successful",
+            status: 200,
           };
+
+          console.log(
+            "Logging in with user info:",
+            JSON.stringify(userInfo, null, 2)
+          );
           await login(userInfo);
+
+          Toast.show({
+            type: "success",
+            text1: "Login Successful",
+            text2: `Welcome, ${data.user.fullname}!`,
+          });
+
+          console.log("Google login completed successfully");
+        } else {
+          console.error("Invalid token structure in response:", data);
+          Toast.show({
+            type: "error",
+            text1: "Login Failed",
+            text2: "Authentication error. Please try again.",
+          });
         }
       } else {
+        console.error("Invalid or missing backend response");
         Toast.show({
           type: "error",
           text1: "Google Sign-In Failed",

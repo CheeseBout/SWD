@@ -95,9 +95,9 @@ export default function YourReservation({ route, navigation }) {
     try {
       setCheckingRating(true);
       const response = await ratingServices.checkRatingForReservation(
-        reservation.coupleTherapistID._id
+        reservation._id
       );
-      if (response.data) {
+      if (response.data.length > 0) {
         setHasRated(true);
       }
     } catch (error) {

@@ -35,14 +35,18 @@ export default function RatingScreen({ route, navigation }) {
     try {
       setLoading(true);
       const response = await ratingServices.checkRatingForReservation(
-        therapist._id
+        reservation._id
       );
 
       console.log("Rating check response:", response);
 
       // Chỉ hiển thị thông báo đã đánh giá nếu response có hasRated = true
       // và có dữ liệu trong response
-      if (response && response.hasRated === true && response.data) {
+      if (
+        response &&
+        response.data.reservationID === reservation._id &&
+        response.data
+      ) {
         Alert.alert(
           "Already Rated",
           "You have already submitted a rating for this session.",

@@ -15,13 +15,26 @@ export const AuthProvider = ({ children }) => {
 
   const loadStoredAuth = async () => {
     try {
+      console.log("Loading stored authentication data");
       const storedUser = await AsyncStorage.getItem("userInfo");
+
       if (storedUser) {
-        setUserInfo(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        console.log(
+          "Found stored user info:",
+          parsedUser?.data?.user?.fullname || "Unknown user"
+        );
+
+        setUserInfo(parsedUser);
         setIsAuthenticated(true);
+        console.log("User authenticated from stored data");
+      } else {
+        console.log("No stored user info found");
+        setIsAuthenticated(false);
       }
     } catch (error) {
       console.error("Error loading auth info:", error);
+      setIsAuthenticated(false);
     } finally {
       setLoading(false);
     }
@@ -29,11 +42,23 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (userData) => {
     try {
+      console.log(
+        "Attempting to login with user data:",
+        JSON.stringify(userData, null, 2)
+      );
+
+      // Đảm bảo userInfo được lưu đúng cấu trúc
       await AsyncStorage.setItem("userInfo", JSON.stringify(userData));
+      console.log("User info saved to AsyncStorage");
+
+      // Cập nhật state
       setUserInfo(userData);
       setIsAuthenticated(true);
+
+      console.log("Authentication state updated: isAuthenticated = true");
+      return true;
     } catch (error) {
-      console.error("Error saving auth info:", error);
+      console.error("Error during login process:", error);
       throw error;
     }
   };

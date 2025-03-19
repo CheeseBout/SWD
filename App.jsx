@@ -71,15 +71,29 @@ const TabItems = () => {
   );
 };
 const NavigationScreens = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, userInfo } = useAuth();
+
+  // Thêm debug logs
+  console.log("App - Auth State:", {
+    isAuthenticated,
+    loading,
+    hasUserInfo: !!userInfo,
+    userName: userInfo?.data?.user?.fullname || "Not available",
+  });
 
   if (loading) {
+    console.log("App - Still loading auth state");
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color="#4a6ee0" />
       </View>
     );
   }
+
+  console.log(
+    "App - Rendering navigation with auth state:",
+    isAuthenticated ? "AUTHENTICATED" : "NOT AUTHENTICATED"
+  );
 
   return (
     <Stack.Navigator

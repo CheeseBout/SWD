@@ -49,20 +49,17 @@ const ratingServices = {
   },
 
   // Kiểm tra người dùng đã đánh giá therapist cho reservation này chưa
-  checkRatingForReservation: async (coupleTherapistID) => {
+  checkRatingForReservation: async (reservationID) => {
     try {
       const tokens = await getTokens();
-      console.log(`Checking rating for reservation: ${coupleTherapistID}`);
+      console.log(`Checking rating for reservation: ${reservationID}`);
 
-      // Adjust endpoint to match your API structure
-      const response = await apiClient.get(
-        `/rating/check/${coupleTherapistID}`,
-        {
-          headers: {
-            Authorization: `Bearer ${tokens.accessToken}`,
-          },
-        }
-      );
+      // Updated to include the full path matching the backend route
+      const response = await apiClient.get(`/rating/check/${reservationID}`, {
+        headers: {
+          Authorization: `Bearer ${tokens.accessToken}`,
+        },
+      });
 
       console.log(
         "Rating check response:",
@@ -71,7 +68,7 @@ const ratingServices = {
       return response.data;
     } catch (error) {
       console.error(
-        `Error checking rating for reservation ${coupleTherapistID}:`,
+        `Error checking rating for reservation ${reservationID}:`,
         error
       );
       return { hasRated: false };

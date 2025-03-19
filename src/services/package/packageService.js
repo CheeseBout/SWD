@@ -1,7 +1,6 @@
 import { api } from "../apiConfig";
 
 class PackageService {
-  // Get all packages for a therapist
   async getTherapistPackages(therapistId) {
     try {
       const response = await api.get(
@@ -14,7 +13,16 @@ class PackageService {
     }
   }
 
-  // Create a new package
+  async getAllPackages() {
+    try {
+      const response = await api.get("/api/v1/package/get-all-package");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching all packages:", error);
+      throw error;
+    }
+  }
+
   async createPackage(packageData) {
     try {
       const response = await api.post(
@@ -28,7 +36,6 @@ class PackageService {
     }
   }
 
-  // Update an existing package
   async updatePackage(packageId, packageData) {
     try {
       const response = await api.put(
@@ -42,10 +49,9 @@ class PackageService {
     }
   }
 
-  // Delete a package
-  async deletePackage(packageId) {
+  async softDeletePackage(packageId) {
     try {
-      const response = await api.delete(
+      const response = await api.put(
         `/api/v1/package/delete-package/${packageId}`
       );
       return response.data;
@@ -55,10 +61,21 @@ class PackageService {
     }
   }
 
-  // Get package details by ID
-  async getPackageById(packageId) {
+  async hardDeletePackage(packageId) {
     try {
-      const response = await api.get(`/api/v1/package/${packageId}`);
+      const response = await api.delete(
+        `/api/v1/package/hard-delete-package/${packageId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error deleting package:", error);
+      throw error;
+    }
+  }
+
+  async getPackageDetail  (packageId) {
+    try {
+      const response = await api.get(`/api/v1/package/get-package-detail/${packageId}`);
       return response.data;
     } catch (error) {
       console.error("Error fetching package details:", error);

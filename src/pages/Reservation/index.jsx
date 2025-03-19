@@ -62,8 +62,8 @@ export default function YourReservation() {
     setIsPayingFull(true);
     const paymentData = {
       reservationID: reservation._id,
-      phase: "FULL",
-      totalPrice: reservation.totalPrice / 2, // 50% remaining
+      phase: "FINAL",
+      totalPrice: reservation.totalPrice / 2,
     };
 
     try {

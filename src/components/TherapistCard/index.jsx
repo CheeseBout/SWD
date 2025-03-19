@@ -43,9 +43,9 @@ export function TherapistCard({ therapist }) {
         {/* Rating */}
         <div className="flex items-center mt-3">
           <FaStar className="text-yellow-400" />
-          <span className="ml-1 font-semibold">{therapist.rating}</span>
+          <span className="ml-1 font-semibold">{therapist.averageRating}</span>
           <span className="text-sm text-gray-500 ml-2">
-            ({therapist.reviewCount} reviews)
+            ({therapist.ratingCount} reviews)
           </span>
         </div>
 

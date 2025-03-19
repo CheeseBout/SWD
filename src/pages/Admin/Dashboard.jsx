@@ -9,7 +9,7 @@ import {
   ArrowSmUpIcon,
   ArrowSmDownIcon,
 } from "@heroicons/react/outline";
-import { blogService } from "../../services/api";
+import { blogService, userService } from "../../services/api";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 
 export default function AdminDashboard() {
@@ -26,21 +26,42 @@ export default function AdminDashboard() {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        
+
         const blogsResponse = await blogService.getAllBlogs();
-        const blogs = Array.isArray(blogsResponse) ? blogsResponse : 
-                     (blogsResponse?.data && Array.isArray(blogsResponse.data)) ? 
-                     blogsResponse.data : [];
-        
-        setStats(prev => ({
+        const blogs = Array.isArray(blogsResponse)
+          ? blogsResponse
+          : blogsResponse?.data && Array.isArray(blogsResponse.data)
+          ? blogsResponse.data
+          : [];
+
+        const usersResponse = await userService.getAllUsers();
+        const users = Array.isArray(usersResponse)
+          ? usersResponse
+          : usersResponse?.data && Array.isArray(usersResponse.data)
+          ? usersResponse.data
+          : usersResponse?.data?.users &&
+            Array.isArray(usersResponse.data.users)
+          ? usersResponse.data.users
+          : [];
+
+        const memberCount = users.filter(
+          (user) => user.role === "member" || user.role === "MEMBER"
+        ).length;
+
+        setStats((prev) => ({
           ...prev,
-          blogs: { ...prev.blogs, count: blogs.length }
+          blogs: { ...prev.blogs, count: blogs.length },
+          users: { ...prev.users, count: memberCount },
         }));
-        
-        const sortedBlogs = [...blogs].sort((a, b) => 
-          new Date(b.createdAt || b.created_at) - new Date(a.createdAt || a.created_at)
-        ).slice(0, 5);
-        
+
+        const sortedBlogs = [...blogs]
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt || b.created_at) -
+              new Date(a.createdAt || a.created_at)
+          )
+          .slice(0, 5);
+
         setRecentBlogs(sortedBlogs);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -69,7 +90,11 @@ export default function AdminDashboard() {
         ) : (
           <ArrowSmDownIcon className="h-4 w-4 text-red-500" />
         )}
-        <span className={`text-sm font-medium ${trend > 0 ? 'text-green-500' : 'text-red-500'}`}>
+        <span
+          className={`text-sm font-medium ${
+            trend > 0 ? "text-green-500" : "text-red-500"
+          }`}
+        >
           {Math.abs(trend)}%
         </span>
         <span className="text-gray-500 text-sm ml-1">from previous month</span>
@@ -80,7 +105,7 @@ export default function AdminDashboard() {
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100">
       <AdminSideBar />
-      
+
       <div className="flex-1 p-6 md:p-8 overflow-y-auto">
         <header className="mb-8">
           <h1 className="text-2xl font-bold text-gray-800">Admin Dashboard</h1>
@@ -92,29 +117,29 @@ export default function AdminDashboard() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-              <StatCard 
-                title="Users" 
-                value={stats.users.count} 
-                icon={UsersIcon} 
-                trend={stats.users.trend} 
+              <StatCard
+                title="Users"
+                value={stats.users.count}
+                icon={UsersIcon}
+                trend={stats.users.trend}
               />
-              <StatCard 
-                title="Blogs" 
-                value={stats.blogs.count} 
-                icon={BookOpenIcon} 
-                trend={stats.blogs.trend} 
+              <StatCard
+                title="Blogs"
+                value={stats.blogs.count}
+                icon={BookOpenIcon}
+                trend={stats.blogs.trend}
               />
-              <StatCard 
-                title="Sessions" 
-                value={stats.sessions.count} 
-                icon={CalendarIcon} 
-                trend={stats.sessions.trend} 
+              <StatCard
+                title="Sessions"
+                value={stats.sessions.count}
+                icon={CalendarIcon}
+                trend={stats.sessions.trend}
               />
-              <StatCard 
-                title="Revenue" 
-                value={stats.revenue.count} 
-                icon={CurrencyDollarIcon} 
-                trend={stats.revenue.trend} 
+              <StatCard
+                title="Revenue"
+                value={stats.revenue.count}
+                icon={CurrencyDollarIcon}
+                trend={stats.revenue.trend}
               />
             </div>
 
@@ -122,8 +147,8 @@ export default function AdminDashboard() {
               <div className="lg:col-span-2 bg-white rounded-lg shadow">
                 <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
                   <h2 className="text-lg font-medium">Recent Blog Posts</h2>
-                  <Link 
-                    to="/manage/blogs" 
+                  <Link
+                    to="/manage/blogs"
                     className="text-sm text-blue-600 hover:text-blue-800"
                   >
                     View all
@@ -134,10 +159,14 @@ export default function AdminDashboard() {
                     <div className="divide-y divide-gray-200">
                       {recentBlogs.map((blog) => (
                         <div key={blog.id || blog._id} className="py-3">
-                          <h3 className="text-base font-medium">{blog.title}</h3>
+                          <h3 className="text-base font-medium">
+                            {blog.title}
+                          </h3>
                           <div className="flex items-center text-sm text-gray-500 mt-1">
                             <span>
-                              {new Date(blog.postDate || blog.created_at).toLocaleDateString('en-GB')}
+                              {new Date(
+                                blog.postDate || blog.created_at
+                              ).toLocaleDateString("en-GB")}
                             </span>
                             <span className="mx-1">•</span>
                             <span className="capitalize">

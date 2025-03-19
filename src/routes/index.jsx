@@ -55,10 +55,18 @@ const CertificateRequest = lazy(() =>
   import("../pages/Admin/CertificateRequest")
 );
 const QuizManagement = lazy(() => import("../pages/Admin/QuizzesManagement"));
+const QuizCreate = lazy(() => import("../pages/Admin/QuizCreate"));
+const QuizEdit = lazy(() => import("../pages/Admin/QuizEdit"));
 const TopicManagement = lazy(() => import("../pages/Admin/TopicsManagement"));
 const UserManagement = lazy(() => import("../pages/Admin/UsersManagement"));
 const QuestionManagement = lazy(() =>
   import("../pages/Admin/QuestionsManagement")
+);
+const QuestionBankManagement = lazy(() =>
+  import("../pages/Admin/QuestionBanksManagement")
+);
+const PackagesManagement = lazy(() =>
+  import("../pages/Admin/PackagesManagement")
 );
 const ResetPassword = lazy(() => import("../pages/ResetPassword"));
 const LazyLoad = ({ children }) => (
@@ -367,6 +375,22 @@ export function AppRoutes() {
             }
           />
           <Route
+            path="quizzes/create"
+            element={
+              <LazyLoad>
+                <QuizCreate />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="quizzes/edit/:id"
+            element={
+              <LazyLoad>
+                <QuizEdit />
+              </LazyLoad>
+            }
+          />
+          <Route
             path="topics"
             element={
               <LazyLoad>
@@ -383,10 +407,26 @@ export function AppRoutes() {
             }
           />
           <Route
-            path="questions"
+            path="question-banks"
+            element={
+              <LazyLoad>
+                <QuestionBankManagement />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="question-banks/questions/:bankId"
             element={
               <LazyLoad>
                 <QuestionManagement />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="packages"
+            element={
+              <LazyLoad>
+                <PackagesManagement />
               </LazyLoad>
             }
           />

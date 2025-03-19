@@ -8,12 +8,12 @@ import AdminSideBar from "../../components/Sidebar/AdminSidebar";
 import {
   PlusIcon,
   PencilAltIcon,
-  TrashIcon,
-  ExternalLinkIcon,
   SearchIcon,
   FilterIcon,
   EyeIcon,
   DocumentTextIcon,
+  LockOpenIcon,
+  LockClosedIcon,
 } from "@heroicons/react/outline";
 
 export default function QuizzesManagement() {
@@ -45,7 +45,6 @@ export default function QuizzesManagement() {
           throw new Error("Invalid quiz data format");
         }
 
-        // Sort quizzes by date (newest first)
         quizData.sort((a, b) => {
           const dateA = new Date(a.lastEdited || a.createdAt || a.created_at);
           const dateB = new Date(b.lastEdited || b.createdAt || b.created_at);
@@ -73,7 +72,9 @@ export default function QuizzesManagement() {
         (quiz) =>
           quiz.quizName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           (quiz.quizDescription &&
-            quiz.quizDescription.toLowerCase().includes(searchTerm.toLowerCase()))
+            quiz.quizDescription
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase()))
       );
     }
 
@@ -89,26 +90,40 @@ export default function QuizzesManagement() {
 
   const indexOfLastQuiz = currentPage * quizzesPerPage;
   const indexOfFirstQuiz = indexOfLastQuiz - quizzesPerPage;
-  const currentQuizzes = filteredQuizzes.slice(indexOfFirstQuiz, indexOfLastQuiz);
+  const currentQuizzes = filteredQuizzes.slice(
+    indexOfFirstQuiz,
+    indexOfLastQuiz
+  );
   const totalPages = Math.ceil(filteredQuizzes.length / quizzesPerPage);
 
-  const handleDelete = (quiz) => {
+  const handleToggleStatus = (quiz) => {
     setCurrentQuiz(quiz);
-    document.getElementById("delete_quiz_modal").checked = true;
+    document.getElementById("toggle_status_modal").showModal();
   };
 
-  const confirmDelete = async () => {
+  const confirmToggleStatus = async () => {
     try {
       setLoading(true);
-      await quizService.deleteQuiz(currentQuiz._id);
+
+      if (currentQuiz.status === "active") {
+        await quizService.deleteQuiz({ quizId: currentQuiz._id });
+        toast.success("Quiz deactivated successfully");
+      } else {
+        await quizService.activateQuiz({ quizId: currentQuiz._id });
+        toast.success("Quiz activated successfully");
+      }
+
       setRefreshTrigger((prev) => prev + 1);
-      toast.success("Quiz deleted successfully");
     } catch (err) {
-      console.error("Error deleting quiz:", err);
-      toast.error("Failed to delete quiz");
+      console.error("Error updating quiz status:", err);
+      toast.error(
+        `Failed to ${
+          currentQuiz.status === "active" ? "deactivate" : "activate"
+        } quiz`
+      );
     } finally {
       setLoading(false);
-      document.getElementById("delete_quiz_modal").checked = false;
+      document.getElementById("toggle_status_modal").close();
     }
   };
 
@@ -238,7 +253,7 @@ export default function QuizzesManagement() {
 
           <div className="flex justify-start lg:justify-end">
             <Link
-              to="/manage/quizzes/create"
+              to="/admin/quizzes/create"
               className="btn btn-primary w-full lg:w-auto"
             >
               <PlusIcon className="h-5 w-5" />
@@ -323,7 +338,7 @@ export default function QuizzesManagement() {
                     Clear Filters
                   </button>
                 )}
-                <Link to="/manage/quizzes/create" className="btn btn-primary">
+                <Link to="/admin/quizzes/create" className="btn btn-primary">
                   <PlusIcon className="h-5 w-5 mr-2" />
                   Create New Quiz
                 </Link>
@@ -394,7 +409,9 @@ export default function QuizzesManagement() {
                       </td>
                       <td className="px-6 py-4 hidden md:table-cell">
                         <div className="text-sm text-gray-500">
-                          {new Date(quiz.lastEdited || quiz.createdAt || quiz.created_at).toLocaleDateString('en-GB')}
+                          {new Date(
+                            quiz.lastEdited || quiz.createdAt || quiz.created_at
+                          ).toLocaleDateString("en-GB")}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -425,18 +442,30 @@ export default function QuizzesManagement() {
                             <EyeIcon className="h-5 w-5" />
                           </a>
                           <Link
-                            to={`/manage/quizzes/edit/${quiz._id}`}
+                            to={`/admin/quizzes/edit/${quiz._id}`}
                             className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
                             title="Edit quiz"
                           >
                             <PencilAltIcon className="h-5 w-5" />
                           </Link>
                           <button
-                            onClick={() => handleDelete(quiz)}
-                            className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
-                            title="Delete quiz"
+                            onClick={() => handleToggleStatus(quiz)}
+                            className={`p-1 rounded ${
+                              quiz.status === "active"
+                                ? "text-red-600 hover:text-red-900 hover:bg-red-50"
+                                : "text-green-600 hover:text-green-900 hover:bg-green-50"
+                            }`}
+                            title={
+                              quiz.status === "active"
+                                ? "Deactivate quiz"
+                                : "Activate quiz"
+                            }
                           >
-                            <TrashIcon className="h-5 w-5" />
+                            {quiz.status === "active" ? (
+                              <LockClosedIcon className="h-5 w-5" />
+                            ) : (
+                              <LockOpenIcon className="h-5 w-5" />
+                            )}
                           </button>
                         </div>
                       </td>
@@ -461,12 +490,18 @@ export default function QuizzesManagement() {
           </div>
         )}
 
-        <dialog id="delete_quiz_modal" className="modal">
+        <dialog id="toggle_status_modal" className="modal">
           <div className="modal-box">
-            <h3 className="text-lg font-bold">Delete Quiz</h3>
+            <h3 className="text-lg font-bold">
+              {currentQuiz?.status === "active"
+                ? "Deactivate Quiz"
+                : "Activate Quiz"}
+            </h3>
             <p className="py-4">
               {currentQuiz
-                ? `Are you sure you want to delete "${currentQuiz?.quizName}"? This action cannot be undone.`
+                ? `Are you sure you want to ${
+                    currentQuiz.status === "active" ? "deactivate" : "activate"
+                  } "${currentQuiz?.quizName}"?`
                 : ""}
             </p>
             <div className="modal-action">
@@ -474,10 +509,14 @@ export default function QuizzesManagement() {
                 <button className="btn btn-sm btn-ghost">Cancel</button>
               </form>
               <button
-                onClick={confirmDelete}
-                className="btn btn-sm bg-red-600 hover:bg-red-700 text-white"
+                onClick={confirmToggleStatus}
+                className={`btn btn-sm ${
+                  currentQuiz?.status === "active"
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-green-600 hover:bg-green-700"
+                } text-white`}
               >
-                Delete
+                {currentQuiz?.status === "active" ? "Deactivate" : "Activate"}
               </button>
             </div>
           </div>

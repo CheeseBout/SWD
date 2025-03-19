@@ -14,7 +14,8 @@ import {
   SearchIcon,
   FilterIcon,
   EyeIcon,
-  SwitchHorizontalIcon,
+  LockOpenIcon,
+  LockClosedIcon,
 } from "@heroicons/react/outline";
 
 export default function TopicsManagement() {
@@ -101,9 +102,9 @@ export default function TopicsManagement() {
     try {
       setLoading(true);
       const deleteData = {
-        topicId: currentTopic._id
+        topicId: currentTopic._id,
       };
-      
+
       await topicService.deleteTopic(deleteData);
       setRefreshTrigger((prev) => prev + 1);
       toast.success("Topic deleted successfully");
@@ -112,7 +113,10 @@ export default function TopicsManagement() {
       toast.error("Failed to delete topic");
     } finally {
       setLoading(false);
-      document.getElementById("delete_topic_modal").checked = false;
+      const modal = document.getElementById("delete_topic_modal");
+      if (modal && typeof modal.checked !== "undefined") {
+        modal.checked = false;
+      }
     }
   };
 
@@ -125,19 +129,30 @@ export default function TopicsManagement() {
   };
 
   const openCreateModal = () => {
-    document.getElementById("create_topic_modal").showModal();
+    const modal = document.getElementById("create_topic_modal");
+    if (modal) {
+      modal.showModal();
+    }
   };
 
   const openEditModal = (topic) => {
     setCurrentTopic(topic);
-    document.getElementById("edit_topic_modal").showModal();
+    const modal = document.getElementById("edit_topic_modal");
+    if (modal) {
+      modal.showModal();
+    }
   };
 
   const handleCreateSubmit = async (formData) => {
     try {
       setLoading(true);
       await topicService.createTopic(formData);
-      document.getElementById("create_topic_modal").close();
+
+      const modal = document.getElementById("create_topic_modal");
+      if (modal) {
+        modal.close();
+      }
+
       setRefreshTrigger((prev) => prev + 1);
       toast.success("Topic created successfully");
     } catch (error) {
@@ -155,11 +170,16 @@ export default function TopicsManagement() {
         topicId: currentTopic._id,
         name: formData.name,
         description: formData.description,
-        imageUrl: formData.imageUrl
+        imageUrl: formData.imageUrl,
       };
-      
+
       await topicService.updateTopic(updateData);
-      document.getElementById("edit_topic_modal").close();
+
+      const modal = document.getElementById("edit_topic_modal");
+      if (modal) {
+        modal.close();
+      }
+
       setRefreshTrigger((prev) => prev + 1);
       toast.success("Topic updated successfully");
     } catch (error) {
@@ -174,9 +194,9 @@ export default function TopicsManagement() {
     try {
       setLoading(true);
       const updateData = {
-        topicId: topic._id
+        topicId: topic._id,
       };
-      
+
       if (topic.status === "active") {
         await topicService.deleteTopic(updateData);
         toast.success("Topic deactivated successfully");
@@ -187,7 +207,11 @@ export default function TopicsManagement() {
       setRefreshTrigger((prev) => prev + 1);
     } catch (error) {
       console.error("Error toggling topic status:", error);
-      toast.error(`Failed to ${topic.status === "active" ? "deactivate" : "activate"} topic`);
+      toast.error(
+        `Failed to ${
+          topic.status === "active" ? "deactivate" : "activate"
+        } topic`
+      );
     } finally {
       setLoading(false);
     }
@@ -504,17 +528,7 @@ export default function TopicsManagement() {
                           >
                             <EyeIcon className="h-5 w-5" />
                           </Link>
-                          <button
-                            onClick={() => handleToggleStatus(topic)}
-                            className={`p-1 rounded ${
-                              topic.status === "active"
-                                ? "text-amber-600 hover:text-amber-900 hover:bg-amber-50"
-                                : "text-green-600 hover:text-green-900 hover:bg-green-50"
-                            }`}
-                            title={topic.status === "active" ? "Deactivate topic" : "Activate topic"}
-                          >
-                            <SwitchHorizontalIcon className="h-5 w-5" />
-                          </button>
+
                           <button
                             onClick={() => openEditModal(topic)}
                             className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
@@ -523,11 +537,23 @@ export default function TopicsManagement() {
                             <PencilAltIcon className="h-5 w-5" />
                           </button>
                           <button
-                            onClick={() => handleDelete(topic)}
-                            className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
-                            title="Delete topic"
+                            onClick={() => handleToggleStatus(topic)}
+                            className={`p-1 rounded ${
+                              topic.status === "active"
+                                ? "text-green-600 hover:text-green-900 hover:bg-green-50"
+                                : "text-red-600 hover:text-red-900 hover:bg-red-50"
+                            }`}
+                            title={
+                              topic.status === "active"
+                                ? "Deactivate topic"
+                                : "Activate topic"
+                            }
                           >
-                            <TrashIcon className="h-5 w-5" />
+                            {topic.status === "active" ? (
+                              <LockOpenIcon className="h-5 w-5" />
+                            ) : (
+                              <LockClosedIcon className="h-5 w-5" />
+                            )}
                           </button>
                         </div>
                       </td>
@@ -557,9 +583,12 @@ export default function TopicsManagement() {
             <h3 className="text-xl font-semibold mb-4">Create New Topic</h3>
             <TopicForm
               onSubmit={handleCreateSubmit}
-              onCancel={() =>
-                document.getElementById("create_topic_modal").close()
-              }
+              onCancel={() => {
+                const modal = document.getElementById("create_topic_modal");
+                if (modal) {
+                  modal.close();
+                }
+              }}
               isSubmitting={loading}
               submitButtonText="Create Topic"
             />
@@ -576,9 +605,12 @@ export default function TopicsManagement() {
             <TopicForm
               initialData={currentTopic}
               onSubmit={handleEditSubmit}
-              onCancel={() =>
-                document.getElementById("edit_topic_modal").close()
-              }
+              onCancel={() => {
+                const modal = document.getElementById("edit_topic_modal");
+                if (modal) {
+                  modal.close();
+                }
+              }}
               isSubmitting={loading}
               submitButtonText="Save Changes"
             />

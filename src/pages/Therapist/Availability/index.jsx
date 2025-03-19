@@ -133,7 +133,16 @@ export default function TherapistAvailability() {
   // Handle updating an availability slot
   const handleUpdateAvailability = async () => {
     if (!selectedEvent) return;
+    const selectedStartDateTime = dayjs(selectedDate)
+      .hour(parseInt(selectedTime.startTime.split(":")[0]))
+      .minute(parseInt(selectedTime.startTime.split(":")[1]));
 
+    // Validate that selected time is not in the past
+    const now = dayjs();
+    if (selectedStartDateTime.isBefore(now)) {
+      toast.error("Cannot update availability to a time in the past");
+      return;
+    }
     setIsSubmitting(true);
 
     const startDateTime = dayjs(selectedDate)
@@ -224,18 +233,29 @@ export default function TherapistAvailability() {
       toast.error("Please select a date and time range");
       return;
     }
+
     // Validate that end time is after start time
     if (selectedTime.startTime >= selectedTime.endTime) {
       toast.error("End time must be after start time");
       return;
     }
+
+    // Create a dayjs object for the selected start date and time
+    const selectedStartDateTime = dayjs(selectedDate)
+      .hour(parseInt(selectedTime.startTime.split(":")[0]))
+      .minute(parseInt(selectedTime.startTime.split(":")[1]));
+
+    // Validate that selected time is not in the past
+    const now = dayjs();
+    if (selectedStartDateTime.isBefore(now)) {
+      toast.error("Cannot add availability for a time in the past");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // Format start and end times to ISO string format
-      const startDateTime = dayjs(selectedDate)
-        .hour(parseInt(selectedTime.startTime.split(":")[0]))
-        .minute(parseInt(selectedTime.startTime.split(":")[1]))
-        .toISOString();
+      const startDateTime = selectedStartDateTime.toISOString();
 
       const endDateTime = dayjs(selectedDate)
         .hour(parseInt(selectedTime.endTime.split(":")[0]))
@@ -828,7 +848,6 @@ export default function TherapistAvailability() {
               </button>
             </div>
           </div>
-          
         </div>
       )}
     </div>

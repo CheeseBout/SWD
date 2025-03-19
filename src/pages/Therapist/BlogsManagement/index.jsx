@@ -1,54 +1,90 @@
 import { useState, useEffect, useContext } from "react";
 import { Link } from "react-router-dom";
-import TherapistSidebar from "../../../components/SideBar/TherapistSidebar";
-import { AuthContext } from "../../../contexts/AuthContextObject";
-import { blogService } from "../../../services/blog/blogService";
-import { toast } from "react-toastify";
 import dayjs from "dayjs";
+import { toast } from "react-toastify";
 import {
+  SearchIcon,
   PencilAltIcon,
   TrashIcon,
   PlusCircleIcon,
-  SearchIcon,
   ExclamationCircleIcon,
+  FilterIcon,
+  ExternalLinkIcon,
+  EyeIcon,
 } from "@heroicons/react/outline";
+import { AuthContext } from "../../../contexts/AuthContextObject";
+import TherapistSidebar from "../../../components/SideBar/TherapistSidebar";
+import { blogService } from "../../../services/api";
 
 export default function TherapistBlogs() {
-  const { user } = useContext(AuthContext);
   const [blogs, setBlogs] = useState([]);
+  const [filteredBlogs, setFilteredBlogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [blogToDelete, setBlogToDelete] = useState(null);
-  const therapistId = localStorage.getItem("therapistId");
+  const { user } = useContext(AuthContext);
+  const blogsPerPage = 8;
 
   useEffect(() => {
     fetchBlogs();
-  }, [searchTerm, currentPage]);
+  }, []);
+
+  useEffect(() => {
+    // Apply client-side filtering on search term or status changes
+    let results = blogs;
+
+    if (searchTerm) {
+      results = results.filter(
+        (blog) =>
+          blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (blog.slug &&
+            blog.slug.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    if (statusFilter !== "all") {
+      results = results.filter(
+        (blog) =>
+          (blog.stage || "DRAFT").toLowerCase() === statusFilter.toLowerCase()
+      );
+    }
+
+    setFilteredBlogs(results);
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, blogs]);
 
   const fetchBlogs = async () => {
     try {
       setIsLoading(true);
-      // Fetch blogs created only by the current therapist
-      const response = await blogService.getBlogs({
-        page: currentPage,
-        limit: 10,
-        search: searchTerm,
-        authorId: therapistId, // Filter by current therapist ID
-      });
+      const userId = user?._id || localStorage.getItem("userId");
+
+      const response = await blogService.getAllBlogs();
 
       if (response?.data?.data) {
-        setBlogs(response.data.data.blogs);
-        setTotalPages(response.data.data.totalPages || 1);
+        // Filter blogs client-side to show only therapist's own blogs
+        const therapistBlogs = response.data.data.filter(
+          (blog) => blog.author?.userId === userId
+        );
+
+        // Sort blogs by date (newest first)
+        therapistBlogs.sort((a, b) => {
+          const dateA = new Date(a.postDate || a.created_at);
+          const dateB = new Date(b.postDate || b.created_at);
+          return dateB - dateA;
+        });
+
+        setBlogs(therapistBlogs);
+        setFilteredBlogs(therapistBlogs);
       } else {
         setBlogs([]);
-        setTotalPages(1);
+        setFilteredBlogs([]);
       }
     } catch (error) {
       console.error("Error fetching blogs:", error);
-      toast.error("Failed to load your blogs");
+      toast.error("Failed to load blogs");
     } finally {
       setIsLoading(false);
     }
@@ -63,20 +99,24 @@ export default function TherapistBlogs() {
     if (!blogToDelete) return;
 
     try {
-      await blogService.deleteBlog(blogToDelete.slug);
+      setIsLoading(true);
+      await blogService.deleteBlog(blogToDelete.id);
       toast.success("Blog deleted successfully");
       setShowDeleteModal(false);
       fetchBlogs(); // Refresh the list
     } catch (error) {
       console.error("Error deleting blog:", error);
       toast.error("Failed to delete blog");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setCurrentPage(1); // Reset to first page on new search
-  };
+  // Calculate pagination details
+  const indexOfLastBlog = currentPage * blogsPerPage;
+  const indexOfFirstBlog = indexOfLastBlog - blogsPerPage;
+  const currentBlogs = filteredBlogs.slice(indexOfFirstBlog, indexOfLastBlog);
+  const totalPages = Math.ceil(filteredBlogs.length / blogsPerPage);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -87,29 +127,48 @@ export default function TherapistBlogs() {
 
         <div className="flex-1 p-6 max-w-7xl mx-auto">
           <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
+            <header className="mb-6">
+              <h1 className="text-2xl font-bold text-gray-800 mb-2">
                 Manage Your Blogs
-              </h2>
+              </h1>
+              <p className="text-gray-600">
+                Create, edit and manage your blog posts
+              </p>
+            </header>
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <form onSubmit={handleSearch} className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search blogs..."
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                  <SearchIcon className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
-                  <button type="submit" className="hidden">
-                    Search
-                  </button>
-                </form>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+              <div className="relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <SearchIcon className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full"
+                  placeholder="Search blogs..."
+                />
+              </div>
 
+              <div className="relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FilterIcon className="h-5 w-5 text-gray-400" />
+                </div>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full appearance-none"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="published">Published</option>
+                  <option value="draft">Draft</option>
+                </select>
+              </div>
+
+              <div className="flex justify-start lg:justify-end">
                 <Link
                   to="/manage/blogs/create"
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-md inline-flex items-center transition-colors duration-150"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-md inline-flex items-center transition-colors duration-150 w-full lg:w-auto justify-center"
                 >
                   <PlusCircleIcon className="h-5 w-5 mr-2" />
                   <span>Create New Blog</span>
@@ -117,12 +176,45 @@ export default function TherapistBlogs() {
               </div>
             </div>
 
-            {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-white shadow-sm rounded-lg p-4 border border-gray-200">
+                <div className="text-xs font-medium uppercase text-gray-500">
+                  Total Blogs
+                </div>
+                <div className="text-2xl font-bold">{blogs.length}</div>
+              </div>
+              <div className="bg-white shadow-sm rounded-lg p-4 border border-gray-200">
+                <div className="text-xs font-medium uppercase text-gray-500">
+                  Published
+                </div>
+                <div className="text-2xl font-bold text-green-600">
+                  {
+                    blogs.filter(
+                      (blog) => (blog.stage || "").toLowerCase() === "published"
+                    ).length
+                  }
+                </div>
+              </div>
+              <div className="bg-white shadow-sm rounded-lg p-4 border border-gray-200">
+                <div className="text-xs font-medium uppercase text-gray-500">
+                  Drafts
+                </div>
+                <div className="text-2xl font-bold text-yellow-600">
+                  {
+                    blogs.filter(
+                      (blog) => (blog.stage || "").toLowerCase() === "draft"
+                    ).length
+                  }
+                </div>
+              </div>
+            </div>
+
+            {isLoading && blogs.length === 0 ? (
               <div className="flex justify-center items-center py-16">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
               </div>
-            ) : blogs.length === 0 ? (
-              <div className="bg-white rounded-lg p-8 text-center">
+            ) : filteredBlogs.length === 0 ? (
+              <div className="bg-white rounded-lg p-8 text-center border border-gray-200">
                 <div className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
                   <PencilAltIcon className="h-8 w-8 text-blue-500" />
                 </div>
@@ -130,9 +222,21 @@ export default function TherapistBlogs() {
                   No blogs found
                 </h3>
                 <p className="text-gray-500 mb-6">
-                  You haven't created any blogs yet or none match your search
-                  criteria.
+                  {searchTerm || statusFilter !== "all"
+                    ? "Try adjusting your search or filter criteria."
+                    : "You haven't created any blogs yet."}
                 </p>
+                {searchTerm || statusFilter !== "all" ? (
+                  <button
+                    onClick={() => {
+                      setSearchTerm("");
+                      setStatusFilter("all");
+                    }}
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium px-4 py-2 rounded-md inline-flex items-center transition-colors duration-150 mr-3"
+                  >
+                    Clear Filters
+                  </button>
+                ) : null}
                 <Link
                   to="/manage/blogs/create"
                   className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-md inline-flex items-center transition-colors duration-150"
@@ -142,180 +246,210 @@ export default function TherapistBlogs() {
                 </Link>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Title
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Status
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Created
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {blogs.map((blog) => (
-                      <tr key={blog._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              <img
-                                className="h-10 w-10 rounded-md object-cover"
-                                src={
-                                  blog.thumbnail ||
-                                  "https://via.placeholder.com/150?text=Blog"
-                                }
-                                alt={blog.title}
-                              />
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">
-                                {blog.title}
+              <>
+                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th
+                            scope="col"
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
+                            Title
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
+                            Status
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
+                            Created
+                          </th>
+                          <th
+                            scope="col"
+                            className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          >
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {currentBlogs.map((blog) => (
+                          <tr
+                            key={blog.id}
+                            className="hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="px-6 py-4">
+                              <div className="flex items-center">
+                                <div className="flex-shrink-0 h-10 w-10">
+                                  {blog.coverPhoto ? (
+                                    <img
+                                      className="h-10 w-10 rounded-md object-cover"
+                                      src={blog.coverPhoto}
+                                      alt={blog.title}
+                                    />
+                                  ) : (
+                                    <div className="h-10 w-10 rounded-md bg-gray-100 flex items-center justify-center">
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-6 w-6 text-gray-400"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={1}
+                                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                        />
+                                      </svg>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="ml-4">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {blog.title}
+                                  </div>
+                                  <div className="text-xs text-gray-500 flex items-center mt-1">
+                                    {blog.slug && (
+                                      <>
+                                        <span className="mr-1 hidden sm:inline">
+                                          /blogs/{blog.slug}
+                                        </span>
+                                        <a
+                                          href={`/blogs/${blog.slug}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-blue-500 hover:text-blue-700"
+                                        >
+                                          <ExternalLinkIcon className="h-3 w-3" />
+                                        </a>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
-                              <div className="text-sm text-gray-500 truncate max-w-xs">
-                                {blog.description.substring(0, 60)}...
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span
+                                className={`px-3 py-1 inline-flex text-xs font-semibold rounded-full ${
+                                  blog.stage === "PUBLISHED"
+                                    ? "bg-green-100 text-green-800"
+                                    : blog.stage === "DRAFT"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-gray-100 text-gray-800"
+                                }`}
+                              >
+                                {blog.stage
+                                  ? blog.stage.toLowerCase()
+                                  : "draft"}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {dayjs(blog.postDate || blog.created_at).format(
+                                "MMM D, YYYY"
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <div className="flex justify-end space-x-2">
+                                <a
+                                  href={`/blogs/${blog.slug}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
+                                  title="View blog"
+                                >
+                                  <EyeIcon className="h-5 w-5" />
+                                </a>
+                                <Link
+                                  to={`/manage/blogs/edit/${blog.slug}`}
+                                  className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
+                                  title="Edit blog"
+                                >
+                                  <PencilAltIcon className="h-5 w-5" />
+                                </Link>
+                                <button
+                                  onClick={() => handleDeleteClick(blog)}
+                                  className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
+                                  title="Delete blog"
+                                >
+                                  <TrashIcon className="h-5 w-5" />
+                                </button>
                               </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-3 py-1 inline-flex text-xs font-semibold rounded-full ${
-                              blog.status === "published"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {blog.status || "draft"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {dayjs(blog.createdAt).format("MMM D, YYYY")}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <Link
-                            to={`/manage/blogs/edit/${blog.slug}`}
-                            className="text-indigo-600 hover:text-indigo-900 mr-4"
-                          >
-                            <PencilAltIcon className="h-5 w-5 inline" />
-                            <span className="sr-only">Edit</span>
-                          </Link>
-                          <button
-                            onClick={() => handleDeleteClick(blog)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <TrashIcon className="h-5 w-5 inline" />
-                            <span className="sr-only">Delete</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between border-t border-gray-200 px-4 py-4 sm:px-6">
-                <div className="flex-1 flex justify-between sm:hidden">
-                  <button
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.max(prev - 1, 1))
-                    }
-                    disabled={currentPage === 1}
-                    className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
-                      currentPage === 1
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                    }
-                    disabled={currentPage === totalPages}
-                    className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
-                      currentPage === totalPages
-                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    Next
-                  </button>
-                </div>
-                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm text-gray-700">
-                      Showing page{" "}
-                      <span className="font-medium">{currentPage}</span> of{" "}
-                      <span className="font-medium">{totalPages}</span> pages
-                    </p>
-                  </div>
-                  <div>
-                    <nav
-                      className="isolate inline-flex -space-x-px rounded-md shadow-sm"
-                      aria-label="Pagination"
-                    >
-                      <button
-                        onClick={() =>
-                          setCurrentPage((prev) => Math.max(prev - 1, 1))
-                        }
-                        disabled={currentPage === 1}
-                        className={`relative inline-flex items-center rounded-l-md px-3 py-2 text-sm font-semibold ${
-                          currentPage === 1
-                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                            : "bg-white text-gray-900 hover:bg-gray-50"
-                        } ring-1 ring-inset ring-gray-300`}
-                      >
-                        Previous
-                      </button>
-                      <button
-                        onClick={() =>
-                          setCurrentPage((prev) =>
-                            Math.min(prev + 1, totalPages)
-                          )
-                        }
-                        disabled={currentPage === totalPages}
-                        className={`relative inline-flex items-center rounded-r-md px-3 py-2 text-sm font-semibold ${
-                          currentPage === totalPages
-                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                            : "bg-white text-gray-900 hover:bg-gray-50"
-                        } ring-1 ring-inset ring-gray-300`}
-                      >
-                        Next
-                      </button>
-                    </nav>
+                  {totalPages > 1 && (
+                    <div className="flex justify-center my-6">
+                      <div className="flex space-x-1">
+                        <button
+                          className="px-3 py-1 border border-gray-300 rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                          onClick={() => setCurrentPage(1)}
+                          disabled={currentPage === 1}
+                        >
+                          «
+                        </button>
+                        <button
+                          className="px-3 py-1 border border-gray-300 rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                          onClick={() =>
+                            setCurrentPage((prev) => Math.max(prev - 1, 1))
+                          }
+                          disabled={currentPage === 1}
+                        >
+                          ‹
+                        </button>
+                        <span className="px-3 py-1 border border-gray-300 rounded-md bg-white text-sm font-medium text-gray-700">
+                          Page {currentPage} of {totalPages}
+                        </span>
+                        <button
+                          className="px-3 py-1 border border-gray-300 rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                          onClick={() =>
+                            setCurrentPage((prev) =>
+                              Math.min(prev + 1, totalPages)
+                            )
+                          }
+                          disabled={currentPage === totalPages}
+                        >
+                          ›
+                        </button>
+                        <button
+                          className="px-3 py-1 border border-gray-300 rounded-md bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                          onClick={() => setCurrentPage(totalPages)}
+                          disabled={currentPage === totalPages}
+                        >
+                          »
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="px-6 py-4 border-t bg-gray-50">
+                    <div className="text-sm text-gray-500">
+                      Showing {indexOfFirstBlog + 1}-
+                      {Math.min(indexOfLastBlog, filteredBlogs.length)} of{" "}
+                      {filteredBlogs.length} blogs
+                      {(searchTerm || statusFilter !== "all") && (
+                        <span> (filtered from {blogs.length} total blogs)</span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-sm w-full">

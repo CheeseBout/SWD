@@ -28,6 +28,7 @@ import YourReservation from "./screens/YourReservation/YourReservation";
 import PaymentWebView from "./screens/PaymentWebView/PaymentWebView";
 import { linking } from "./navigation/linking";
 import RatingScreen from "./screens/RatingScreen/RatingScreen";
+import { ChooseGalleryPhoto } from "./screens/Profile/ChooseGalleryPhoto";
 
 // Add this line to ignore the specific warning related to this React Native bug
 LogBox.ignoreLogs([
@@ -205,6 +206,11 @@ const NavigationScreens = () => {
           <Stack.Screen
             name="RatingScreen"
             component={RatingScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="ChooseGalleryPhoto"
+            component={ChooseGalleryPhoto}
             options={{ headerShown: false }}
           />
         </>

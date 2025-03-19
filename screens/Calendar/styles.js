@@ -24,21 +24,58 @@ export const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: "#2E66E7",
     flexDirection: "row",
-    alignItems: "center",
+  },
+  timeContainer: {
+    width: 80,
+    marginRight: 15,
   },
   eventTime: {
     color: "#2E66E7",
     fontWeight: "bold",
-    marginRight: 10,
-    width: 80,
+  },
+  eventEndTime: {
+    color: "#777",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  eventInfo: {
+    flex: 1,
   },
   eventTitle: {
     fontSize: 16,
-    flex: 1,
+    fontWeight: "600",
+    marginBottom: 5,
+  },
+  eventContent: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 5,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 8,
+  },
+  statusText: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 3,
   },
   noEventsText: {
     textAlign: "center",
     color: "#999",
     marginTop: 20,
+  },
+  meetingLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  meetingText: {
+    fontSize: 12,
+    color: "#2E66E7",
+    marginLeft: 5,
+    fontWeight: "500",
   },
 });

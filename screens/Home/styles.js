@@ -169,17 +169,30 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: 10,
+    flexWrap: "wrap",
   },
   eventLocation: {
     fontSize: 14,
     color: "#666",
     marginLeft: 5,
+    marginRight: 15,
   },
   eventTime: {
     fontSize: 14,
     color: "#666",
     marginLeft: 5,
-    marginLeft: 15,
+    marginRight: 15,
+  },
+  statusIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 5,
+  },
+  eventStatus: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#666",
   },
   bottomNavigation: {
     flexDirection: "row",

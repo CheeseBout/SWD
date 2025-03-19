@@ -1,114 +1,241 @@
-import React, { useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  TextInput,
+  FlatList,
+  Image,
   TouchableOpacity,
-  ScrollView,
+  TextInput,
+  Button,
 } from "react-native";
-import Ionicons from "@expo/vector-icons/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
+import { fetchSearchTherapistList } from "../../services/therapistServices";
 import { styles } from "./styles";
-import { fetchTherapistList } from "../../services/therapistServices";
-import { useFocusEffect } from "@react-navigation/native";
 
-// Process steps data
-const PROCESS_STEPS = [
-  {
-    title: "Find a Therapist",
-    description:
-      "Everyone has unique needs when it comes to relationship help or mental health condition. Search by name, city or zip and we will display the best therapists in your locale from our list.",
-  },
-  {
-    title: "Connect",
-    description:
-      "Found therapists that seem right for you? Great! You can connect with them directly on their profile page. Get to know them better by reading their advisory articles. Contact them and take back control of your life",
-  },
-  {
-    title: "Seek Advice",
-    description:
-      "Now that you've found your perfect therapist, don't wait to seek advice and therapy. Talk 1-on-1 as your therapist helps you uncover strengths to cope with life challenges.",
-  },
-];
-
-export default function SearchTherapistScreen({ navigation }) {
+export default function SearchTherapistResultScreen({ navigation }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [therapistList, setTherapistList] = useState([]);
+  const [filteredTherapists, setFilteredTherapists] = useState([]);
+  const [sortBy, setSortBy] = useState("rating"); // Options: rating, experience, reviews
 
-  useFocusEffect(
-    useCallback(() => {
-      const fetchData = async () => {
-        try {
-          await fetchTherapistList();
-        } catch (error) {
-          console.log("Error while fetching couple therapist", error);
-        }
-      };
+  useEffect(() => {
+    // Initial fetch without any query parameters
+    const fetchData = async () => {
+      try {
+        const response = await fetchSearchTherapistList("");
+        setTherapistList(response || []);
+        setFilteredTherapists(response || []);
+        console.log(response);
+      } catch (error) {
+        console.log("Error while fetching couple therapist", error);
+        setTherapistList([]);
+        setFilteredTherapists([]);
+      }
+    };
 
-      fetchData();
+    fetchData();
+  }, []);
 
-      // Cleanup function
-      return () => {
-        // Reset states when screen loses focus
-        setSearchQuery("");
-      };
-    }, [])
-  );
-
-  const handleSearch = () => {
-    if (searchQuery.trim() !== "") {
-      // Use requestAnimationFrame to handle navigation more smoothly
-      requestAnimationFrame(() => {
-        navigation.navigate("SearchTherapistResult", { searchQuery });
-      });
+  // Filter therapists based on search query
+  const filterTherapists = async () => {
+    try {
+      const response = await fetchSearchTherapistList(searchQuery);
+      setFilteredTherapists(response || []);
+      console.log(response);
+    } catch (error) {
+      console.log("Error filtering therapists:", error);
+      setFilteredTherapists([]);
     }
   };
 
-  // Render a single process step
-  const renderProcessStep = (step, index) => (
-    <View key={index} style={styles.processStep}>
-      <View style={styles.stepNumberContainer}>
-        <Text style={styles.stepNumber}>{index + 1}</Text>
+  // Handle enter key press
+  const handleKeyPress = (event) => {
+    if (event.key === "Enter") {
+      filterTherapists();
+    }
+  };
+
+  // Sort therapists based on criteria
+  const sortTherapists = (criteria) => {
+    setSortBy(criteria);
+    let sorted = [...filteredTherapists];
+
+    switch (criteria) {
+      case "rating":
+        sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        break;
+      case "experience":
+        sorted.sort(
+          (a, b) => parseInt(b.experience || 0) - parseInt(a.experience || 0)
+        );
+        break;
+      case "reviews":
+        sorted.sort((a, b) => (b.reviews || 0) - (a.reviews || 0));
+        break;
+    }
+
+    setFilteredTherapists(sorted);
+  };
+
+  // Render each therapist card
+  const renderTherapistCard = ({ item }) => (
+    <TouchableOpacity
+      style={styles.therapistCard}
+      onPress={() =>
+        navigation.navigate("TherapistDetail", { therapist: item })
+      }
+    >
+      <Image
+        source={{
+          uri: item?.userInfo?.photoURL || "https://via.placeholder.com/150",
+        }}
+        style={styles.therapistImage}
+      />
+      <View style={styles.therapistInfo}>
+        <View style={styles.nameContainer}>
+          <Text style={styles.therapistName}>
+            {item?.userInfo?.fullname || "Unknown"}
+          </Text>
+          {item?.userInfo?.isVerified && (
+            <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+          )}
+        </View>
+
+        <Text style={styles.therapistCategory}>
+          {item?.category || "General"}
+        </Text>
+        <Text style={styles.therapistLocation}>
+          {item?.userInfo?.address || "No location specified"}
+        </Text>
+
+        <View style={styles.therapistDetails}>
+          <View style={styles.detailItem}>
+            <Ionicons name="star" size={14} color="#FFD700" />
+            <Text style={styles.detailText}>
+              {item.rating || "New"}{" "}
+              {item.rating ? `(${item.reviewCount || 0} reviews)` : ""}
+            </Text>
+          </View>
+
+          {item?.certificates && item.certificates.length > 0 && (
+            <View style={styles.detailItem}>
+              <Ionicons name="school-outline" size={14} color="#666" />
+              <Text style={styles.detailText}>
+                {item.certificates.length} Certificate
+                {item.certificates.length > 1 ? "s" : ""}
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.detailItem}>
+            <Ionicons name="location-outline" size={14} color="#666" />
+            <Text style={styles.detailText}>
+              {item?.userInfo?.address || "No location"}
+            </Text>
+          </View>
+        </View>
       </View>
-      <View style={styles.stepContent}>
-        <Text style={styles.stepTitle}>{step.title}</Text>
-        <Text style={styles.stepDescription}>{step.description}</Text>
-      </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Search Section */}
-      <View style={styles.searchSection}>
-        <Text style={styles.searchTitle}>Find Your Perfect Match</Text>
-        <Text style={styles.searchSubtitle}>
-          Search for therapists by name, specialty, or location
+    <View style={styles.container}>
+      {/* Search Bar */}
+      <View style={styles.searchBarContainer}>
+        <Ionicons
+          name="search"
+          size={20}
+          color="#666"
+          style={styles.searchIcon}
+        />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search therapists..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          onKeyPress={handleKeyPress}
+        />
+        <Button title="Search" onPress={filterTherapists} />
+      </View>
+
+      {/* Sort Options */}
+      <View style={styles.sortContainer}>
+        <Text style={styles.resultsCount}>
+          {filteredTherapists.length} therapists found
         </Text>
-
-        <View style={styles.searchBarContainer}>
-          <Ionicons
-            name="search"
-            size={20}
-            color="#666"
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search therapists..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
+        <View style={styles.sortButtons}>
+          <Text style={styles.sortByText}>Sort by:</Text>
+          <TouchableOpacity
+            style={[
+              styles.sortButton,
+              sortBy === "rating" && styles.activeSortButton,
+            ]}
+            onPress={() => sortTherapists("rating")}
+          >
+            <Text
+              style={[
+                styles.sortButtonText,
+                sortBy === "rating" && styles.activeSortButtonText,
+              ]}
+            >
+              Rating
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.sortButton,
+              sortBy === "experience" && styles.activeSortButton,
+            ]}
+            onPress={() => sortTherapists("experience")}
+          >
+            <Text
+              style={[
+                styles.sortButtonText,
+                sortBy === "experience" && styles.activeSortButtonText,
+              ]}
+            >
+              Experience
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.sortButton,
+              sortBy === "reviews" && styles.activeSortButton,
+            ]}
+            onPress={() => sortTherapists("reviews")}
+          >
+            <Text
+              style={[
+                styles.sortButtonText,
+                sortBy === "reviews" && styles.activeSortButtonText,
+              ]}
+            >
+              Reviews
+            </Text>
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-          <Text style={styles.searchButtonText}>Search</Text>
-        </TouchableOpacity>
       </View>
 
-      {/* Process Section */}
-      <View style={styles.processSection}>
-        <Text style={styles.processTitle}>How It Works</Text>
-        {PROCESS_STEPS.map(renderProcessStep)}
-      </View>
-    </ScrollView>
+      {/* Therapist List */}
+      {filteredTherapists.length > 0 ? (
+        <FlatList
+          data={filteredTherapists}
+          keyExtractor={(item) => item._id || Math.random().toString()}
+          renderItem={renderTherapistCard}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+        />
+      ) : (
+        <View style={styles.noResultsContainer}>
+          <Ionicons name="search-outline" size={64} color="#ccc" />
+          <Text style={styles.noResultsText}>
+            No therapists found matching your search
+          </Text>
+          <Text style={styles.noResultsSubtext}>
+            Try adjusting your search terms
+          </Text>
+        </View>
+      )}
+    </View>
   );
 }

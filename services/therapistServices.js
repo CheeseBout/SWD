@@ -3,6 +3,11 @@ import apiClient from "../configs/axiosConfig";
 const fetchTherapistList = async () => {
   try {
     const response = await apiClient.get("/coupletherapist");
+    console.log(
+      "Fetched therapists:",
+      JSON.stringify(response.data.data, null, 2)
+    );
+
     return response.data.data;
   } catch (error) {
     console.log(error);

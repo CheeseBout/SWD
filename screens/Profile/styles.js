@@ -42,6 +42,22 @@ export const styles = StyleSheet.create({
     borderColor: "#fff",
     marginTop: -50,
   },
+  changePhotoOverlay: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    left: 0,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    paddingVertical: 5,
+    alignItems: "center",
+    borderBottomLeftRadius: 75,
+    borderBottomRightRadius: 75,
+  },
+  changePhotoText: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
   name: {
     fontSize: 22,
     fontWeight: "bold",

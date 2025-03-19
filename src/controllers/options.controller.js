@@ -19,8 +19,9 @@ class OptionsController {
     return OK(res, "Success", await optionsServices.createOptions(req));
   });
 
-  selectOption = catchAsync(async (req, res) => {
-    return OK(res, "Success", await optionsServices.selectOption(req));
+  selectOptionWithQuiz = catchAsync(async (req, res) => {
+    // Pass the quizID from params to the service
+    return OK(res, "Success", await optionsServices.selectOptionWithQuiz(req));
   });
 
   updateOption = catchAsync(async (req, res) => {
@@ -28,11 +29,7 @@ class OptionsController {
   });
 
   deleteOption = catchAsync(async (req, res) => {
-    return OK(
-      res,
-      "Success",
-      await optionsServices.deleteOptions(req)
-    );
+    return OK(res, "Success", await optionsServices.deleteOptions(req));
   });
 }
 

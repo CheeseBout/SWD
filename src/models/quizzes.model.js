@@ -15,12 +15,10 @@ const quizzesSchema = new mongoose.Schema({
       ref: "Questions",
     },
   ],
-  userAnswer: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "UserAnswers",
-    },
-  ],
+  userAnswer: {
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: "UserAnswers" }],
+    default: [],
+  },
   imageUrl: {
     type: String,
     required: true,

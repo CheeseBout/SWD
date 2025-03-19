@@ -4,7 +4,21 @@ const TOPIC = require("../models/topic.model");
 
 class QuizRepository {
   async findAllQuizzes() {
-    return await QUIZZES.find().populate("questions").populate("userAnswer");
+    const topics = await TOPIC.find().lean().populate("questionBank");
+    const allQuizzes = [];
+
+    for (const topic of topics) {
+      if (topic.quiz && topic.quiz.length > 0) {
+        for (const quiz of topic.quiz) {
+          allQuizzes.push({
+            ...quiz,
+            topic: topic,
+          });
+        }
+      }
+    }
+
+    return allQuizzes;
   }
 
   async findQuizById(quizId) {

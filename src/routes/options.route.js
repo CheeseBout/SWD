@@ -273,12 +273,19 @@ const optionsController = require("../controllers/options.controller");
 
 /**
  * @swagger
- * /options/select:
+ * /options/select/{quizID}:
  *   post:
- *     summary: Select options for questions
+ *     summary: Select options for questions in a specific quiz
  *     tags: [Options]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: quizID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the quiz
  *     requestBody:
  *       required: true
  *       content:
@@ -310,25 +317,21 @@ const optionsController = require("../controllers/options.controller");
  *                 success:
  *                   type: boolean
  *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       optionID:
- *                         type: string
- *                       questionID:
- *                         type: string
- *                       score:
- *                         type: number
- *                       optionContent:
- *                         type: string
- *                       selectedAt:
- *                         type: string
- *                         format: date-time
- *                       userAnswerId:
- *                         type: string
- *                 totalScore:
- *                   type: number
+ *                   type: object
+ *                   properties:
+ *                     userAnswerID:
+ *                       type: string
+ *                     selections:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                     totalScore:
+ *                       type: number
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *                     quizId:
+ *                       type: string
  */
 
 //Public Routes
@@ -338,7 +341,11 @@ router.get("/:id", optionsController.getOptionById);
 //Protected Routes
 
 router.post("/create-option", auth, optionsController.createOption);
-router.post("/select-option", auth, optionsController.selectOption);
+router.post(
+  "/select-option/:quizID",
+  auth,
+  optionsController.selectOptionWithQuiz
+);
 
 router.put("/update-option", auth, optionsController.updateOption);
 

@@ -62,12 +62,14 @@ export default function TherapistBlogs() {
       const userId = user?._id || localStorage.getItem("userId");
 
       const response = await blogService.getAllBlogs();
+      console.log("the blogs", response.data);
 
-      if (response?.data?.data) {
+      if (response?.data) {
         // Filter blogs client-side to show only therapist's own blogs
-        const therapistBlogs = response.data.data.filter(
+        const therapistBlogs = response.data.filter(
           (blog) => blog.author?.userId === userId
         );
+console.log("my the blogs", therapistBlogs);
 
         // Sort blogs by date (newest first)
         therapistBlogs.sort((a, b) => {

@@ -39,6 +39,18 @@ export const reservationResultService = {
     }
   },
 
+  async getAllReservationResultByUserId(userId) {
+    try {
+      const response = await api.get(
+        `/api/v1/reservation-result/get-all-reservation-result/user/${userId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching reservation result:", error);
+      throw error;
+    }
+  },
+
   async deleteReservationResult(reservationResultID, deleteReason) {
     try {
       const response = await api.put(

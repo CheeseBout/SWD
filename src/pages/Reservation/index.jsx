@@ -6,6 +6,7 @@ import paymentService from "../../services/payment";
 import { useLocation, useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import SideBar from "../../components/SideBar";
+import { reservationResultService } from "../../services/reservation/reservationResultService";
 
 export default function YourReservation() {
   const { user: authUser } = useContext(AuthContext);
@@ -28,45 +29,22 @@ export default function YourReservation() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [isPayingFull, setIsPayingFull] = useState(false);
 
-  const handlePayment = async (reservation) => {
-    setIsLoading(true);
-    const paymentData = {
-      reservationID: reservation._id,
-      phase: "DEPOSIT",
-      totalPrice: reservation.totalPrice / 2,
-    };
-
-    try {
-      const response = await paymentService.createPayment(paymentData);
-      console.log("Payment response:", response);
-      if (response?.paymentUrl) {
-        window.location.href = response.paymentUrl;
-      } else {
-        console.log("Payment failed!");
-      }
-    } catch (error) {
-      console.error("Payment error:", error);
-    } finally {
-      setIsLoading(false);
+  const handleUnifiedPayment = async (reservation, paymentPhase) => {
+    // Show appropriate loading state
+    if (paymentPhase === "DEPOSIT") {
+      setIsLoading(true);
+    } else {
+      setIsPayingFull(true);
     }
-  };
 
-  const handleViewDetails = (reservation) => {
-    setSelectedReservation(reservation);
-    setShowDetailsModal(true);
-  };
-  const navigateToResults = (reservationId) => {
-    navigate(`/profile/reservation-results/${reservationId}`);
-  };
-  const handleFullPayment = async (reservation) => {
-    setIsPayingFull(true);
     const paymentData = {
       reservationID: reservation._id,
-      phase: "FINAL",
-      totalPrice: reservation.totalPrice / 2,
+      phase: paymentPhase,
+      totalPrice: reservation.totalPrice,
     };
 
     try {
+      sessionStorage.setItem("paymentPhase", paymentPhase);
       const response = await paymentService.createPayment(paymentData);
       if (response?.paymentUrl) {
         window.location.href = response.paymentUrl;
@@ -78,30 +56,24 @@ export default function YourReservation() {
       console.error("Payment error:", error);
       toast.error("Payment processing error");
     } finally {
-      setIsPayingFull(false);
+      // Reset appropriate loading state
+      if (paymentPhase === "DEPOSIT") {
+        setIsLoading(false);
+      } else {
+        setIsPayingFull(false);
+      }
     }
   };
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const isCancelled = params.get("cancelled");
-    const errorMessage = params.get("message");
-    const isSuccessful = params.get("success");
 
-    if (isCancelled === "true" && isSuccessful === "false") {
-      toast.warning(errorMessage || "Payment cancelled");
-      setTimeout(() => {
-        // Make sure this matches the path in SideBar navigation
-        navigate("/profile/your-reservations", { replace: true });
-      }, 3000);
-    }
-    if (isSuccessful === "true") {
-      toast.success("Payment successful");
-      setTimeout(() => {
-        // Make sure this matches the path in SideBar navigation
-        navigate("/profile/your-reservations", { replace: true });
-      }, 3000);
-    }
-  }, [location, navigate]);
+  const handleViewDetails = (reservation) => {
+    setSelectedReservation(reservation);
+    setShowDetailsModal(true);
+  };
+  const navigateToResults = (reservationId, therapistId) => {
+    console.log("Navigating to results for reservation:", therapistId);
+
+    navigate(`/reservation-results/${reservationId}/${therapistId}`);
+  };
 
   useEffect(() => {
     const fetchReservations = async () => {
@@ -120,9 +92,49 @@ export default function YourReservation() {
     fetchReservations();
   }, [userID, filterStatus, currentPage, refreshKey]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const isCancelled = params.get("cancelled");
+    const errorMessage = params.get("message");
+    const isSuccessful = params.get("success");
+    const storedPaymentPhase = sessionStorage.getItem("paymentPhase");
+
+    if (isCancelled === "true" && isSuccessful === "false") {
+      toast.warning(errorMessage || "Payment cancelled");
+      sessionStorage.removeItem("paymentPhase");
+      setTimeout(() => {
+        navigate("/profile/your-reservations", { replace: true });
+      }, 3000);
+    }
+
+    if (isSuccessful === "true") {
+      toast.success("Payment successful");
+      // If this was a FINAL payment, update the reservation results
+      if (storedPaymentPhase === "FINAL") {
+        const updateResults = async () => {
+          try {
+            await reservationResultService.getAllReservationResultByUserId(
+              userID
+            );
+            // Refresh the reservations data
+            setRefreshKey((prev) => prev + 1);
+          } catch (error) {
+            console.error("Error fetching updated results:", error);
+          }
+        };
+        updateResults();
+      }
+      sessionStorage.removeItem("paymentPhase");
+      setTimeout(() => {
+        navigate("/profile/your-reservations", { replace: true });
+      }, 3000);
+    }
+  }, [location, navigate, userID]);
+
   const handleOpenPayment = (reservation) => {
     setSelectedReservation(reservation);
     setShowPaymentModal(true);
+    // No change to actual payment until user confirms in modal
   };
   const handleCancel = (id) => {
     setCancelReservationId(id);
@@ -469,7 +481,9 @@ export default function YourReservation() {
                 className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-150 ${
                   isLoading ? "opacity-75 cursor-not-allowed" : ""
                 }`}
-                onClick={() => handlePayment(selectedReservation)}
+                onClick={() =>
+                  handleUnifiedPayment(selectedReservation, "DEPOSIT")
+                }
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -684,18 +698,6 @@ export default function YourReservation() {
                   </div>
                 </div>
               )}
-
-              {/* Description if available */}
-              {selectedReservation.description && (
-                <div className="mt-4">
-                  <h4 className="text-md font-semibold text-gray-800 mb-2">
-                    Description
-                  </h4>
-                  <p className="text-sm text-gray-600">
-                    {selectedReservation.description}
-                  </p>
-                </div>
-              )}
             </div>
 
             <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
@@ -713,26 +715,94 @@ export default function YourReservation() {
 
               {selectedReservation.status === "deposited" && (
                 <>
-                  <a
-                    href={
-                      selectedReservation.meetingURL ||
-                      "https://meet.google.com/landing"
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors duration-150"
-                  >
-                    Join Meeting
-                  </a>
-                  <button
-                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors duration-150"
-                    onClick={() => {
-                      setShowDetailsModal(false);
-                      handleFullPayment(selectedReservation);
-                    }}
-                  >
-                    Pay Remaining Balance
-                  </button>
+                  {/* Case 1: Deposited with null result  */}
+                  {!selectedReservation.reservationResult && (
+                    <a
+                      href={
+                        selectedReservation.meetingURL ||
+                        "https://meet.google.com/landing"
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors duration-150"
+                    >
+                      Join Meeting
+                    </a>
+                  )}
+
+                  {/* Case 2: Deposited with final_completed result  */}
+                  {/* {selectedReservation.reservationResult?.status ===
+                    "final_completed" && (
+                    <button
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors duration-150"
+                      onClick={() => {
+                        setShowDetailsModal(false);
+
+                        navigateToResults(selectedReservation._id);
+                      }}
+                    >
+                      View Results
+                    </button>
+                  )} */}
+
+                  {/* Case 3: Deposited with pending result  */}
+                  {selectedReservation.reservationResult?.status ===
+                    "pending" && (
+                    <div className="flex flex-col space-y-2">
+                      <button
+                        className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-md hover:from-green-600 hover:to-emerald-700 transition-all duration-150 flex items-center justify-center shadow-md"
+                        onClick={() => {
+                          setShowDetailsModal(false);
+                          handleUnifiedPayment(selectedReservation, "FINAL");
+                        }}
+                        disabled={isPayingFull}
+                      >
+                        {isPayingFull ? (
+                          <div className="flex items-center">
+                            <svg
+                              className="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              ></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              ></path>
+                            </svg>
+                            Processing...
+                          </div>
+                        ) : (
+                          <>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5 mr-2"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                              />
+                            </svg>
+                            Pay Remaining Balance
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
 
@@ -741,7 +811,10 @@ export default function YourReservation() {
                   className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors duration-150"
                   onClick={() => {
                     setShowDetailsModal(false);
-                    navigateToResults(selectedReservation._id);
+                    navigateToResults(
+                      selectedReservation._id,
+                      selectedReservation.coupleTherapistID._id
+                    );
                   }}
                 >
                   View Results
@@ -767,6 +840,28 @@ export default function YourReservation() {
                 Close
               </button>
             </div>
+            {selectedReservation.status === "deposited" &&
+              selectedReservation.reservationResult?.status === "pending" && (
+                <div className="flex flex-col space-y-2">
+                  <p className="text-md text-amber-600 font-medium text-center mt-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="inline-block h-5 w-5 mr-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    Complete payment to access your results
+                  </p>
+                </div>
+              )}
           </div>
         </div>
       )}

@@ -37,6 +37,9 @@ const TherapistDashboard = lazy(() => import("../pages/Therapist/Dashboard"));
 const Therapist = lazy(() => import("../pages/Therapist/Therapist"));
 const BookReservation = lazy(() => import("../pages/BookReservation"));
 const YourReservation = lazy(() => import("../pages/Reservation"));
+const MemberResultDetail = lazy(() =>
+  import("../pages/ReservationResult/ResultDetail")
+);
 const Connect = lazy(() => import("../pages/Connection/Connect"));
 const TherapistReservations = lazy(() =>
   import("../pages/Therapist/Reservations")
@@ -157,6 +160,14 @@ export function AppRoutes() {
             }
           />
         </Route>
+        <Route
+          path="reservation-results/:reservationId/:therapistId"
+          element={
+            <LazyLoad>
+              <MemberResultDetail />
+            </LazyLoad>
+          }
+        />
         <Route
           path="faq"
           element={

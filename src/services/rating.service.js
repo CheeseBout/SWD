@@ -13,6 +13,11 @@ class RatingService {
       throw new APIError(403, "Permission denied: Insufficient privileges");
     }
 
+    // Check if reservationID is provided
+    if (!rating.reservationID) {
+      throw new APIError(400, "Reservation ID is required");
+    }
+
     const duplicate = await ratingRepo.checkDuplicate(rating);
     if (duplicate) throw new APIError(400, "Duplicate rating");
 
@@ -28,21 +33,19 @@ class RatingService {
     return newRating;
   };
 
-  checkRatingForReservation = async (req, coupleTherapistID) => {
+  checkRatingForReservation = async (req, reservationID) => {
     try {
-      console.log("Looking for ratings with therapist ID:", coupleTherapistID);
+      console.log("Looking for ratings with reservation ID:", reservationID);
 
-      if (!coupleTherapistID) {
-        throw new Error("Missing coupleTherapistID parameter");
+      if (!reservationID) {
+        throw new Error("Missing reservationID parameter");
       }
 
       // Kiểm tra và log ID người dùng hiện tại nếu có
       const userID = req && req.user ? req.user.id : null;
       console.log("Current user ID:", userID);
 
-      const ratings = await ratingRepo.checkRatingForReservation(
-        coupleTherapistID
-      );
+      const ratings = await ratingRepo.checkRatingForReservation(reservationID);
       console.log("Ratings found:", ratings);
 
       return ratings;

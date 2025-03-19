@@ -11,6 +11,11 @@ const ratingSchema = mongoose.Schema(
       ref: "CoupleTherapist",
       require: true,
     },
+    reservationID: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Reservation",
+      require: true,
+    },
     content: {
       type: String,
       trim: true,

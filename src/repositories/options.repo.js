@@ -162,9 +162,6 @@ class OptionsRepository {
         { new: true }
       );
 
-      console.log("Update result:", result);
-
-      // Verify the update worked by fetching the updated quiz
       await QUIZZES.findById(quizId);
       console.log("After update, quiz userAnswer:", updatedQuiz.userAnswer);
 

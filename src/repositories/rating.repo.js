@@ -55,8 +55,8 @@ class RatingRepository {
 
   async getRatingByTherapistId(therapistId) {
     return await RATING.find({ coupleTherapistID: therapistId })
-      .populate('userID')
-      .populate('coupleTherapistID');
+      .populate("userID")
+      .populate("coupleTherapistID");
   }
 
   async update(ratingID, rating) {
@@ -101,11 +101,13 @@ class RatingRepository {
     );
   }
 
-  async checkRatingForReservation(coupleTherapistID) {
-    console.log("Checking rating for therapist ID:", coupleTherapistID);
+  async checkRatingForReservation(reservationID) {
+    console.log("Checking rating for reservation ID:", reservationID);
 
     try {
-      const ratings = await RATING.find({ coupleTherapistID });
+      // Use find with a query object instead of findById
+      const ratings = await RATING.find({ reservationID });
+      console.log("Ratings found:", ratings);
       return ratings;
     } catch (error) {
       console.error("Error in checkRatingForReservation:", error);
@@ -119,6 +121,7 @@ class RatingRepository {
       coupleTherapistID: rating.coupleTherapistID,
       rate: rating.rate,
       content: rating.content,
+      reservationID: rating.reservationID,
     });
   }
 }

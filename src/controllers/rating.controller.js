@@ -5,12 +5,14 @@ const APIError = require("../utils/ApiError");
 
 class RatingController {
   createRating = catchAsync(async (req, res) => {
-    const { userID, coupleTherapistID, rate, content } = req.body;
+    const { userID, coupleTherapistID, rate, content, reservationID } =
+      req.body;
     const result = await ratingService.createRating(req, {
       userID,
       coupleTherapistID,
       rate,
       content,
+      reservationID,
     });
     return OK(res, "Success", result);
   });
@@ -36,19 +38,43 @@ class RatingController {
       throw new APIError(403, "Permission denied: Insufficient privileges");
     }
 
-    const coupleTherapistID = req.params.coupleTherapistID;
-    console.log("Checking ratings for therapist:", coupleTherapistID);
+    // Correctly extract the reservationID from req.params
+    const reservationID = req.params.reservationID;
+    console.log("Checking ratings for reservation:", reservationID);
 
-    if (!coupleTherapistID) {
-      throw new APIError(400, "Missing therapist ID parameter");
+    if (!reservationID) {
+      throw new APIError(400, "Missing reservation ID parameter");
     }
 
     const result = await ratingService.checkRatingForReservation(
       req,
-      coupleTherapistID
+      reservationID
     );
 
     return OK(res, "Rating check completed", result);
+  });
+
+  // Add a separate method for checking by therapist ID
+  checkRatingByTherapist = catchAsync(async (req, res) => {
+    if (!req.user) {
+      throw new APIError(401, "Authentication required");
+    }
+
+    if (req.user.role !== "member") {
+      throw new APIError(403, "Permission denied: Insufficient privileges");
+    }
+
+    const therapistID = req.params.therapistID;
+    console.log("Checking ratings for therapist:", therapistID);
+
+    if (!therapistID) {
+      throw new APIError(400, "Missing therapist ID parameter");
+    }
+
+    // Call a different service method for checking by therapist ID
+    const result = await ratingService.getRatingByTherapistId(therapistID);
+
+    return OK(res, "Therapist ratings retrieved", result);
   });
 
   getRatingByTherapistId = catchAsync(async (req, res) => {

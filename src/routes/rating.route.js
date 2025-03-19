@@ -236,19 +236,19 @@ const { auth } = require("../middlewares/auth.middleware");
 
 /**
  * @swagger
- * /rating/check/{coupleTherapistID}:
+ * /rating/check/{reservationID}:
  *   get:
- *     summary: Check if ratings exist for a specific therapist
+ *     summary: Check if ratings exist for a specific reservation
  *     tags: [Ratings]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: coupleTherapistID
+ *         name: reservationID
  *         required: true
  *         schema:
  *           type: string
- *         description: ID of the therapist
+ *         description: ID of the reservation
  *     responses:
  *       200:
  *         description: Rating check results
@@ -279,7 +279,7 @@ router.post("/", auth, ratingController.createRating);
 router.get("/", ratingController.getAllRating);
 router.get("/therapist/:therapistId", ratingController.getRatingByTherapistId);
 router.get(
-  "/check/:coupleTherapistID",
+  "/check/:reservationID",
   auth,
   ratingController.checkRatingForReservation
 );

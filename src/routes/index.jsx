@@ -334,14 +334,6 @@ export function AppRoutes() {
           }
         >
           <Route
-            path="blogs"
-            element={
-              <LazyLoad>
-                <AdminBlogs />
-              </LazyLoad>
-            }
-          />
-          <Route
             path="blogs/create"
             element={
               <LazyLoad>
@@ -366,6 +358,14 @@ export function AppRoutes() {
             element={
               <LazyLoad>
                 <AdminDashboard />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="mange/blogs"
+            element={
+              <LazyLoad>
+                <AdminBlogs />
               </LazyLoad>
             }
           />

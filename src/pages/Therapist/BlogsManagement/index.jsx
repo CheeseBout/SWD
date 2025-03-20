@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
 import {
@@ -28,9 +28,25 @@ export default function TherapistBlogs() {
   const { user } = useContext(AuthContext);
   const blogsPerPage = 8;
 
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [refreshTrigger, setRefreshTrigger] = useState(Date.now());
+
   useEffect(() => {
     fetchBlogs();
-  }, []);
+
+    // If we have a refresh state, clear it and update our trigger
+    if (location.state?.refresh) {
+      setRefreshTrigger(Date.now());
+      // Replace the current entry in the history stack
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.state?.refresh, navigate, location.pathname]);
+
+  // Add a separate effect that only depends on refreshTrigger
+  useEffect(() => {
+    fetchBlogs();
+  }, [refreshTrigger]);
 
   useEffect(() => {
     // Apply client-side filtering on search term or status changes
@@ -62,15 +78,12 @@ export default function TherapistBlogs() {
       const userId = user?._id || localStorage.getItem("userId");
 
       const response = await blogService.getAllBlogs();
-      console.log("the blogs", response.data);
 
       if (response?.data) {
         // Filter blogs client-side to show only therapist's own blogs
         const therapistBlogs = response.data.filter(
           (blog) => blog.author?.userId === userId
         );
-console.log("my the blogs", therapistBlogs);
-
         // Sort blogs by date (newest first)
         therapistBlogs.sort((a, b) => {
           const dateA = new Date(a.postDate || a.created_at);
@@ -102,10 +115,20 @@ console.log("my the blogs", therapistBlogs);
 
     try {
       setIsLoading(true);
-      await blogService.deleteBlog(blogToDelete.id);
+      // Try both ID formats
+      const blogId = blogToDelete.id || blogToDelete._id;
+      await blogService.deleteBlog(blogId);
       toast.success("Blog deleted successfully");
+
+      // Optimistically update the UI immediately
+      const updatedBlogs = blogs.filter(
+        (blog) => blog.id !== blogId && blog._id !== blogId
+      );
+      setBlogs(updatedBlogs);
+      setFilteredBlogs((prevFiltered) =>
+        prevFiltered.filter((blog) => blog.id !== blogId && blog._id !== blogId)
+      );
       setShowDeleteModal(false);
-      fetchBlogs(); // Refresh the list
     } catch (error) {
       console.error("Error deleting blog:", error);
       toast.error("Failed to delete blog");
@@ -113,7 +136,6 @@ console.log("my the blogs", therapistBlogs);
       setIsLoading(false);
     }
   };
-
   // Calculate pagination details
   const indexOfLastBlog = currentPage * blogsPerPage;
   const indexOfFirstBlog = indexOfLastBlog - blogsPerPage;

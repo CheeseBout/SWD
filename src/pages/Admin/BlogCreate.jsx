@@ -15,6 +15,16 @@ export default function BlogCreate() {
   const [coverPhoto, setCoverPhoto] = useState("");
   const [slug, setSlug] = useState("");
 
+  // Reusable navigation function
+  const navigateToAppropriateBlogs = () => {
+    const therapistId = localStorage.getItem("therapistId");
+    if (therapistId) {
+      navigate("/therapist/blogs", { state: { refresh: true } });
+    } else {
+      navigate("/manage/blogs");
+    }
+  };
+
   const handleSubmit = async (blogData) => {
     setIsSubmitting(true);
     setError(null);
@@ -35,7 +45,7 @@ export default function BlogCreate() {
 
       const response = await blogService.createBlog(blogData);
       toast.success("Blog created successfully");
-      navigate("/manage/blogs");
+      navigateToAppropriateBlogs(); // Use the shared function
     } catch (error) {
       console.error("Error creating blog:", error);
 
@@ -92,7 +102,7 @@ export default function BlogCreate() {
         isSubmitting={isSubmitting}
         onSubmit={handleSubmit}
         submitButtonText="Create Blog"
-        onCancel={() => navigate("/manage/blogs")}
+        onCancel={navigateToAppropriateBlogs} // Use the shared function
         autoGenerateSlug={true}
       />
     </div>

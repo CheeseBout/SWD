@@ -33,14 +33,21 @@ export default function BlogEdit() {
 
     fetchBlog();
   }, [slug]);
-
+  const navigateToAppropriateBlogs = () => {
+    const therapistId = localStorage.getItem("therapistId");
+    if (therapistId) {
+      navigate("/therapist/blogs", { state: { refresh: true } });
+    } else {
+      navigate("/manage/blogs");
+    }
+  };
   const handleSubmit = async (blogData) => {
     setIsSubmitting(true);
 
     try {
       await blogService.updateBlog(blogData, blog.id || blog._id);
       toast.success("Blog updated successfully");
-      navigate("/manage/blogs");
+      navigateToAppropriateBlogs();
     } catch (error) {
       console.error("Error updating blog:", error);
       toast.error("Failed to update blog");
@@ -73,7 +80,7 @@ export default function BlogEdit() {
           isSubmitting={isSubmitting}
           onSubmit={handleSubmit}
           submitButtonText="Update Blog"
-          onCancel={() => navigate("/manage/blogs")}
+          onCancel={() => navigateToAppropriateBlogs()}
           autoGenerateSlug={false}
         />
       )}

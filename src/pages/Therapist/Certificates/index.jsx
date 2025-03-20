@@ -68,7 +68,14 @@ export default function TherapistCertificates() {
         toast.error("Please fill all required fields");
         return;
       }
+      const issuedDate = dayjs(formData.issuedDate);
+      const expiryDate = dayjs(formData.expiryDate);
 
+      if (issuedDate.isAfter(expiryDate) || issuedDate.isSame(expiryDate)) {
+        toast.error("Issue date must be before expiry date");
+        setIsSubmitting(false);
+        return;
+      }
       // Format dates for API
       const payload = {
         ...formData,

@@ -301,7 +301,7 @@ class ReservationService {
             if (isDeposited) {
               // Update reservation status to deposited in the database
               await mongoose
-                .model("Reservations")
+                .model("Reservation")
                 .findByIdAndUpdate(reservation._id, { status: "deposited" });
 
               // Update the status in the returned object as well

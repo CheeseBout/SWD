@@ -37,4 +37,14 @@ export const adminService = {
       throw error;
     }
   },
+
+  getRevenue: async () => {
+    try {
+      const response = await api.get("/api/v1/admin/revenue");
+      return response.data;
+    } catch (error) {
+      console.error("Error getting revenue:", error);
+      throw error;
+    }
+  }
 };

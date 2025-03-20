@@ -163,7 +163,7 @@ const AdminSideBar = () => {
                   label="Package Management"
                 />
                 <NavItem
-                  to="/manage/blogs"
+                  to="/admin/blogs"
                   icon={ClipboardCheckIcon}
                   label="Blog Management"
                 />

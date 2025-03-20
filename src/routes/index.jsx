@@ -362,7 +362,7 @@ export function AppRoutes() {
             }
           />
           <Route
-            path="mange/blogs"
+            path="blogs"
             element={
               <LazyLoad>
                 <AdminBlogs />

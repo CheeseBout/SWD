@@ -1,4 +1,5 @@
 const adminServices = require("../services/admin.services");
+const APIError = require("../utils/ApiError");
 const catchAsync = require("../utils/catchAsync");
 const { OK } = require("../utils/response");
 
@@ -18,6 +19,14 @@ class AdminController {
 
   getAllCertificateRequests = catchAsync(async (req, res) => {
     const result = await adminServices.getAllCertificateRequests(req);
+    return OK(res, "Success", result);
+  });
+
+  getSumMoneyPayment = catchAsync(async (req, res) => {
+    if (req.user.role !== "admin") {
+      throw new APIError(401, "You are not authorized to perform this action");
+    }
+    const result = await adminServices.calSumRevenue();
     return OK(res, "Success", result);
   });
 }

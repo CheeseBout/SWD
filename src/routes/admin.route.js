@@ -124,4 +124,31 @@ router.get(
   adminController.getAllCertificateRequests
 );
 
+/**
+ * @swagger
+ * /admin/revenue:
+ *   get:
+ *     summary: Get total revenue
+ *     description: Endpoint for admins to view the total revenue generated
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Total revenue
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 total:
+ *                   type: number
+ *                   example: 1000
+ *       401:
+ *         description: Unauthorized - Admin access required
+ *       403:
+ *         description: Forbidden - Not an admin
+ */
+router.get("/revenue", auth, adminController.getSumMoneyPayment);
+
 module.exports = router;

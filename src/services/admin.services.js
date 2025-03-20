@@ -3,6 +3,7 @@ const certificateRepository = require("../repositories/certificate.repository");
 const coupleTherapistRepo = require("../repositories/coupleTherapist.repo");
 const emailServices = require("../services/email.services");
 const userRepo = require("../repositories/user.repo");
+const paymentRepo = require("../repositories/payment.repo");
 
 class AdminServices {
   async manageCertificate({ certificateID, req, action, reason }) {
@@ -112,6 +113,16 @@ class AdminServices {
     }
 
     return await certificateRepository.getAllCertificateRequests();
+  }
+
+  async calSumRevenue() {
+    try {
+      const sum = await paymentRepo.calculateAllPayments();
+      return { sum: sum || 0 };
+    } catch (error) {
+      console.error("Error in calSumRevenue:", error);
+      throw new APIError(500, "Error calculating revenue");
+    }
   }
 }
 

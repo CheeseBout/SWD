@@ -77,6 +77,18 @@ class CoupleTherapistServices {
     // Validate time slots
     this.validateTimeSlots(timeAvailable);
 
+    // Check if all time slots are in the future
+    const now = new Date();
+    for (let i = 0; i < timeAvailable.length; i++) {
+      const startTime = new Date(timeAvailable[i].startHour);
+      if (startTime <= now) {
+        throw new APIError(
+          400,
+          `Time slot at index ${i} must be in the future. Current time: ${now.toISOString()}`
+        );
+      }
+    }
+
     // Check for existing availability
     const isDuplicate = await therapistRepo.findExistingAvailability(
       coupleTherapistId,

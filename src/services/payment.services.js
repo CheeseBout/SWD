@@ -92,6 +92,38 @@ class PaymentService {
         `Payment record: totalPrice=${payment.totalPrice}, totalPaid=${payment.totalPaid}`
       );
 
+      // Check if previous transactions exist for this payment
+      const previousTransactions = await TRANSACTION.find({
+        payment: payment._id,
+        status: "PAID",
+      });
+
+      let actualPaid = payment.totalPaid;
+
+      // Sum up amounts from all paid transactions to ensure we have the correct total
+      if (previousTransactions && previousTransactions.length > 0) {
+        const paidAmount = previousTransactions.reduce(
+          (sum, transaction) => sum + transaction.amount,
+          0
+        );
+
+        console.log(
+          `Found ${previousTransactions.length} previous successful transactions, total paid: ${paidAmount}`
+        );
+
+        // If the amounts don't match, update the payment record
+        if (paidAmount !== payment.totalPaid) {
+          console.log(
+            `Updating payment totalPaid from ${payment.totalPaid} to ${paidAmount}`
+          );
+          payment.totalPaid = paidAmount;
+          await payment.save();
+          actualPaid = paidAmount;
+        } else {
+          actualPaid = payment.totalPaid;
+        }
+      }
+
       // Calculate payment amount - use direct approach
       let amount;
 
@@ -99,12 +131,17 @@ class PaymentService {
         // 50% deposit
         amount = Math.round(totalPrice * 0.5);
       } else if (phase === "FINAL") {
-        // For final payment, calculate remaining amount
-        const remainingAmount = totalPrice - payment.totalPaid;
+        // For final payment, calculate remaining amount using the verified actualPaid
+        const remainingAmount = totalPrice - actualPaid;
+
+        console.log(
+          `Calculating FINAL payment: totalPrice=${totalPrice}, totalPaid=${actualPaid}, remainingAmount=${remainingAmount}`
+        );
+
         amount = Math.round(remainingAmount);
 
         // If totalPaid is equal to totalPrice, something is wrong
-        if (payment.totalPaid >= totalPrice) {
+        if (actualPaid >= totalPrice) {
           throw new APIError(400, "Payment is already complete");
         }
       } else {

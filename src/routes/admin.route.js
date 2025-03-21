@@ -277,7 +277,7 @@ router.get("/revenue-by-date", auth, adminController.getRevenueByDate);
  *                   items:
  *                     $ref: '#/components/schemas/Transaction'
  */
-router.get("/transactions", adminController.getAllTransactions);
+router.get("/transactions", auth, adminController.getAllTransactions);
 
 /**
  * @swagger

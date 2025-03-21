@@ -21,6 +21,16 @@ class PaymentRepository {
       throw error;
     }
   }
+
+  async getPaymentById(paymentId) {
+    try {
+      const payment = await PAYMENT.findById(paymentId);
+      return payment;
+    } catch (error) {
+      console.error("Error getting payment by ID:", error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new PaymentRepository();

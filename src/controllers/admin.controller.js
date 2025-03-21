@@ -29,6 +29,31 @@ class AdminController {
     const result = await adminServices.calSumRevenue();
     return OK(res, "Success", result);
   });
+
+  getRevenueByDate = catchAsync(async (req, res) => {
+    if (req.user.role !== "admin") {
+      throw new APIError(401, "You are not authorized to perform this action");
+    }
+    const result = await adminServices.getRevenueByDate();
+    return OK(res, "Success", result);
+  });
+
+  getAllTransactions = catchAsync(async (req, res) => {
+    if (req.user.role !== "admin") {
+      throw new APIError(401, "You are not authorized to perform this action");
+    }
+    const result = await adminServices.getAllTransactions();
+    return OK(res, "Success", result);
+  });
+
+  getPaymentById = catchAsync(async (req, res) => {
+    if (req.user.role !== "admin") {
+      throw new APIError(401, "You are not authorized to perform this action");
+    }
+    const { paymentId } = req.params;
+    const result = await adminServices.getPaymentById(paymentId);
+    return OK(res, "Success", result);
+  });
 }
 
 module.exports = new AdminController();

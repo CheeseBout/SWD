@@ -32,6 +32,72 @@ const { auth } = require("../middlewares/auth.middleware");
  *         expiryDate:
  *           type: string
  *           format: date
+ *     Payment:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Payment ID
+ *         reservation:
+ *           type: string
+ *           description: Reservation ID
+ *         totalPrice:
+ *           type: number
+ *           description: Total amount to be paid
+ *         totalPaid:
+ *           type: number
+ *           description: Total amount already paid
+ *         status:
+ *           type: string
+ *           enum: [PENDING, COMPLETED, CANCELED]
+ *           description: Payment status
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *     Transaction:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: Transaction ID
+ *         payment:
+ *           $ref: '#/components/schemas/Payment'
+ *         phase:
+ *           type: string
+ *           enum: [DEPOSIT, FINAL]
+ *           description: Payment phase
+ *         amount:
+ *           type: number
+ *           description: Transaction amount
+ *         method:
+ *           type: string
+ *           description: Payment method
+ *         transactionCode:
+ *           type: string
+ *           description: Unique transaction code
+ *         status:
+ *           type: string
+ *           enum: [PENDING, PAID, CANCELLED]
+ *           description: Transaction status
+ *         platform:
+ *           type: string
+ *           description: Platform where transaction occurred
+ *         paymentMessage:
+ *           type: string
+ *           description: Additional payment message
+ *         returnUrl:
+ *           type: string
+ *           nullable: true
+ *           description: Return URL after payment
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
  */
 
 /**
@@ -86,7 +152,7 @@ const { auth } = require("../middlewares/auth.middleware");
  *                 message:
  *                   type: string
  *                   example: "Invalid action specified"
- *       401:
+ *       401:ions);
  *         description: Unauthorized - Admin access required
  *       403:
  *         description: Forbidden - Not an admin
@@ -150,5 +216,108 @@ router.get(
  *         description: Forbidden - Not an admin
  */
 router.get("/revenue", auth, adminController.getSumMoneyPayment);
+
+/**
+ * @swagger
+ * /admin/revenue-by-date:
+ *   get:
+ *     summary: Get revenue by date with paid transactions
+ *     description: Endpoint for admins to view revenue data by date with only PAID transactions
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Revenue data with paid transactions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Success
+ *                 status:
+ *                   type: number
+ *                   example: 200
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Transaction'
+ *       401:
+ *         description: Unauthorized - Admin access required
+ *       403:
+ *         description: Forbidden - Not an admin
+ */
+router.get("/revenue-by-date", auth, adminController.getRevenueByDate);
+
+/**
+ * @swagger
+ * /admin/transactions:
+ *   get:
+ *     summary: Get all transactions
+ *     description: Endpoint for admins to view all transactions in the system
+ *     tags: [Admin]
+ *     responses:
+ *       200:
+ *         description: List of all transactions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Success
+ *                 status:
+ *                   type: number
+ *                   example: 200
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Transaction'
+ */
+router.get("/transactions", adminController.getAllTransactions);
+
+/**
+ * @swagger
+ * /admin/payment/{paymentId}:
+ *   get:
+ *     summary: Get payment by ID
+ *     description: Endpoint for admins to view details of a specific payment
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: paymentId
+ *         required: true
+ *         description: ID of the payment to retrieve
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Payment details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Success
+ *                 status:
+ *                   type: number
+ *                   example: 200
+ *                 data:
+ *                   $ref: '#/components/schemas/Payment'
+ *       401:
+ *         description: Unauthorized - Admin access required
+ *       403:
+ *         description: Forbidden - Not an admin
+ *       404:
+ *         description: Payment not found
+ */
+router.get("/payment/:paymentId", auth, adminController.getPaymentById);
 
 module.exports = router;

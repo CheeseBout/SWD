@@ -4,6 +4,7 @@ const coupleTherapistRepo = require("../repositories/coupleTherapist.repo");
 const emailServices = require("../services/email.services");
 const userRepo = require("../repositories/user.repo");
 const paymentRepo = require("../repositories/payment.repo");
+const transactionRepo = require("../repositories/transaction.repo");
 
 class AdminServices {
   async manageCertificate({ certificateID, req, action, reason }) {
@@ -122,6 +123,38 @@ class AdminServices {
     } catch (error) {
       console.error("Error in calSumRevenue:", error);
       throw new APIError(500, "Error calculating revenue");
+    }
+  }
+
+  async getRevenueByDate() {
+    try {
+      const revenue = await transactionRepo.getRevenueByDate();
+      return revenue;
+    } catch (error) {
+      console.error("Error in getRevenueByDate:", error);
+      throw new APIError(500, "Error getting revenue by date");
+    }
+  }
+
+  async getAllTransactions() {
+    try {
+      return await transactionRepo.getAllTransactions();
+    } catch (error) {
+      console.error("Error in getAllTransactions:", error);
+      throw new APIError(500, "Error getting all transactions");
+    }
+  }
+
+  async getPaymentById(paymentId) {
+    try {
+      const payment = await paymentRepo.getPaymentById(paymentId);  
+      if (!payment) {
+        throw new APIError(404, "Payment not found");
+      }
+      return payment;
+    } catch (error) {
+      console.error("Error in getPaymentById:", error);
+      throw new APIError(500, "Error getting payment by ID");
     }
   }
 }

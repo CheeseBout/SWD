@@ -12,7 +12,6 @@ const {
   errorHandler,
 } = require("./middlewares/error.middleware");
 const morgan = require("morgan");
-const swaggerJSDoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 const swaggerOptions = require("./configs/swagger.config");
 
@@ -85,12 +84,12 @@ const startServer = async () => {
     });
 
     try {
-      // Swagger setup - thêm try-catch để xử lý lỗi
-      const swaggerSpec = swaggerJSDoc(swaggerOptions);
-      app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+      // Swagger setup - simplified
+      app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerOptions));
+      console.log("🔵 Swagger documentation available at /api-docs");
     } catch (swaggerError) {
       console.error("Swagger initialization failed:", swaggerError);
-      // Tiếp tục khởi động server dù swagger có lỗi
+      // Continue server startup even if swagger fails
     }
 
     app.use("/api/v1", require("./routes"));

@@ -1,18 +1,16 @@
-const swaggerOptions = {
+const swaggerJSDoc = require("swagger-jsdoc");
+
+const options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "Pre-Marital Counseling API",
+      title: "Pre-Marriage API",
       version: "1.0.0",
-      description: "API documentation for Pre-Marital Counseling System",
-      contact: {
-        name: "API Support",
-        email: "support@example.com",
-      },
+      description: "API documentation for the Pre-Marriage application",
     },
     servers: [
       {
-        url: "http://localhost:8080/api/v1",
+        url: "/api/v1",
         description: "Development server",
       },
     ],
@@ -29,4 +27,4 @@ const swaggerOptions = {
   apis: ["./src/routes/*.js"], // Path to the API routes
 };
 
-module.exports = swaggerOptions;
+module.exports = swaggerJSDoc(options);

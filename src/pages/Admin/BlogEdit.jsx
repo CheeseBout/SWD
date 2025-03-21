@@ -36,26 +36,29 @@ export default function BlogEdit() {
   const navigateToAppropriateBlogs = () => {
     const therapistId = localStorage.getItem("therapistId");
     if (therapistId) {
-      navigate("/therapist/blogs", { state: { refresh: true } });
+      navigate("/therapist/blogs");
     } else {
       navigate("/manage/blogs");
     }
   };
+
   const handleSubmit = async (blogData) => {
     setIsSubmitting(true);
 
     try {
       await blogService.updateBlog(blogData, blog.id || blog._id);
       toast.success("Blog updated successfully");
-      navigateToAppropriateBlogs();
+
+      // Đợi 500ms trước khi navigate để server có thời gian xử lý
+      setTimeout(() => {
+        navigateToAppropriateBlogs();
+      }, 500);
     } catch (error) {
       console.error("Error updating blog:", error);
       toast.error("Failed to update blog");
-    } finally {
       setIsSubmitting(false);
     }
   };
-
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorMessage message={error} />;
 

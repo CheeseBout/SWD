@@ -18,7 +18,7 @@ export default function BlogCreate() {
   const navigateToAppropriateBlogs = () => {
     const therapistId = localStorage.getItem("therapistId");
     if (therapistId) {
-      navigate("/therapist/blogs", { state: { refresh: true } });
+      navigate("/therapist/blogs");
     } else {
       navigate("/manage/blogs");
     }
@@ -44,7 +44,9 @@ export default function BlogCreate() {
 
       const response = await blogService.createBlog(blogData);
       toast.success("Blog created successfully");
-      navigateToAppropriateBlogs();
+      setTimeout(() => {
+        navigateToAppropriateBlogs();
+      }, 500);
     } catch (error) {
       console.error("Error creating blog:", error);
 

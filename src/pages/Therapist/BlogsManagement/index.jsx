@@ -28,23 +28,42 @@ export default function TherapistBlogs() {
   const { user } = useContext(AuthContext);
   const blogsPerPage = 8;
 
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [refreshTrigger, setRefreshTrigger] = useState(Date.now());
+
+  const [refreshTrigger, setRefreshTrigger] = useState();
 
   useEffect(() => {
-    fetchBlogs();
+    const fetchBlogs = async () => {
+      try {
+        setIsLoading(true);
+        const userId = user?._id || localStorage.getItem("userId");
 
-    // If we have a refresh state, clear it and update our trigger
-    if (location.state?.refresh) {
-      setRefreshTrigger(Date.now());
-      // Replace the current entry in the history stack
-      navigate(location.pathname, { replace: true });
-    }
-  }, [location.state?.refresh, navigate, location.pathname]);
+        const response = await blogService.getAllBlogs();
 
-  // Add a separate effect that only depends on refreshTrigger
-  useEffect(() => {
+        if (response?.data) {
+          // Filter blogs client-side to show only therapist's own blogs
+          const therapistBlogs = response.data.filter(
+            (blog) => blog.author?.userId === userId
+          );
+          // Sort blogs by date (newest first)
+          therapistBlogs.sort((a, b) => {
+            const dateA = new Date(a.postDate || a.created_at);
+            const dateB = new Date(b.postDate || b.created_at);
+            return dateB - dateA;
+          });
+
+          setBlogs(therapistBlogs);
+          setFilteredBlogs(therapistBlogs);
+        } else {
+          setBlogs([]);
+          setFilteredBlogs([]);
+        }
+      } catch (error) {
+        console.error("Error fetching blogs:", error);
+        toast.error("Failed to load blogs");
+      } finally {
+        setIsLoading(false);
+      }
+    };
     fetchBlogs();
   }, [refreshTrigger]);
 
@@ -72,39 +91,6 @@ export default function TherapistBlogs() {
     setCurrentPage(1);
   }, [searchTerm, statusFilter, blogs]);
 
-  const fetchBlogs = async () => {
-    try {
-      setIsLoading(true);
-      const userId = user?._id || localStorage.getItem("userId");
-
-      const response = await blogService.getAllBlogs();
-
-      if (response?.data) {
-        // Filter blogs client-side to show only therapist's own blogs
-        const therapistBlogs = response.data.filter(
-          (blog) => blog.author?.userId === userId
-        );
-        // Sort blogs by date (newest first)
-        therapistBlogs.sort((a, b) => {
-          const dateA = new Date(a.postDate || a.created_at);
-          const dateB = new Date(b.postDate || b.created_at);
-          return dateB - dateA;
-        });
-
-        setBlogs(therapistBlogs);
-        setFilteredBlogs(therapistBlogs);
-      } else {
-        setBlogs([]);
-        setFilteredBlogs([]);
-      }
-    } catch (error) {
-      console.error("Error fetching blogs:", error);
-      toast.error("Failed to load blogs");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleDeleteClick = (blog) => {
     setBlogToDelete(blog);
     setShowDeleteModal(true);
@@ -112,7 +98,6 @@ export default function TherapistBlogs() {
 
   const confirmDelete = async () => {
     if (!blogToDelete) return;
-
     try {
       setIsLoading(true);
       // Try both ID formats
@@ -129,6 +114,7 @@ export default function TherapistBlogs() {
         prevFiltered.filter((blog) => blog.id !== blogId && blog._id !== blogId)
       );
       setShowDeleteModal(false);
+      // setRefreshTrigger((prev) => prev + 1);
     } catch (error) {
       console.error("Error deleting blog:", error);
       toast.error("Failed to delete blog");

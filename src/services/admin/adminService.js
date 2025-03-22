@@ -20,13 +20,16 @@ export const adminService = {
       const payload = {
         action,
         certificateID,
-        reason: reason || ""
+        reason: reason || "",
       };
 
       console.log("Sending payload to manage certificate:", payload);
-      
-      const response = await api.post("/api/v1/admin/manage-certificate", payload);
-      
+
+      const response = await api.post(
+        "/api/v1/admin/manage-certificate",
+        payload
+      );
+
       return response.data;
     } catch (error) {
       console.error("Error managing certificate:", error);
@@ -46,5 +49,38 @@ export const adminService = {
       console.error("Error getting revenue:", error);
       throw error;
     }
-  }
+  },
+
+  getRevenueByDate: async () => {
+    try {
+      const response = await api.get(`/api/v1/admin/revenue-by-date`);
+      return response.data;
+    } catch (error) {
+      console.error("Error getting revenue by date:", error);
+      throw error;
+    }
+  },
+
+  getAllTransactions: async () => {
+    try {
+      const response = await api.get("/api/v1/admin/transactions");
+      return response.data;
+    } catch (error) {
+      console.error("Error getting all transactions:", error);
+      throw error;
+    }
+  },
+
+  getPaymentByID: async (paymentID) => {
+    try {
+      if (!paymentID) {
+        throw new Error("Payment ID is required");
+      }
+      const response = await api.get(`/api/v1/admin/payment/${paymentID}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error getting payment by ID:", error);
+      throw error;
+    }
+  },
 };

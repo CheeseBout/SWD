@@ -75,6 +75,7 @@ const ResetPassword = lazy(() => import("../pages/ResetPassword"));
 const LazyLoad = ({ children }) => (
   <Suspense fallback={<div></div>}>{children}</Suspense>
 );
+const Transactions = lazy(() => import("../pages/Admin/Transactions"));
 
 LazyLoad.propTypes = {
   children: PropTypes.node.isRequired,
@@ -438,6 +439,14 @@ export function AppRoutes() {
             element={
               <LazyLoad>
                 <PackagesManagement />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="transactions"
+            element={
+              <LazyLoad>
+                <Transactions />
               </LazyLoad>
             }
           />

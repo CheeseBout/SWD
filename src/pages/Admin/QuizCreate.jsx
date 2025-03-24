@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import AdminSidebar from "../../components/Sidebar/AdminSidebar";
+import AdminSidebar from "../../components/SideBar/AdminSidebar";
 import QuizForm from "../../components/Admin/QuizForm";
 import { quizService } from "../../services/api";
 import { ArrowLeftIcon } from "@heroicons/react/outline";

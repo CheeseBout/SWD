@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { questionService } from "../../services/api";
-import AdminSideBar from "../../components/Sidebar/AdminSidebar";
+import AdminSideBar from "../../components/SideBar/AdminSidebar";
 import {
   SearchIcon,
   FilterIcon,

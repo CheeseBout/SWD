@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import AdminSidebar from "../../components/Sidebar/AdminSidebar";
+import AdminSidebar from "../../components/SideBar/AdminSidebar";
 import QuizForm from "../../components/Admin/QuizForm";
 import { quizService, questionService } from "../../services/api";
 import LoadingSpinner from "../../components/common/LoadingSpinner";

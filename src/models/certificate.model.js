@@ -21,10 +21,13 @@ const certificateSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    category: {
-      type: String,
-      required: true,
-    },
+    category: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Categories",
+        required: true,
+      },
+    ],
     status: {
       type: String,
       enum: ["pending", "approved", "denied"],

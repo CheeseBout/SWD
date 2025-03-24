@@ -145,6 +145,38 @@ class TherapistRepo {
       _id: coupleTherapistId,
     }).populate("certificates");
   }
+
+  async findTherapistsByCategory(categoryId) {
+    try {
+      // Find therapists directly with category field
+      const therapistsByDirectCategory = await COUPLETHERAPIST.find({
+        category: { $in: [categoryId] },
+      }).populate("userID");
+
+      // Find therapists who have certificates with this category
+      const therapistsByCertCategory = await COUPLETHERAPIST.find({
+        "certificates.category": { $in: [categoryId] },
+      }).populate("userID");
+
+      // Combine unique therapists from both queries
+      const allTherapists = [...therapistsByDirectCategory];
+
+      for (const therapist of therapistsByCertCategory) {
+        if (
+          !allTherapists.some(
+            (t) => t._id.toString() === therapist._id.toString()
+          )
+        ) {
+          allTherapists.push(therapist);
+        }
+      }
+
+      return allTherapists;
+    } catch (error) {
+      console.error("Error in findTherapistsByCategory:", error);
+      return [];
+    }
+  }
 }
 
 module.exports = new TherapistRepo();

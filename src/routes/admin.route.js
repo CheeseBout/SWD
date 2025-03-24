@@ -258,6 +258,8 @@ router.get("/revenue-by-date", auth, adminController.getRevenueByDate);
  *     summary: Get all transactions
  *     description: Endpoint for admins to view all transactions in the system
  *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: List of all transactions

@@ -86,13 +86,17 @@ class AuthService {
     const coupleTherapistId =
       await coupleTherapistRepo.getCoupleTherapistIdByUserId(userId);
     console.log("coupleTherapistId", coupleTherapistId);
+
+    // Check if category is an array, if not convert it
+    const categoryArray = Array.isArray(category) ? category : [category];
+
     const certificate = await authRepo.createCertificate({
       title,
       coupleTherapistID: coupleTherapistId,
       issuedDate,
       expiryDate,
       documentURL,
-      category,
+      category: categoryArray,
       isCertificateVerified: false,
       status: "pending",
     });
@@ -103,7 +107,7 @@ class AuthService {
       issuedDate,
       expiryDate,
       documentURL,
-      category,
+      category: categoryArray,
       updatedAt: new Date(),
       isCertificateVerified: false,
       status: "pending",
@@ -117,48 +121,58 @@ class AuthService {
 
   async createTherapistProfile(userId, therapistData = {}) {
     try {
-      if (!userId) {
-        throw new APIError(400, "User ID is required");
-      }
-
-      // Validate that the user exists
+      // Check if the user exists and is a couple therapist
       const user = await authRepo.findUserById(userId);
       if (!user) {
-        throw new APIError(404, "User not found");
+        throw new APIError(400, "User not found");
+      }
+
+      // Check if therapist profile already exists
+      const existingTherapist = await authRepo.findTherapistProfile(userId);
+      if (existingTherapist) {
+        throw new APIError(400, "Therapist profile already exists");
       }
 
       // Process certificates if provided
-      let processedCertificates = [];
+      const processedCertificates = [];
       if (
         therapistData.certificates &&
-        Array.isArray(therapistData.certificates)
+        Array.isArray(therapistData.certificates) &&
+        therapistData.certificates.length > 0
       ) {
         for (const cert of therapistData.certificates) {
           const { title, issuedDate, expiryDate, documentURL, category } = cert;
 
-          // Create certificate in database
+          // Create the certificate in the Certificate collection
           const certificate = await authRepo.createCertificate({
             title,
             issuedDate,
             expiryDate,
             documentURL,
-            category,
-            isCertificateVerified: false,
+            // Ensure category is always an array
+            category: Array.isArray(category) ? category : [category],
             status: "pending",
           });
 
-          // Format certificate for therapist profile
+          // Add to the processed certificates for the therapist profile
           processedCertificates.push({
             certificateID: certificate._id,
             title,
             issuedDate,
             expiryDate,
             documentURL,
-            category,
+            // Ensure category is always an array
+            category: Array.isArray(category) ? category : [category],
             updatedAt: new Date(),
             status: "pending",
           });
         }
+      }
+
+      // Ensure category is an array
+      let therapistCategory = therapistData.category || [];
+      if (!Array.isArray(therapistCategory)) {
+        therapistCategory = [therapistData.category].filter(Boolean);
       }
 
       // Use provided values or defaults
@@ -167,7 +181,7 @@ class AuthService {
         description: therapistData.description || "New Couple Therapist",
         isVerified: therapistData.isVerified || false,
         certificates: processedCertificates, // Use processed certificates
-        category: therapistData.category || "General",
+        category: therapistCategory,
         // Add any other customizable fields
       });
 
@@ -181,7 +195,7 @@ class AuthService {
       if (error.isOperational) {
         throw error;
       }
-      throw new APIError(400, "Failed to create therapist profile");
+      throw new APIError(500, "Failed to create therapist profile");
     }
   }
 

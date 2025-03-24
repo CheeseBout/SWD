@@ -7,6 +7,10 @@ router.get("/", categoryController.getAllCategories);
 router.get("/id/:id", categoryController.getCategoryById);
 router.get("/name", categoryController.getCategoryByName);
 router.get("/status", categoryController.getCategoryByStatus);
+router.get(
+  "/therapists/:categoryId",
+  categoryController.getTherapistsByCategory
+);
 
 router.post("/create", auth, categoryController.createCategory);
 router.put("/", auth, categoryController.updateCategory);

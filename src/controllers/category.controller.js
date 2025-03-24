@@ -1,5 +1,6 @@
 const categoryServices = require("../services/category.services");
 const { OK } = require("../utils/response");
+const APIError = require("../utils/ApiError");
 
 class CategoryController {
   async createCategory(req, res) {
@@ -30,6 +31,12 @@ class CategoryController {
       req.query.status
     );
     return OK(res, "Success", result.data);
+  }
+
+  async getTherapistsByCategory(req, res) {
+    const { categoryId } = req.params;
+    const result = await categoryServices.findTherapistsByCategory(categoryId);
+    return OK(res, "Therapists retrieved successfully", result.therapists);
   }
 
   async updateCategory(req, res) {

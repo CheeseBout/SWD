@@ -1,4 +1,6 @@
 const categoryRepo = require("../repositories/category.repo");
+const coupleTherapistRepo = require("../repositories/coupleTherapist.repo");
+const APIError = require("../utils/ApiError");
 
 class CategoryServices {
   async createCategory(req) {
@@ -66,6 +68,22 @@ class CategoryServices {
   async findCategoryByStatus(status) {
     const data = await categoryRepo.findByStatus(status);
     return { data };
+  }
+
+  async findTherapistsByCategory(categoryId) {
+    if (!categoryId) {
+      throw new APIError(400, "Category ID is required");
+    }
+
+    const category = await categoryRepo.findById(categoryId);
+    if (!category) {
+      throw new APIError(404, "Category not found");
+    }
+
+    const therapists = await coupleTherapistRepo.findTherapistsByCategory(
+      categoryId
+    );
+    return { therapists };
   }
 }
 

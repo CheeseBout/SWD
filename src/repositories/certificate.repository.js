@@ -8,10 +8,24 @@ class CertificateRepository {
   }
 
   async findCertificateById(certificateId) {
-    return await CERTIFICATE.findById(certificateId).populate(
-      "processedBy",
-      "fullname email"
-    );
+    try {
+      return await CERTIFICATE.findById(certificateId).populate("category");
+    } catch (error) {
+      console.error("Error in findCertificateById:", error);
+      return null;
+    }
+  }
+
+  // Add a method to get certificates by category
+  async findCertificatesByCategory(categoryId) {
+    try {
+      return await CERTIFICATE.find({
+        category: { $in: [categoryId] },
+      }).populate("category");
+    } catch (error) {
+      console.error("Error in findCertificatesByCategory:", error);
+      return [];
+    }
   }
 
   async updateCertificateVerification(certificateId, adminId) {

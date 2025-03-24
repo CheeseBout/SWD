@@ -37,7 +37,12 @@ const coupleTherapistSchema = new mongoose.Schema(
         issuedDate: Date,
         expiryDate: Date,
         documentURL: String,
-        category: String,
+        category: [
+          {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Categories",
+          },
+        ],
         status: {
           type: String,
           enum: ["pending", "approved", "denied"],
@@ -61,10 +66,7 @@ const coupleTherapistSchema = new mongoose.Schema(
         ref: "Packages",
       },
     ],
-    category: {
-      type: String,
-      default: "General",
-    },
+    category: [{ type: mongoose.Schema.Types.ObjectId, ref: "Categories" }],
     availability: [
       {
         type: mongoose.Schema.Types.ObjectId,

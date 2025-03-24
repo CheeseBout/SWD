@@ -4,7 +4,12 @@ import daisyui from "daisyui";
 // import typography from "@tailwindcss/typography";
 // import forms from "@tailwindcss/forms";
 export default withMT({
-  content: ["./src/**/*.{js,jsx,ts,tsx}"],
+  content: [
+    "./src/**/*.{js,jsx,ts,tsx}",
+    "./pages/**/*.{js,ts,jsx,tsx}",
+    "./components/**/*.{js,ts,jsx,tsx}",
+    "./app/**/*.{js,ts,jsx,tsx}",
+  ],
   darkMode: "class",
   theme: {
     extend: {},

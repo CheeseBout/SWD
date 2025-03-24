@@ -12,6 +12,7 @@ import {
   MenuAlt2Icon,
   XIcon,
   ShoppingBagIcon, // Add this new icon for Package Management
+  CashIcon, // Add this new icon for Transaction History
 } from "@heroicons/react/outline";
 
 const AdminSideBar = () => {
@@ -186,6 +187,11 @@ const AdminSideBar = () => {
                   to="/admin/certificates"
                   icon={AcademicCapIcon}
                   label="Certificate Requests"
+                />
+                <NavItem
+                  to="/admin/transactions"
+                  icon={CashIcon}
+                  label="Transaction History"
                 />
               </>
             )}

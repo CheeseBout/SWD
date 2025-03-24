@@ -13,6 +13,7 @@ import {
   adminService,
 } from "../../services/api";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
+import RevenueChart from "../../components/Admin/RevenueChart";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -145,39 +146,43 @@ export default function AdminDashboard() {
               />
             </div>
 
-            <div className="lg:col-span-2 bg-white rounded-lg shadow">
-              <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-                <h2 className="text-lg font-medium">Recent Blog Posts</h2>
-                <Link
-                  to="/manage/blogs"
-                  className="text-sm text-blue-600 hover:text-blue-800"
-                >
-                  View all
-                </Link>
-              </div>
-              <div className="p-6">
-                {recentBlogs.length > 0 ? (
-                  <div className="divide-y divide-gray-200">
-                    {recentBlogs.map((blog) => (
-                      <div key={blog.id || blog._id} className="py-3">
-                        <h3 className="text-base font-medium">{blog.title}</h3>
-                        <div className="flex items-center text-sm text-gray-500 mt-1">
-                          <span>
-                            {new Date(
-                              blog.postDate || blog.created_at
-                            ).toLocaleDateString("en-GB")}
-                          </span>
-                          <span className="mx-1">•</span>
-                          <span className="capitalize">
-                            {blog.stage || "Draft"}
-                          </span>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <RevenueChart />
+              
+              <div className="bg-white rounded-lg shadow">
+                <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+                  <h2 className="text-lg font-medium">Recent Blog Posts</h2>
+                  <Link
+                    to="/admin/blogs"
+                    className="text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    View all
+                  </Link>
+                </div>
+                <div className="p-6">
+                  {recentBlogs.length > 0 ? (
+                    <div className="divide-y divide-gray-200">
+                      {recentBlogs.map((blog) => (
+                        <div key={blog.id || blog._id} className="py-3">
+                          <h3 className="text-base font-medium">{blog.title}</h3>
+                          <div className="flex items-center text-sm text-gray-500 mt-1">
+                            <span>
+                              {new Date(
+                                blog.postDate || blog.created_at
+                              ).toLocaleDateString("en-GB")}
+                            </span>
+                            <span className="mx-1">•</span>
+                            <span className="capitalize">
+                              {blog.stage || "Draft"}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-sm">No blog posts yet.</p>
-                )}
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm">No blog posts yet.</p>
+                  )}
+                </div>
               </div>
             </div>
           </>

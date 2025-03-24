@@ -10,7 +10,7 @@ class TherapistRepo {
   }
 
   async searchTherapists(searchParams) {
-    const { category, searchName } = searchParams;
+    const { category, searchName, minRating, maxRating } = searchParams;
 
     let pipeline = [
       // Lookup to join with Users collection
@@ -57,6 +57,25 @@ class TherapistRepo {
       });
     }
 
+    // Filter by rating range if provided
+    if (minRating !== undefined || maxRating !== undefined) {
+      let ratingCondition = {};
+
+      if (minRating !== undefined) {
+        ratingCondition.$gte = parseFloat(minRating);
+      }
+
+      if (maxRating !== undefined) {
+        ratingCondition.$lte = parseFloat(maxRating);
+      }
+
+      if (Object.keys(ratingCondition).length > 0) {
+        conditions.push({
+          averageRating: ratingCondition,
+        });
+      }
+    }
+
     if (conditions.length > 0) {
       matchConditions.$and = conditions;
       pipeline.push({
@@ -66,6 +85,7 @@ class TherapistRepo {
 
     return await COUPLETHERAPIST.aggregate(pipeline);
   }
+
   async updateTherapistCertificate(certificateID, userId) {
     await CERTIFICATE.findOneAndUpdate(
       { _id: certificateID },

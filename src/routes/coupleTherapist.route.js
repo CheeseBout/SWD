@@ -54,6 +54,9 @@ const { checkCertificate, auth } = require("../middlewares/auth.middleware");
  *           type: string
  *         rating:
  *           type: number
+ *         averageRating:
+ *           type: number
+ *           description: Average rating from client reviews
  */
 
 /**
@@ -77,6 +80,30 @@ const { checkCertificate, auth } = require("../middlewares/auth.middleware");
  *         name: expertise
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Filter therapists by category
+ *       - in: query
+ *         name: searchName
+ *         schema:
+ *           type: string
+ *         description: Search therapists by name
+ *       - in: query
+ *         name: minRating
+ *         schema:
+ *           type: number
+ *           minimum: 0
+ *           maximum: 5
+ *         description: Minimum averageRating value (0-5)
+ *       - in: query
+ *         name: maxRating
+ *         schema:
+ *           type: number
+ *           minimum: 0
+ *           maximum: 5
+ *         description: Maximum averageRating value (0-5)
  *     responses:
  *       200:
  *         description: List of couple therapists

@@ -9,7 +9,7 @@ class CategoryServices {
   }
 
   async updateCategory(req) {
-    const { categoryId, name, description, imageUrl } = req.body;
+    const { categoryId, name, description } = req.body;
 
     if (!categoryId) {
       throw new APIError(400, "Category ID is required");
@@ -23,7 +23,6 @@ class CategoryServices {
     const updateData = {};
     if (name) updateData.name = name;
     if (description) updateData.description = description;
-    if (imageUrl) updateData.imageUrl = imageUrl;
     updateData.lastEdited = Date.now();
 
     const updatedCategory = await categoryRepo.update(categoryId, updateData);

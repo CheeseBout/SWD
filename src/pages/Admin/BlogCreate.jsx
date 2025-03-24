@@ -20,7 +20,7 @@ export default function BlogCreate() {
     if (therapistId) {
       navigate("/therapist/blogs");
     } else {
-      navigate("/manage/blogs");
+      navigate("/admin/blogs");
     }
   };
 

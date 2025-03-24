@@ -4,7 +4,7 @@ import { topicService } from "../../services/api";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
-import AdminSideBar from "../../components/Sidebar/AdminSidebar";
+import AdminSideBar from "../../components/SideBar/AdminSidebar";
 import TopicForm from "../../components/Admin/TopicForm";
 import { toast } from "react-toastify";
 import {

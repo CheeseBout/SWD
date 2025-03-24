@@ -3,7 +3,7 @@ import { adminService } from "../../services/api";
 import { toast } from "react-toastify";
 import { FaCheck, FaTimes, FaEye, FaCalendarAlt } from "react-icons/fa";
 import { format } from "date-fns";
-import AdminSideBar from "../../components/Sidebar/AdminSidebar";
+import AdminSideBar from "../../components/SideBar/AdminSidebar";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import {

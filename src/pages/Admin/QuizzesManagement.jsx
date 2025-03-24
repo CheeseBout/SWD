@@ -4,7 +4,7 @@ import { quizService } from "../../services/api";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { toast } from "react-toastify";
-import AdminSideBar from "../../components/Sidebar/AdminSidebar";
+import AdminSideBar from "../../components/SideBar/AdminSidebar";
 import {
   PlusIcon,
   PencilAltIcon,

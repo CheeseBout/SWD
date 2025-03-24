@@ -38,7 +38,7 @@ export default function BlogEdit() {
     if (therapistId) {
       navigate("/therapist/blogs");
     } else {
-      navigate("/manage/blogs");
+      navigate("/admin/blogs");
     }
   };
 

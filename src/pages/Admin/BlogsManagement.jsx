@@ -5,7 +5,7 @@ import LoadingSpinner from "../../components/common/LoadingSpinner";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import ConfirmationModal from "../../components/common/ConfirmationModal";
 import { toast } from "react-toastify";
-import AdminSideBar from "../../components/Sidebar/AdminSidebar";
+import AdminSideBar from "../../components/SideBar/AdminSidebar";
 import {
   PlusIcon,
   PencilAltIcon,
@@ -44,8 +44,23 @@ export default function AdminBlogs() {
         }
 
         blogData.sort((a, b) => {
-          const dateA = new Date(a.createdAt || a.created_at);
-          const dateB = new Date(b.createdAt || b.created_at);
+          const dateA = new Date(
+            a.createdAt ||
+              a.created_at ||
+              a.postDate ||
+              a.updatedAt ||
+              a.date ||
+              0
+          );
+          const dateB = new Date(
+            b.createdAt ||
+              b.created_at ||
+              b.postDate ||
+              b.updatedAt ||
+              b.date ||
+              0
+          );
+
           return dateB - dateA;
         });
 
@@ -296,7 +311,7 @@ export default function AdminBlogs() {
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-12 w-12 text-gray-400"
                   fill="none"
-                  viewBox="0 0 24 24"
+                  viewBox="0  0 24 24"
                   stroke="currentColor"
                 >
                   <path
@@ -425,7 +440,9 @@ export default function AdminBlogs() {
                       </td>
                       <td className="px-6 py-4 hidden md:table-cell">
                         <div className="text-sm text-gray-500">
-                          {new Date(blog.postDate || blog.created_at).toLocaleDateString('en-GB')}
+                          {new Date(
+                            blog.postDate || blog.created_at
+                          ).toLocaleDateString("en-GB")}
                         </div>
                       </td>
                       <td className="px-6 py-4">

@@ -1,18 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
-import PropTypes from 'prop-types';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Placeholder from '@tiptap/extension-placeholder';
-import Image from '@tiptap/extension-image';
-import Link from '@tiptap/extension-link';
-import EditorToolbar from './EditorToolbar';
+import { useEffect, useRef, useState } from "react";
+import PropTypes from "prop-types";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Placeholder from "@tiptap/extension-placeholder";
+import Image from "@tiptap/extension-image";
+import Link from "@tiptap/extension-link";
+import EditorToolbar from "./EditorToolbar";
+import { categoryService } from "../../services/api";
 
 const BlogForm = ({
   title,
   setTitle,
   category,
   setCategory,
-  status = 'PUBLISHED',
+  status = "PUBLISHED",
   coverPhoto,
   setCoverPhoto,
   slug,
@@ -22,17 +23,37 @@ const BlogForm = ({
   onSubmit,
   submitButtonText,
   onCancel,
-  autoGenerateSlug = true
+  autoGenerateSlug = true,
 }) => {
   const [tags, setTags] = useState([]);
-  const [tagInput, setTagInput] = useState('');
+  const [tagInput, setTagInput] = useState("");
   const editorContainerRef = useRef(null);
+  const [categories, setCategories] = useState([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setIsLoadingCategories(true);
+      try {
+        const response = await categoryService.getAllCategories();
+        if (response && Array.isArray(response.data)) {
+          setCategories(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const editor = useEditor({
     extensions: [
       StarterKit,
       Placeholder.configure({
-        placeholder: 'Write your blog content here...',
+        placeholder: "Write your blog content here...",
         showOnlyWhenEditable: true,
         includeChildren: true,
       }),
@@ -41,10 +62,10 @@ const BlogForm = ({
         openOnClick: false,
       }),
     ],
-    content: initialContent || '<p></p>',
+    content: initialContent || "<p></p>",
     editorProps: {
       attributes: {
-        class: 'prose max-w-none min-h-[400px] px-3 py-2 outline-none',
+        class: "prose max-w-none min-h-[400px] px-3 py-2 outline-none",
       },
     },
     autofocus: false,
@@ -52,43 +73,52 @@ const BlogForm = ({
 
   useEffect(() => {
     if (autoGenerateSlug && title) {
-      setSlug(title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''));
+      setSlug(
+        title
+          .toLowerCase()
+          .replace(/\s+/g, "-")
+          .replace(/[^a-z0-9-]/g, "")
+      );
     }
   }, [title, setSlug, autoGenerateSlug]);
 
   const handleEditorContainerClick = (e) => {
     if (editor && !editor.isFocused) {
       editor.commands.focus();
-      if (e.target.classList.contains('ProseMirror')) {
+      if (e.target.classList.contains("ProseMirror")) {
         const domRect = e.target.getBoundingClientRect();
         const y = e.clientY - domRect.top;
-        editor.view.posAtCoords({ left: e.clientX, top: y })
-          .pos && editor.commands.setTextSelection(editor.view.posAtCoords({ left: e.clientX, top: y }).pos);
+        editor.view.posAtCoords({ left: e.clientX, top: y }).pos &&
+          editor.commands.setTextSelection(
+            editor.view.posAtCoords({ left: e.clientX, top: y }).pos
+          );
       }
     }
   };
 
   const handleTagInputKeyDown = (e) => {
-    if (e.key === 'Enter' && tagInput.trim()) {
+    if (e.key === "Enter" && tagInput.trim()) {
       setTags([...tags, tagInput.trim()]);
-      setTagInput('');
+      setTagInput("");
       e.preventDefault();
     }
   };
 
   const handleTagRemove = (tagToRemove) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
+    setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!title || !editor?.getHTML() || editor.getHTML() === '<p></p>') {
-      alert('Title and content are required');
+    if (!title || !editor?.getHTML() || editor.getHTML() === "<p></p>") {
+      alert("Title and content are required");
       return;
     }
+    
+    // Using category directly as the name instead of finding the category object
     const blogData = {
       title,
-      category,
+      category, // This will be the category name
       status,
       coverPhoto,
       slug,
@@ -104,7 +134,12 @@ const BlogForm = ({
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="bg-white shadow-md rounded-lg p-6">
         <div className="mb-4">
-          <label htmlFor="title" className="block mb-1 font-medium text-gray-700">Title <span className="text-red-500">*</span></label>
+          <label
+            htmlFor="title"
+            className="block mb-1 font-medium text-gray-700"
+          >
+            Title <span className="text-red-500">*</span>
+          </label>
           <input
             type="text"
             id="title"
@@ -116,7 +151,12 @@ const BlogForm = ({
         </div>
 
         <div className="mb-4">
-          <label htmlFor="slug" className="block mb-1 font-medium text-gray-700">Slug <span className="text-red-500">*</span></label>
+          <label
+            htmlFor="slug"
+            className="block mb-1 font-medium text-gray-700"
+          >
+            Slug <span className="text-red-500">*</span>
+          </label>
           <div className="flex items-center">
             <span className="text-gray-500 mr-2">/blogs/</span>
             <input
@@ -128,24 +168,48 @@ const BlogForm = ({
               required
             />
           </div>
-          <p className="mt-1 text-sm text-gray-500">URL-friendly version of the title</p>
+          <p className="mt-1 text-sm text-gray-500">
+            URL-friendly version of the title
+          </p>
         </div>
 
         <div className="mb-4">
           <div>
-            <label htmlFor="category" className="block mb-1 font-medium text-gray-700">Category</label>
-            <input
-              type="text"
+            <label
+              htmlFor="category"
+              className="block mb-1 font-medium text-gray-700"
+            >
+              Category
+            </label>
+            <select
               id="category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+              disabled={isLoadingCategories}
+            >
+              <option value="">Select a category</option>
+              {categories.map((cat) => (
+                <option key={cat._id} value={cat.name}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+            {isLoadingCategories && (
+              <p className="mt-1 text-sm text-gray-500">
+                Loading categories...
+              </p>
+            )}
           </div>
         </div>
 
         <div className="mb-4">
-          <label htmlFor="coverPhoto" className="block mb-1 font-medium text-gray-700">Cover Photo URL</label>
+          <label
+            htmlFor="coverPhoto"
+            className="block mb-1 font-medium text-gray-700"
+          >
+            Cover Photo URL
+          </label>
           <input
             type="text"
             id="coverPhoto"
@@ -156,13 +220,14 @@ const BlogForm = ({
           {coverPhoto && (
             <div className="mt-2 border border-gray-200 rounded-md p-2 bg-gray-50">
               <p className="text-sm font-medium mb-2">Preview:</p>
-              <img 
-                src={coverPhoto} 
-                alt="Cover preview" 
-                className="h-48 object-cover rounded-md" 
+              <img
+                src={coverPhoto}
+                alt="Cover preview"
+                className="h-48 object-cover rounded-md"
                 onError={(e) => {
                   e.target.onerror = null;
-                  e.target.src = 'https://via.placeholder.com/800x400?text=Invalid+Image+URL';
+                  e.target.src =
+                    "https://via.placeholder.com/800x400?text=Invalid+Image+URL";
                 }}
               />
             </div>
@@ -170,7 +235,12 @@ const BlogForm = ({
         </div>
 
         <div className="mb-4">
-          <label htmlFor="tags" className="block mb-1 font-medium text-gray-700">Tags</label>
+          <label
+            htmlFor="tags"
+            className="block mb-1 font-medium text-gray-700"
+          >
+            Tags
+          </label>
           <input
             type="text"
             id="tags"
@@ -182,7 +252,10 @@ const BlogForm = ({
           />
           <div className="mt-2 flex flex-wrap gap-2">
             {tags.map((tag, index) => (
-              <span key={index} className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm flex items-center">
+              <span
+                key={index}
+                className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm flex items-center"
+              >
                 {tag}
                 <button
                   type="button"
@@ -198,8 +271,10 @@ const BlogForm = ({
       </div>
 
       <div className="bg-white shadow-md rounded-lg p-6">
-        <label className="block mb-2 font-medium text-gray-700">Content <span className="text-red-500">*</span></label>
-        <div 
+        <label className="block mb-2 font-medium text-gray-700">
+          Content <span className="text-red-500">*</span>
+        </label>
+        <div
           ref={editorContainerRef}
           className="border border-gray-300 rounded-md overflow-hidden"
           onClick={handleEditorContainerClick}
@@ -224,16 +299,35 @@ const BlogForm = ({
           className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           disabled={isSubmitting}
         >
-          {isSubmitting ? 
+          {isSubmitting ? (
             <span className="flex items-center">
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <svg
+                className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
-              {submitButtonText === 'Create Blog' ? 'Creating...' : 'Updating...'}
+              {submitButtonText === "Create Blog"
+                ? "Creating..."
+                : "Updating..."}
             </span>
-            : submitButtonText || 'Submit'
-          }
+          ) : (
+            submitButtonText || "Submit"
+          )}
         </button>
       </div>
     </form>
@@ -256,7 +350,7 @@ BlogForm.propTypes = {
   onSubmit: PropTypes.func.isRequired,
   submitButtonText: PropTypes.string,
   onCancel: PropTypes.func.isRequired,
-  autoGenerateSlug: PropTypes.bool
+  autoGenerateSlug: PropTypes.bool,
 };
 
 export default BlogForm;

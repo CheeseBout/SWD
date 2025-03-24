@@ -4,7 +4,7 @@ import { AuthContext } from "../../contexts/AuthContextObject";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import { userService } from "../../services/api";
-import { ProfileHeader, ProfileInfoCard } from "../../components/profile";
+import { ProfileHeader, ProfileInfoCard } from "../../components/Profile";
 import SideBar from "../../components/SideBar";
 
 export default function ProfilePage() {

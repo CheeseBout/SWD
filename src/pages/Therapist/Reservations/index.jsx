@@ -38,7 +38,10 @@ export default function TherapistReservations() {
         10
       );
       if (response?.reservations) {
-        setReservations(response.reservations);
+        const sortedReservations = [...response.reservations].sort((a, b) => {
+          return new Date(b.updatedAt) - new Date(a.updatedAt);
+        });
+        setReservations(sortedReservations);
         setTotalPages(response?.pages || 1);
       } else {
         setReservations([]);
@@ -563,47 +566,6 @@ export default function TherapistReservations() {
           </div>
         </div>
       )}
-
-      {/* Meeting URL Modal */}
-      {/* {showMeetingModal && selectedReservation && (
-        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center bg-black/30 backdrop-blur-sm">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
-            <h3 className="text-lg font-bold mb-4">
-              {selectedReservation.meetingURL
-                ? "Update Meeting Link"
-                : "Add Meeting Link"}
-            </h3>
-            <p className="mb-4 text-gray-600">
-              Please provide the URL for the meeting:
-            </p>
-            <input
-              type="url"
-              className="w-full border border-gray-300 rounded-md p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
-              placeholder="https://zoom.us/j/123456789"
-              value={meetingURL}
-              onChange={(e) => setMeetingURL(e.target.value)}
-            />
-            <div className="flex justify-end space-x-3">
-              <button
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                onClick={() => {
-                  setShowMeetingModal(false);
-                  setShowDetailsModal(true);
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-                onClick={handleAddMeeting}
-                disabled={!meetingURL.trim() || isUpdating}
-              >
-                {isUpdating ? "Saving..." : "Save"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )} */}
     </div>
   );
 }

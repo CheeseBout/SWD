@@ -85,7 +85,12 @@ export default function YourReservation() {
         20
       );
 
-      setReservations(response.reservations);
+      // Sort reservations by updatedAt in descending order
+      const sortedReservations = [...response.reservations].sort((a, b) => {
+        return new Date(b.updatedAt) - new Date(a.updatedAt);
+      });
+
+      setReservations(sortedReservations);
       setTotalPages(response.pages);
       setIsLoadingList(false);
     };
@@ -617,53 +622,102 @@ export default function YourReservation() {
               </div>
 
               {/* Session Details */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-md font-semibold text-gray-800 mb-3">
+              <div className="bg-gray-50 rounded-lg p-5">
+                <h4 className="text-md font-semibold text-gray-800 mb-4">
                   Session Information
                 </h4>
 
-                <div className="grid grid-cols-2 gap-y-3">
-                  <div className="text-sm text-gray-600">Title:</div>
-                  <div className="text-sm font-medium">
-                    {selectedReservation.title}
+                <div className="space-y-3">
+                  {/* Regular information rows */}
+                  <div className="grid grid-cols-3">
+                    <div className="col-span-1 text-sm text-gray-600">
+                      Title:
+                    </div>
+                    <div className="col-span-2 text-sm font-medium">
+                      {selectedReservation.title}
+                    </div>
                   </div>
 
-                  <div className="text-sm text-gray-600">Date:</div>
-                  <div className="text-sm font-medium">
-                    {dayjs(selectedReservation.startTime).format(
-                      "MMM DD, YYYY"
-                    )}
+                  <div className="grid grid-cols-3">
+                    <div className="col-span-1 text-sm text-gray-600">
+                      Date:
+                    </div>
+                    <div className="col-span-2 text-sm font-medium">
+                      {dayjs(selectedReservation.startTime).format(
+                        "MMM DD, YYYY"
+                      )}
+                    </div>
                   </div>
 
-                  <div className="text-sm text-gray-600">Time:</div>
-                  <div className="text-sm font-medium">
-                    {dayjs(selectedReservation.startTime).format("HH:mm")} -{" "}
-                    {dayjs(selectedReservation.endTime).format("HH:mm")}
+                  <div className="grid grid-cols-3">
+                    <div className="col-span-1 text-sm text-gray-600">
+                      Time:
+                    </div>
+                    <div className="col-span-2 text-sm font-medium">
+                      {dayjs(selectedReservation.startTime).format("HH:mm")} -{" "}
+                      {dayjs(selectedReservation.endTime).format("HH:mm")}
+                    </div>
                   </div>
 
-                  <div className="text-sm text-gray-600">Status:</div>
-                  <div>
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${
-                        selectedReservation.status === "confirmed"
-                          ? "bg-green-100 text-green-800"
-                          : selectedReservation.status === "pending"
-                          ? "bg-gray-200 text-gray-800"
-                          : selectedReservation.status === "completed"
-                          ? "bg-blue-100 text-blue-800"
-                          : selectedReservation.status === "deposited"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {selectedReservation.status}
-                    </span>
+                  <div className="grid grid-cols-3">
+                    <div className="col-span-1 text-sm text-gray-600">
+                      Status:
+                    </div>
+                    <div className="col-span-2">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${
+                          selectedReservation.status === "confirmed"
+                            ? "bg-green-100 text-green-800"
+                            : selectedReservation.status === "pending"
+                            ? "bg-gray-200 text-gray-800"
+                            : selectedReservation.status === "completed"
+                            ? "bg-blue-100 text-blue-800"
+                            : selectedReservation.status === "deposited"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {selectedReservation.status}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="text-sm text-gray-600">Price:</div>
-                  <div className="text-sm font-medium">
-                    {selectedReservation.totalPrice.toLocaleString()} VND
+                  <div className="grid grid-cols-3">
+                    <div className="col-span-1 text-sm text-gray-600">
+                      Price:
+                    </div>
+                    <div className="col-span-2 text-sm font-medium">
+                      {selectedReservation.totalPrice.toLocaleString()} VND
+                    </div>
                   </div>
+
+                  {/* Conditional deposit information */}
+                  {selectedReservation.status === "deposited" && (
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <div className="grid grid-cols-3">
+                        <div className="col-span-1 text-sm text-gray-600">
+                          Deposited:
+                        </div>
+                        <div className="col-span-2 text-sm font-medium text-green-600">
+                          {(
+                            selectedReservation.totalPrice / 2
+                          ).toLocaleString()}{" "}
+                          VND
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 mt-1">
+                        <div className="col-span-1 text-sm text-gray-600">
+                          Remaining:
+                        </div>
+                        <div className="col-span-2 text-sm font-medium text-amber-600">
+                          {(
+                            selectedReservation.totalPrice / 2
+                          ).toLocaleString()}{" "}
+                          VND
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -729,22 +783,6 @@ export default function YourReservation() {
                       Join Meeting
                     </a>
                   )}
-
-                  {/* Case 2: Deposited with final_completed result  */}
-                  {/* {selectedReservation.reservationResult?.status ===
-                    "final_completed" && (
-                    <button
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors duration-150"
-                      onClick={() => {
-                        setShowDetailsModal(false);
-
-                        navigateToResults(selectedReservation._id);
-                      }}
-                    >
-                      View Results
-                    </button>
-                  )} */}
-
                   {/* Case 3: Deposited with pending result  */}
                   {selectedReservation.reservationResult?.status ===
                     "pending" && (

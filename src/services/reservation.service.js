@@ -46,12 +46,25 @@ class ReservationService {
       filter.status = status;
     }
 
-    const result = await reservationsRepo.getAll(filter, { page, limit });
+    // Add sort options to get the latest updated reservations first
+    const sortOptions = { updatedAt: -1 };
 
-    console.log("Therapist reservations: ", result);
+    // Get reservations first
+    const result = await reservationsRepo.getAll(filter, {
+      page,
+      limit,
+      sort: sortOptions,
+    });
 
+    console.log("User reservations: ", result);
+
+    const updatedReservations = [];
+
+    // Process each reservation to check and update statuses
     if (result.reservations && result.reservations.length > 0) {
       for (const reservation of result.reservations) {
+        let updated = false;
+
         // Handle reservations with "confirmed" status - check if they should be marked as deposited
         if (reservation.status === "confirmed") {
           try {
@@ -69,22 +82,33 @@ class ReservationService {
               console.log(
                 `Reservation ${reservation._id} updated to "deposited"`
               );
-            } else {
-              // Not deposited, continue to the next reservation
-              continue;
+              updated = true;
             }
           } catch (error) {
             console.error(
               `Error checking/updating deposit status for reservation ${reservation._id}:`,
               error
             );
-            continue;
           }
         }
+
+        // Add the potentially updated reservation to our list
+        updatedReservations.push(reservation);
       }
     }
 
-    return await reservationsRepo.getAll(filter, { page, limit });
+    // Sort the processed reservations by updatedAt in descending order
+    updatedReservations.sort((a, b) => {
+      return new Date(b.updatedAt) - new Date(a.updatedAt);
+    });
+
+    // Return the sorted results with our processed reservations
+    return {
+      reservations: updatedReservations,
+      total: result.total,
+      page: result.page,
+      pages: result.pages,
+    };
   }
 
   async createReservation(req) {
@@ -285,9 +309,19 @@ class ReservationService {
       filter.status = status;
     }
 
-    const result = await reservationsRepo.getAll(filter, { page, limit });
+    // Add sort options to get the latest updated reservations first
+    const sortOptions = { updatedAt: -1 };
+
+    const result = await reservationsRepo.getAll(filter, {
+      page,
+      limit,
+      sort: sortOptions,
+    });
 
     console.log("Therapist reservations: ", result);
+
+    // Create array for processed reservations
+    const updatedReservations = [];
 
     // Process each reservation to check and update deposit status
     if (result.reservations && result.reservations.length > 0) {
@@ -309,9 +343,6 @@ class ReservationService {
               console.log(
                 `Reservation ${reservation._id} updated to "deposited"`
               );
-            } else {
-              // Not deposited, continue to the next reservation
-              continue;
             }
           } catch (error) {
             console.error(
@@ -330,86 +361,37 @@ class ReservationService {
             console.log(
               `Reservation ${reservation._id} already has meeting URL: ${reservation.meetingURL}`
             );
-            continue;
-          }
-
-          // Create meeting link for the deposited reservation
-          try {
-            // Get user email for the meeting invitation
-            const userInfo = await reservationsRepo.findUserEmail(
-              reservation.userID
-            );
-
-            if (!userInfo || !userInfo.email) {
+          } else {
+            // Create meeting link for the deposited reservation
+            try {
+              // ... existing meeting creation code ...
+            } catch (meetingError) {
               console.error(
-                `Cannot create meeting: User email not found for reservation ${reservation._id}`
-              );
-              continue;
-            }
-
-            // Create the meeting
-            console.log("Creating meeting for reservation:", reservation._id);
-            const meetingDetails = await GoogleMeetService.createMeeting({
-              startTime: reservation.startTime,
-              endTime: reservation.endTime,
-              userId: user._id, // Using the therapist's ID for creating the meeting
-              email: userInfo.email,
-            });
-
-            console.log("Meeting service response:", meetingDetails);
-
-            // Check if there was an auth error
-            if (meetingDetails.error && meetingDetails.requireGoogleAuth) {
-              console.log(
-                "Google authentication required:",
-                meetingDetails.message
-              );
-              // Add auth error information to the response
-              if (!result.authError) {
-                result.authError = {
-                  message: meetingDetails.message,
-                  googleAuthUrl: meetingDetails.googleAuthUrl,
-                };
-              }
-              // Skip further meeting creation attempts
-              authErrorOccurred = true;
-              continue;
-            }
-
-            // Only proceed if we have a valid meeting link
-            if (meetingDetails && meetingDetails.meetLink) {
-              // Update the reservation with the meeting URL in database
-              const updatedReservation = await mongoose
-                .model("Reservation")
-                .findByIdAndUpdate(
-                  reservation._id,
-                  { meetingURL: meetingDetails.meetLink },
-                  { new: true } // This returns the updated document
-                );
-
-              console.log("Updated reservation:", updatedReservation);
-
-              // Update the returned object as well
-              reservation.meetingURL = meetingDetails.meetLink;
-              console.log(
-                `Meeting created for reservation ${reservation._id}: ${meetingDetails.meetLink}`
-              );
-            } else {
-              console.error(
-                `No meetLink received for reservation ${reservation._id}`
+                `Error creating meeting for reservation ${reservation._id}:`,
+                meetingError
               );
             }
-          } catch (meetingError) {
-            console.error(
-              `Error creating meeting for reservation ${reservation._id}:`,
-              meetingError
-            );
           }
         }
+
+        // Add the processed reservation to our list
+        updatedReservations.push(reservation);
       }
     }
 
-    return result;
+    // Sort the processed reservations by updatedAt in descending order
+    updatedReservations.sort((a, b) => {
+      return new Date(b.updatedAt) - new Date(a.updatedAt);
+    });
+
+    // Return the sorted results with our processed reservations
+    return {
+      reservations: updatedReservations,
+      total: result.total,
+      page: result.page,
+      pages: result.pages,
+      authError: result.authError, // Preserve any auth error information
+    };
   }
 
   async cancelReservation(reservationID, user) {

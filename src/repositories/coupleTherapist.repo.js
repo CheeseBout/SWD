@@ -185,7 +185,14 @@ class TherapistRepo {
   async getCoupleTherapistById(coupleTherapistId) {
     return await COUPLETHERAPIST.findOne({
       _id: coupleTherapistId,
-    }).populate("certificates");
+    })
+      .populate("certificates")
+      .populate("userID", "fullname email photoURL")
+      .populate({
+        path: "category",
+        model: "Categories",
+        select: "name description status createdAt lastEdited",
+      });
   }
 
   async findTherapistsByCategory(categoryId) {

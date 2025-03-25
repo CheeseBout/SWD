@@ -13,7 +13,8 @@ const quizServices = {
 
   getQuizById: async (quizId) => {
     try {
-      const response = await apiClient.get(`/quiz/get-quiz/${quizId}`);
+      console.log("quizid", quizId);
+      const response = await apiClient.get(`/quiz/${quizId}`);
       return response;
     } catch (error) {
       throw error;

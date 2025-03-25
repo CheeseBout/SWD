@@ -29,72 +29,147 @@ export default function QuizDetail({ route, navigation }) {
   const [quizStarted, setQuizStarted] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [score, setScore] = useState(0);
+  const [isMounted, setIsMounted] = useState(true);
 
   useEffect(() => {
     fetchQuizDetails();
+
+    return () => {
+      // Clean up to prevent state updates after unmounting
+      setIsMounted(false);
+    };
   }, []);
 
   const fetchQuizDetails = async () => {
+    if (!isMounted) return;
+
     try {
       setLoading(true);
-
-      // Fetch quiz data
       const response = await quizServices.getQuizById(quizId);
-      console.log("Quiz response:", JSON.stringify(response.data, null, 2));
+
+      if (!isMounted) return;
 
       if (response.data && response.data.status === 200) {
-        // Handle the new response format where quiz is directly in data.quiz
         const quizData = response.data.data.quiz;
         setQuiz(quizData);
 
-        // Fetch all questions and filter for those in this quiz
-        await fetchAllQuestions(quizData.questions);
+        // Check if the quiz has complete question objects
+        if (
+          quizData.questions &&
+          Array.isArray(quizData.questions) &&
+          quizData.questions.length > 0 &&
+          quizData.questions[0].questionContent &&
+          quizData.questions[0].options
+        ) {
+          setQuestions(quizData.questions);
+        } else if (quizData.questions && quizData.questions.length > 0) {
+          // Fetch questions if needed
+          await fetchQuestionsDirectly(quizData.questions);
+        } else {
+          setError("This quiz has no questions");
+        }
       } else {
         setError("Failed to load quiz details");
       }
     } catch (err) {
       console.error("Error fetching quiz details:", err);
-      setError("Network error. Please try again later.");
+      if (isMounted) {
+        setError("Network error. Please try again later.");
+      }
     } finally {
-      setLoading(false);
+      if (isMounted) {
+        setLoading(false);
+      }
     }
   };
 
-  const fetchAllQuestions = async (questionIds) => {
+  // Simplified question fetching
+  const fetchQuestionsDirectly = async (questionsList) => {
+    if (!isMounted) return;
+
     try {
-      if (!questionIds || questionIds.length === 0) {
-        setError("This quiz has no questions");
-        return;
-      }
-
-      // Fetch all questions at once instead of one by one
-      const questionsResponse = await questionServices.getAllQuestions();
-
-      if (questionsResponse.data && questionsResponse.data.status === 200) {
-        // Extract questions from the response
-        const allQuestions = questionsResponse.data.data.data;
-
-        // Filter questions that belong to this quiz
-        const quizQuestions = allQuestions.filter((question) =>
-          questionIds.includes(question._id)
+      // First try: fetch questions for the specific quiz
+      try {
+        const quizQuestionsResponse = await questionServices.getQuizQuestions(
+          quizId
         );
 
-        console.log(`Found ${quizQuestions.length} questions for this quiz`);
-        setQuestions(quizQuestions);
+        if (quizQuestionsResponse.data?.status === 200) {
+          const responseData = quizQuestionsResponse.data.data;
+          let fetchedQuestions;
 
-        if (quizQuestions.length === 0) {
+          if (Array.isArray(responseData)) {
+            fetchedQuestions = responseData;
+          } else if (
+            responseData.questions &&
+            Array.isArray(responseData.questions)
+          ) {
+            fetchedQuestions = responseData.questions;
+          } else if (responseData.data && Array.isArray(responseData.data)) {
+            fetchedQuestions = responseData.data;
+          }
+
+          if (fetchedQuestions?.length > 0) {
+            setQuestions(fetchedQuestions);
+            return;
+          }
+        }
+      } catch (e) {
+        // Just continue with the next approach
+      }
+
+      // Second try: get question IDs and fetch them individually
+      const questionIds = questionsList.map((q) =>
+        typeof q === "string" ? q : q._id
+      );
+      const fetchedQuestions = [];
+
+      for (const questionId of questionIds) {
+        try {
+          const questionResponse = await questionServices.getQuestionById(
+            questionId
+          );
+
+          if (questionResponse.data?.status === 200) {
+            let questionData = questionResponse.data.data;
+
+            if (questionData.question) questionData = questionData.question;
+            else if (questionData.data) questionData = questionData.data;
+
+            if (questionData.questionContent && questionData.options) {
+              fetchedQuestions.push(questionData);
+            }
+          }
+        } catch (err) {
+          // Continue with next question
+        }
+      }
+
+      if (fetchedQuestions.length > 0) {
+        setQuestions(fetchedQuestions);
+      } else {
+        // Last resort: check if original question objects have enough data
+        if (
+          questionsList[0]?._id &&
+          (questionsList[0].questionContent ||
+            (questionsList[0].question &&
+              questionsList[0].question.questionContent))
+        ) {
+          setQuestions(questionsList.map((q) => q.question || q));
+        } else {
           setError("No questions found for this quiz");
         }
-      } else {
-        setError("Failed to load quiz questions");
       }
     } catch (err) {
-      console.error("Error fetching questions:", err);
-      setError("Failed to load quiz questions");
+      if (isMounted) {
+        setError("Failed to load quiz questions");
+      }
     }
   };
 
   const handleStartQuiz = () => {
+    if (!isMounted) return;
+
     if (!quiz || !questions || questions.length === 0) {
       Alert.alert("Error", "This quiz doesn't have any questions yet.");
       return;
@@ -410,6 +485,17 @@ export default function QuizDetail({ route, navigation }) {
     );
   };
 
+  const navigateBack = () => {
+    // Use setTimeout to handle the navigation event after the current frame completes
+    setTimeout(() => {
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+      } else {
+        navigation.navigate("QuizList");
+      }
+    }, 0);
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
@@ -443,11 +529,11 @@ export default function QuizDetail({ route, navigation }) {
                 "Your progress will be lost. Are you sure you want to quit?",
                 [
                   { text: "Cancel", style: "cancel" },
-                  { text: "Quit", onPress: () => navigation.goBack() },
+                  { text: "Quit", onPress: navigateBack },
                 ]
               );
             } else {
-              navigation.goBack();
+              navigateBack();
             }
           }}
         >

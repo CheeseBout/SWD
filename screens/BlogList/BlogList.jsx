@@ -48,7 +48,7 @@ export default function BlogList() {
       // Phân tích cấu trúc đúng của response
       if (response.data && response.data.data) {
         console.log("Blog data to set:", response.data.data);
-        setBlogs(response.data.data);
+        setBlogs(response.data.data.reverse());
       }
     } catch (error) {
       console.error("Error fetching blogs:", error);

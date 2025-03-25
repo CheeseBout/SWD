@@ -7,7 +7,11 @@ import {
   MinusCircleIcon,
 } from "@heroicons/react/outline";
 import PropTypes from "prop-types";
-import { topicService, questionService, utilsService } from "../../services/api";
+import {
+  topicService,
+  questionService,
+  utilsService,
+} from "../../services/api";
 
 const QuizForm = ({
   initialData = {
@@ -168,26 +172,26 @@ const QuizForm = ({
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      alert('File size too large. Please choose an image under 10MB.');
+      alert("File size too large. Please choose an image under 10MB.");
       return;
     }
 
     const previewUrl = URL.createObjectURL(file);
     setImagePreview(previewUrl);
-    setQuizData(prev => ({ ...prev, imageUrl: previewUrl }));
+    setQuizData((prev) => ({ ...prev, imageUrl: previewUrl }));
 
     try {
       const result = await utilsService.uploadImage(file);
       const imageUrl = result?.data;
-      
+
       if (imageUrl) {
-        setQuizData(prev => ({ ...prev, imageUrl }));
+        setQuizData((prev) => ({ ...prev, imageUrl }));
       }
     } catch (error) {
-      console.error('Error uploading image:', error);
-      alert('Failed to upload image. Please try again.');
+      console.error("Error uploading image:", error);
+      alert("Failed to upload image. Please try again.");
       setImagePreview(null);
-      setQuizData(prev => ({ ...prev, imageUrl: '' }));
+      setQuizData((prev) => ({ ...prev, imageUrl: "" }));
     }
   };
 
@@ -341,7 +345,8 @@ const QuizForm = ({
                   className="h-40 w-full object-contain rounded-md"
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = "https://via.placeholder.com/300x150?text=Invalid+Image+URL";
+                    e.target.src =
+                      "https://via.placeholder.com/300x150?text=Invalid+Image+URL";
                   }}
                 />
               </div>

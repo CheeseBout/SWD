@@ -18,7 +18,7 @@ export default function ResultDetail() {
   const [therapist, setTherapist] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState("");
+  const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function ResultDetail() {
         setResult(resultResponse.data);
 
         // Get additional user data using the userID from therapist response
-        const userID = therapistResponse.data.userID;
+        const userID = therapistResponse.data.userID._id;
         const userResponse = await userService.getUserById(userID);
 
         // Combine therapist and user data
@@ -61,7 +61,7 @@ export default function ResultDetail() {
   const handleRatingSubmit = async (e) => {
     e.preventDefault();
 
-    if (!comment.trim()) {
+    if (!content.trim()) {
       toast.warning("Please provide a comment with your rating");
       return;
     }
@@ -73,13 +73,13 @@ export default function ResultDetail() {
         userID,
         coupleTherapistID: therapistId,
         rate: rating,
-        comment,
+        content,
         reservationID: reservationId,
       };
 
       await ratingService.createRating(ratingData);
       toast.success("Thank you for your rating!");
-      setComment("");
+      setContent("");
     } catch (error) {
       console.error("Error submitting rating:", error);
       toast.error("Failed to submit your rating. Please try again.");
@@ -420,10 +420,10 @@ export default function ResultDetail() {
                   Your Review
                 </label>
                 <textarea
-                  id="comment"
+                  id="content"
                   rows="4"
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
                   className="shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border-gray-300 rounded-md p-2 border"
                   placeholder="Share your experience with this therapist..."
                 ></textarea>

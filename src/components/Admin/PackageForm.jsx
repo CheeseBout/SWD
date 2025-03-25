@@ -124,7 +124,6 @@ const PackageForm = ({
             t.id ||
             `therapist-${Math.random().toString(36).substr(2, 9)}`,
           fullName: extractName(t),
-          expertise: t.category || "",
           email: t.userInfo?.email || t.userID?.email || "",
           photoURL: t.userInfo?.photoURL || t.userID?.photoURL || "",
         }));

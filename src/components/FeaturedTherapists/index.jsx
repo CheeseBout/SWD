@@ -21,6 +21,19 @@ export function FeaturedTherapists() {
     fetchTherapists();
   }, []);
 
+  const getCategories = (therapist) => {
+    if (Array.isArray(therapist.categoryInfo) && therapist.categoryInfo.length > 0) {
+      return therapist.categoryInfo.map(cat => {
+        return typeof cat === 'string' ? cat : cat?.name || 'Unknown';
+      }).join(", ");
+    }
+    // Fallback to legacy category field
+    if (typeof therapist.category === 'object') {
+      return therapist.category?.name || 'Unknown';
+    }
+    return therapist.category || "Unknown";
+  };
+
   return (
     <section className="py-16 bg-base-100">
       <div className="container mx-auto px-4">
@@ -54,15 +67,9 @@ export function FeaturedTherapists() {
                 <h3 className="card-title text-xl font-semibold">
                   {therapist.userInfo?.fullname || "Unnamed Therapist"}
                 </h3>
-                <p className="text-sm text-gray-600">
-                  {therapist.certificates && therapist.certificates.length > 0
-                    ? therapist.certificates.find(
-                        (cert) => cert.status === "approved"
-                      )?.category || "General Therapist"
-                    : "General Therapist"}
-                </p>
-                <div className="badge badge-primary p-2">
-                  {therapist.category || "General"}
+
+                <div className="badge badge-primary p-2 whitespace-normal text-left h-auto break-words max-w-full leading-relaxed">
+                  {getCategories(therapist)}
                 </div>
 
                 <div className="flex items-center mt-2">

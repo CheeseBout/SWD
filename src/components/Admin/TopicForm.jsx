@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
-import { utilsService } from '../../services/api';
+import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
+import { utilsService } from "../../services/api";
 
 const TopicForm = ({
   initialData,
@@ -8,12 +8,12 @@ const TopicForm = ({
   onCancel,
   isSubmitting,
   submitButtonText,
-  formSubmitSuccess = false
+  formSubmitSuccess = false,
 }) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    imageUrl: ""
+    imageUrl: "",
   });
 
   useEffect(() => {
@@ -21,7 +21,7 @@ const TopicForm = ({
       setFormData({
         name: initialData.name || "",
         description: initialData.description || "",
-        imageUrl: initialData.imageUrl || ""
+        imageUrl: initialData.imageUrl || "",
       });
     }
   }, [initialData]);
@@ -31,14 +31,14 @@ const TopicForm = ({
       setFormData({
         name: "",
         description: "",
-        imageUrl: ""
+        imageUrl: "",
       });
     }
   }, [formSubmitSuccess, initialData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleImageUpload = async (e) => {
@@ -46,25 +46,24 @@ const TopicForm = ({
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      alert('File size too large. Please choose an image under 10MB.');
+      alert("File size too large. Please choose an image under 10MB.");
       return;
     }
 
-    // Show preview immediately
     const previewUrl = URL.createObjectURL(file);
-    setFormData(prev => ({ ...prev, imageUrl: previewUrl }));
+    setFormData((prev) => ({ ...prev, imageUrl: previewUrl }));
 
     try {
       const result = await utilsService.uploadImage(file);
       const imageUrl = result?.data;
-      
+
       if (imageUrl) {
-        setFormData(prev => ({ ...prev, imageUrl }));
+        setFormData((prev) => ({ ...prev, imageUrl }));
       }
     } catch (error) {
-      console.error('Error uploading image:', error);
-      alert('Failed to upload image. Please try again.');
-      setFormData(prev => ({ ...prev, imageUrl: '' }));
+      console.error("Error uploading image:", error);
+      alert("Failed to upload image. Please try again.");
+      setFormData((prev) => ({ ...prev, imageUrl: "" }));
     }
   };
 
@@ -120,7 +119,8 @@ const TopicForm = ({
               className="h-40 w-full object-contain rounded-md"
               onError={(e) => {
                 e.target.onerror = null;
-                e.target.src = "https://via.placeholder.com/300x150?text=Invalid+Image+URL";
+                e.target.src =
+                  "https://via.placeholder.com/300x150?text=Invalid+Image+URL";
               }}
             />
           </div>
@@ -150,13 +150,13 @@ TopicForm.propTypes = {
   initialData: PropTypes.shape({
     name: PropTypes.string,
     description: PropTypes.string,
-    imageUrl: PropTypes.string
+    imageUrl: PropTypes.string,
   }),
   onSubmit: PropTypes.func.isRequired,
   onCancel: PropTypes.func.isRequired,
   isSubmitting: PropTypes.bool,
   submitButtonText: PropTypes.string,
-  formSubmitSuccess: PropTypes.bool
+  formSubmitSuccess: PropTypes.bool,
 };
 
 export default TopicForm;

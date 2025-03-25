@@ -31,52 +31,60 @@ export default function TherapistDetail() {
   const [reviews, setReviews] = useState([]);
   const [showAllReviews, setShowAllReviews] = useState(false);
 
+  const getCategory = (cat) => {
+    if (typeof cat === 'string') return cat;
+    return cat?.name || 'General';
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setError(null);
+        
         // Fetch therapist data
-        const therapistResponse = await therapistService.getTherapistById(
-          therapistId
-        );
-        setTherapist(therapistResponse.data);
-        // Get reviews
-        const reviewsResponse = await ratingService.getRatingByTherapistId(
-          therapistId
-        );
-        setReviews(reviewsResponse.data);
+        const therapistResponse = await therapistService.getTherapistById(therapistId);
+        if (!therapistResponse?.data) {
+          throw new Error('No therapist data found');
+        }
+        const therapistData = therapistResponse.data;
+        setTherapist(therapistData);
 
-        // Fetch user data using userID from therapist data
+       // Fetch user data using userID from therapist data
         const userResponse = await userService.getUserById(
-          therapistResponse.data.userID
+          therapistResponse.data.userID._id
         );
         setUser(userResponse.data.user);
 
+        // Get reviews
+        try {
+          const reviewsResponse = await ratingService.getRatingByTherapistId(therapistId);
+          setReviews(reviewsResponse?.data || []);
+        } catch (reviewError) {
+          console.warn('Error fetching reviews:', reviewError);
+          setReviews([]);
+        }
+
         // Fetch availability
         try {
-          const availabilityResponse = await therapistService.getAvailability(
-            therapistId
-          );
-          if (
-            availabilityResponse.data &&
-            availabilityResponse.data.availability
-          ) {
-            setAvailabilities(availabilityResponse.data.availability);
-          } else {
-            setAvailabilities([]);
-          }
+          const availabilityResponse = await therapistService.getAvailability(therapistId);
+          setAvailabilities(availabilityResponse?.data?.availability || []);
         } catch (availabilityError) {
+          console.warn('Error fetching availability:', availabilityError);
           setAvailabilities([]);
         }
+
       } catch (err) {
-        setError("Failed to load therapist details. Please try again.");
-        console.error(err);
+        console.error('Error fetching therapist details:', err);
+        setError(err.message || "Failed to load therapist details. Please try again.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    if (therapistId) {
+      fetchData();
+    }
   }, [therapistId]);
 
   if (loading) {
@@ -275,12 +283,12 @@ export default function TherapistDetail() {
                 >
                   <path
                     d="M0,0 L100,0 L100,100 L0,100 Z"
-                    fill="url(#pattern)"
+                    fill="url(#patternId)"
                   />
                 </svg>
                 <defs>
                   <pattern
-                    id="pattern"
+                    id="patternId"
                     width="40"
                     height="40"
                     patternUnits="userSpaceOnUse"
@@ -316,9 +324,20 @@ export default function TherapistDetail() {
                     {user.fullname}
                   </h1>
                   <div className="flex flex-wrap items-center gap-3 mt-2">
-                    <span className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-medium">
-                      {therapist.category} Therapist
-                    </span>
+                    {Array.isArray(therapist.category) && therapist.category.length > 0 ? (
+                      therapist.category.map((cat, index) => (
+                        <span 
+                          key={index}
+                          className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-medium"
+                        >
+                          {getCategory(cat)} Therapist
+                        </span>
+                      ))
+                    ) : (
+                      <span className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-medium">
+                        {getCategory(therapist.category) || 'General'}
+                      </span>
+                    )}
                     {verifiedCertificates.length > 0 && (
                       <span className="bg-green-500/80 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-medium flex items-center">
                         <CheckCircleIcon className="h-4 w-4 mr-1" />
@@ -527,16 +546,6 @@ export default function TherapistDetail() {
                     </div>
                     <div className="text-lg font-medium text-gray-800">
                       {therapist.category}
-                    </div>
-                  </div> */}
-                  {/* <div className="bg-gray-50 p-5 rounded-xl hover:shadow-md transition-shadow duration-300">
-                    <div className="text-sm font-medium text-blue-500 uppercase tracking-wider mb-1">
-                      Experience
-                    </div>
-                    <div className="text-lg font-medium text-gray-800">
-                      {verifiedCertificates.length > 0
-                        ? `${verifiedCertificates.length} certified specialties`
-                        : "New therapist"}
                     </div>
                   </div> */}
                 </div>

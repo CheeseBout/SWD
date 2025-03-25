@@ -44,7 +44,7 @@ const BookReservation = () => {
 
         if (therapistResponse.data?.data) {
           await userService
-            .getUserById(therapistResponse.data.data.userID)
+            .getUserById(therapistResponse.data.data.userID._id)
             .then((response) => {
               setTherapist({
                 ...therapistResponse.data.data,

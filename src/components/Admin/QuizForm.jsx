@@ -7,7 +7,7 @@ import {
   MinusCircleIcon,
 } from "@heroicons/react/outline";
 import PropTypes from "prop-types";
-import { topicService, questionService } from "../../services/api";
+import { topicService, questionService, utilsService } from "../../services/api";
 
 const QuizForm = ({
   initialData = {
@@ -35,6 +35,7 @@ const QuizForm = ({
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [initialSelectedQuestions, setInitialSelectedQuestions] = useState([]);
+  const [imagePreview, setImagePreview] = useState(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -160,6 +161,34 @@ const QuizForm = ({
 
   const handleRemoveQuestion = (questionId) => {
     setSelectedQuestions((prev) => prev.filter((q) => q._id !== questionId));
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size too large. Please choose an image under 10MB.');
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+    setQuizData(prev => ({ ...prev, imageUrl: previewUrl }));
+
+    try {
+      const result = await utilsService.uploadImage(file);
+      const imageUrl = result?.data;
+      
+      if (imageUrl) {
+        setQuizData(prev => ({ ...prev, imageUrl }));
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image. Please try again.');
+      setImagePreview(null);
+      setQuizData(prev => ({ ...prev, imageUrl: '' }));
+    }
   };
 
   const handleSubmit = (e) => {
@@ -298,14 +327,25 @@ const QuizForm = ({
               Image URL*
             </label>
             <input
-              type="text"
-              name="imageUrl"
-              value={quizData.imageUrl || ""}
-              onChange={handleQuizInputChange}
-              className="input input-bordered w-full"
-              placeholder="Enter image URL"
-              required
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="file-input w-full mb-2"
             />
+            {(imagePreview || quizData.imageUrl) && (
+              <div className="mt-2 border border-gray-200 rounded-md p-2 bg-gray-50">
+                <p className="text-sm font-medium mb-2">Preview:</p>
+                <img
+                  src={imagePreview || quizData.imageUrl}
+                  alt="Quiz preview"
+                  className="h-40 w-full object-contain rounded-md"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "https://via.placeholder.com/300x150?text=Invalid+Image+URL";
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

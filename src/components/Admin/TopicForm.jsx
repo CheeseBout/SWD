@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { utilsService } from '../../services/api';
 
 const TopicForm = ({
   initialData,
@@ -40,6 +41,33 @@ const TopicForm = ({
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size too large. Please choose an image under 10MB.');
+      return;
+    }
+
+    // Show preview immediately
+    const previewUrl = URL.createObjectURL(file);
+    setFormData(prev => ({ ...prev, imageUrl: previewUrl }));
+
+    try {
+      const result = await utilsService.uploadImage(file);
+      const imageUrl = result?.data;
+      
+      if (imageUrl) {
+        setFormData(prev => ({ ...prev, imageUrl }));
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image. Please try again.');
+      setFormData(prev => ({ ...prev, imageUrl: '' }));
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
@@ -75,14 +103,13 @@ const TopicForm = ({
       </div>
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Image URL
+          Image
         </label>
         <input
-          type="text"
-          name="imageUrl"
-          value={formData.imageUrl}
-          onChange={handleInputChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          className="file-input w-full mb-2"
         />
         {formData.imageUrl && (
           <div className="mt-2 border border-gray-200 rounded-md p-2 bg-gray-50">
@@ -90,7 +117,7 @@ const TopicForm = ({
             <img
               src={formData.imageUrl}
               alt="Topic preview"
-              className="h-40 object-cover rounded-md mx-auto"
+              className="h-40 w-full object-contain rounded-md"
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = "https://via.placeholder.com/300x150?text=Invalid+Image+URL";

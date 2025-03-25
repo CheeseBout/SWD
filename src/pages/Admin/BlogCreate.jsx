@@ -14,6 +14,7 @@ export default function BlogCreate() {
   const [status, setStatus] = useState("PUBLISHED");
   const [coverPhoto, setCoverPhoto] = useState("");
   const [slug, setSlug] = useState("");
+  const [imagePreview, setImagePreview] = useState(null);
 
   const navigateToAppropriateBlogs = () => {
     const therapistId = localStorage.getItem("therapistId");
@@ -42,7 +43,7 @@ export default function BlogCreate() {
 
       console.log("Submitting blog data:", JSON.stringify(blogData, null, 2));
 
-      const response = await blogService.createBlog(blogData);
+      await blogService.createBlog(blogData);
       toast.success("Blog created successfully");
       setTimeout(() => {
         navigateToAppropriateBlogs();
@@ -105,6 +106,8 @@ export default function BlogCreate() {
         submitButtonText="Create Blog"
         onCancel={navigateToAppropriateBlogs}
         autoGenerateSlug={true}
+        imagePreview={imagePreview}
+        setImagePreview={setImagePreview}
       />
     </div>
   );

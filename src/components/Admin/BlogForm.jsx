@@ -6,7 +6,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import EditorToolbar from "./EditorToolbar";
-import { categoryService } from "../../services/api";
+import { categoryService, utilsService } from "../../services/api";
 
 const BlogForm = ({
   title,
@@ -16,6 +16,9 @@ const BlogForm = ({
   status = "PUBLISHED",
   coverPhoto,
   setCoverPhoto,
+  imagePreview,
+  setImagePreview,
+  handleFileChange,
   slug,
   setSlug,
   initialContent,
@@ -65,7 +68,7 @@ const BlogForm = ({
     content: initialContent || "<p></p>",
     editorProps: {
       attributes: {
-        class: "prose max-w-none min-h-[400px] px-3 py-2 outline-none",
+        class: "prose max-w-none min-h-[400px] px-3 py-2 outline-none [&_img]:max-h-[300px] [&_img]:object-contain",
       },
     },
     autofocus: false,
@@ -95,6 +98,64 @@ const BlogForm = ({
       }
     }
   };
+  
+  const handleImageUpload = async (file) => {
+    if (!file || !editor) return;
+    
+    const loadingPlaceholder = document.createElement('div');
+    loadingPlaceholder.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50';
+    const spinner = document.createElement('div');
+    spinner.className = 'animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full';
+    loadingPlaceholder.appendChild(spinner);
+    document.body.appendChild(loadingPlaceholder);
+    
+    try {
+      const result = await utilsService.uploadImage(file);
+      const imageUrl = result?.data;
+      
+      if (imageUrl) {
+        editor.chain()
+          .focus()
+          .setImage({ 
+            src: imageUrl,
+            alt: file.name 
+          })
+          .run();
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      document.body.removeChild(loadingPlaceholder);
+    }
+  };
+
+  const handleCoverFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size too large. Please choose an image under 10MB.');
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+    setCoverPhoto(previewUrl);
+    try {
+      const result = await utilsService.uploadImage(file);
+      const imageUrl = result?.data;
+      
+      if (imageUrl) {
+        setCoverPhoto(imageUrl);
+      }
+    } catch (error) {
+      console.error('Error uploading cover image:', error);
+      alert('Failed to upload cover image. Please try again.');
+      setImagePreview(null);
+      setCoverPhoto(null);
+    }
+  };
 
   const handleTagInputKeyDown = (e) => {
     if (e.key === "Enter" && tagInput.trim()) {
@@ -114,11 +175,10 @@ const BlogForm = ({
       alert("Title and content are required");
       return;
     }
-    
-    // Using category directly as the name instead of finding the category object
+
     const blogData = {
       title,
-      category, // This will be the category name
+      category,
       status,
       coverPhoto,
       slug,
@@ -208,30 +268,30 @@ const BlogForm = ({
             htmlFor="coverPhoto"
             className="block mb-1 font-medium text-gray-700"
           >
-            Cover Photo URL
+            Cover Image
           </label>
-          <input
-            type="text"
-            id="coverPhoto"
-            value={coverPhoto}
-            onChange={(e) => setCoverPhoto(e.target.value)}
-            className="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-          {coverPhoto && (
-            <div className="mt-2 border border-gray-200 rounded-md p-2 bg-gray-50">
-              <p className="text-sm font-medium mb-2">Preview:</p>
-              <img
-                src={coverPhoto}
-                alt="Cover preview"
-                className="h-48 object-cover rounded-md"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src =
-                    "https://via.placeholder.com/800x400?text=Invalid+Image+URL";
-                }}
-              />
-            </div>
-          )}
+          <div className="mt-1 flex flex-col space-y-4">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleCoverFileChange}
+              className="file-input w-full"
+            />
+            
+            {/* Image Preview */}
+            {imagePreview && (
+              <div className="mt-2 border border-gray-200 rounded-md p-2 bg-gray-50">
+                <p className="text-sm font-medium mb-2">Preview:</p>
+                <div className="relative">
+                  <img
+                    src={imagePreview}
+                    alt="Cover preview"
+                    className="w-full object-contain rounded-md"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="mb-4">
@@ -279,7 +339,7 @@ const BlogForm = ({
           className="border border-gray-300 rounded-md overflow-hidden"
           onClick={handleEditorContainerClick}
         >
-          <EditorToolbar editor={editor} />
+          <EditorToolbar editor={editor} onImageUpload={handleImageUpload} />
           <div className="p-2 mb-4 cursor-text">
             <EditorContent editor={editor} />
           </div>
@@ -341,8 +401,12 @@ BlogForm.propTypes = {
   setCategory: PropTypes.func.isRequired,
   status: PropTypes.string,
   setStatus: PropTypes.func.isRequired,
-  coverPhoto: PropTypes.string,
+  coverPhoto: PropTypes.string.isRequired,
   setCoverPhoto: PropTypes.func.isRequired,
+  imageFile: PropTypes.object,
+  imagePreview: PropTypes.string,
+  setImagePreview: PropTypes.func.isRequired,
+  handleFileChange: PropTypes.func,
   slug: PropTypes.string,
   setSlug: PropTypes.func.isRequired,
   initialContent: PropTypes.string,

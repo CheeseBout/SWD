@@ -13,6 +13,7 @@ export default function BlogEdit() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
 
   useEffect(() => {
     async function fetchBlog() {
@@ -20,6 +21,10 @@ export default function BlogEdit() {
         const response = await blogService.getBlogBySlug(slug);
         if (response && response.data) {
           setBlog(response.data);
+          // Set initial cover photo as preview if it exists
+          if (response.data.coverPhoto) {
+            setImagePreview(response.data.coverPhoto);
+          }
         } else {
           setError("Blog post not found");
         }
@@ -75,7 +80,7 @@ export default function BlogEdit() {
           setCategory={(category) => setBlog({ ...blog, category })}
           status={blog.status}
           setStatus={(status) => setBlog({ ...blog, status })}
-          coverPhoto={blog.coverPhoto}
+          coverPhoto={blog.coverPhoto || ""}
           setCoverPhoto={(coverPhoto) => setBlog({ ...blog, coverPhoto })}
           slug={blog.slug}
           setSlug={(slug) => setBlog({ ...blog, slug })}
@@ -85,6 +90,8 @@ export default function BlogEdit() {
           submitButtonText="Update Blog"
           onCancel={() => navigateToAppropriateBlogs()}
           autoGenerateSlug={false}
+          imagePreview={imagePreview}
+          setImagePreview={setImagePreview}
         />
       )}
     </div>

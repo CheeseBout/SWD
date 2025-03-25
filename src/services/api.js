@@ -12,6 +12,7 @@ import { availabilityService } from "./availability/availabilityService";
 import { packageService } from "./package/packageService";
 import { reservationService } from "./reservation/reservationService";
 import { categoryService } from "./category/categoryService";
+import { utilsService } from "./utils/utilsService";
 
 export {
   api,
@@ -28,4 +29,5 @@ export {
   packageService,
   reservationService,
   categoryService,
+  utilsService,
 };

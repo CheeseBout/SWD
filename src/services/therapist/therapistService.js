@@ -1,8 +1,26 @@
 import { api } from "../apiConfig";
 
 export const therapistService = {
-  getAllTherapists: async () => {
-    const response = await api.get("/api/v1/coupletherapist");
+  getAllTherapists: async ({
+    page = 1,
+    limit = 10,
+    expertise = "",
+    category = "",
+    searchName = "",
+    minRating = 0,
+    maxRating = 5,
+  } = {}) => {
+    const response = await api.get("/api/v1/coupletherapist", {
+      params: {
+        page,
+        limit,
+        expertise,
+        category,
+        searchName,
+        minRating,
+        maxRating,
+      },
+    });
     return response.data;
   },
 
@@ -33,8 +51,6 @@ export const therapistService = {
   },
 
   updateTherapistProfile: async (id, data) => {
-    console.log("Updating therapist profile with ID:", id);
-    console.log("Update data:", data);
     const response = await api.put(
       `/api/v1/auth/update-therapist-profile`,
       data

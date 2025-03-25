@@ -15,7 +15,7 @@ const upload = multer({ storage: storage });
 
 /**
  * @swagger
- * /api/utils/upload-image:
+ * /api/util/upload-image:
  *   post:
  *     summary: Upload an image to Imgur
  *     tags: [Utils]

@@ -26,6 +26,14 @@ class TherapistRepo {
       {
         $unwind: "$userInfo",
       },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "categoryInfo",
+        },
+      },
     ];
 
     // Match conditions
@@ -82,6 +90,20 @@ class TherapistRepo {
         $match: matchConditions,
       });
     }
+
+    // Final project stage to structure the output with populated category data
+    pipeline.push({
+      $project: {
+        _id: 1,
+        userID: 1,
+        userInfo: 1,
+        averageRating: 1,
+        certificates: 1,
+        categoryInfo: 1,
+        category: 1,
+        // Include any other fields you want to return
+      },
+    });
 
     return await COUPLETHERAPIST.aggregate(pipeline);
   }

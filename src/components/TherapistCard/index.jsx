@@ -38,7 +38,7 @@ export function TherapistCard({ therapist }) {
         </h3>
         <p className="text-sm text-gray-600">{therapist.description}</p>
 
-        <div className="badge badge-primary mt-2">{therapist.category}</div>
+        <div className="badge badge-primary mt-2 p-2">{therapist.category}</div>
 
         {/* Rating */}
         <div className="flex items-center mt-3">

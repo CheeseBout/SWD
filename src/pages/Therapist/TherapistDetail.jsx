@@ -220,7 +220,7 @@ export default function TherapistDetail() {
           </div>
         ) : (
           <div className="bg-blue-50 border rounded-xl p-6 text-gray-800 flex">
-            <div className="flex-shrink-0 bg-blue-100 p-2 rounded-full">
+            <div className="flex-shrink-0 bg-blue-100 p-2 rounded-full h-10">
               <CalendarIcon className="h-6 w-6 text-blue-600" />
             </div>
             <div className="ml-4">
@@ -361,9 +361,7 @@ export default function TherapistDetail() {
                       />
                     ))}
                   </div>
-                  <span className="ml-2 font-semibold text-gray-800">
-                    {therapist.rating || "New"}
-                  </span>
+
                   <span className="ml-1 text-sm text-gray-500">
                     ({therapist?.ratingCount} reviews)
                   </span>
@@ -523,15 +521,15 @@ export default function TherapistDetail() {
                       {user.address}
                     </div>
                   </div>
-                  <div className="bg-gray-50 p-5 rounded-xl hover:shadow-md transition-shadow duration-300">
+                  {/* <div className="bg-gray-50 p-5 rounded-xl hover:shadow-md transition-shadow duration-300">
                     <div className="text-sm font-medium text-blue-500 uppercase tracking-wider mb-1">
                       Specialty
                     </div>
                     <div className="text-lg font-medium text-gray-800">
                       {therapist.category}
                     </div>
-                  </div>
-                  <div className="bg-gray-50 p-5 rounded-xl hover:shadow-md transition-shadow duration-300">
+                  </div> */}
+                  {/* <div className="bg-gray-50 p-5 rounded-xl hover:shadow-md transition-shadow duration-300">
                     <div className="text-sm font-medium text-blue-500 uppercase tracking-wider mb-1">
                       Experience
                     </div>
@@ -540,10 +538,10 @@ export default function TherapistDetail() {
                         ? `${verifiedCertificates.length} certified specialties`
                         : "New therapist"}
                     </div>
-                  </div>
+                  </div> */}
                 </div>
                 {reviews.length > 0 && (
-                  <div className="bg-gray-50 p-5 rounded-xl hover:shadow-md transition-shadow duration-300">
+                  <div className="bg-gray-50 p-5 rounded-xl hover:shadow-md transition-shadow duration-300 mt-5">
                     <div className="flex justify-between items-center mb-3">
                       <div>
                         <div className="text-sm font-medium text-blue-500 uppercase tracking-wider mb-1">
@@ -676,9 +674,9 @@ export default function TherapistDetail() {
                               {certificate.title}
                             </h3>
 
-                            <div className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full mb-4">
+                            {/* <div className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full mb-4">
                               {certificate.category}
-                            </div>
+                            </div> */}
 
                             <div className="flex flex-col sm:flex-row gap-6 text-gray-800">
                               <div>

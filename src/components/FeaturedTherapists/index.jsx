@@ -61,7 +61,7 @@ export function FeaturedTherapists() {
                       )?.category || "General Therapist"
                     : "General Therapist"}
                 </p>
-                <div className="badge badge-primary">
+                <div className="badge badge-primary p-2">
                   {therapist.category || "General"}
                 </div>
 

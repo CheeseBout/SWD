@@ -11,8 +11,9 @@ import {
   UserGroupIcon,
   MenuAlt2Icon,
   XIcon,
-  ShoppingBagIcon, // Add this new icon for Package Management
-  CashIcon, // Add this new icon for Transaction History
+  ShoppingBagIcon,
+  CashIcon,
+  TagIcon,
 } from "@heroicons/react/outline";
 
 const AdminSideBar = () => {
@@ -172,6 +173,11 @@ const AdminSideBar = () => {
                   to="/admin/topics"
                   icon={CollectionIcon}
                   label="Topic Management"
+                />
+                <NavItem
+                  to="/admin/categories"
+                  icon={TagIcon}
+                  label="Category Management"
                 />
                 <NavItem
                   to="/admin/question-banks"

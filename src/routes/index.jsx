@@ -72,6 +72,9 @@ const PackagesManagement = lazy(() =>
   import("../pages/Admin/PackagesManagement")
 );
 const ResetPassword = lazy(() => import("../pages/ResetPassword"));
+const CategoryManagement = lazy(() =>
+  import("../pages/Admin/CategoryManagement")
+);
 const LazyLoad = ({ children }) => (
   <Suspense fallback={<div></div>}>{children}</Suspense>
 );
@@ -447,6 +450,14 @@ export function AppRoutes() {
             element={
               <LazyLoad>
                 <Transactions />
+              </LazyLoad>
+            }
+          />
+          <Route
+            path="categories"
+            element={
+              <LazyLoad>
+                <CategoryManagement />
               </LazyLoad>
             }
           />

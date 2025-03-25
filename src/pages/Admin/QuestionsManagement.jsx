@@ -46,7 +46,7 @@ export default function QuestionsManagement() {
 
       if (!bank) {
         toast.error("Question bank not found");
-        navigate("/manage/question-banks");
+        navigate("/admin/question-banks");
         return;
       }
 
@@ -55,7 +55,7 @@ export default function QuestionsManagement() {
     } catch (error) {
       console.error("Error fetching question bank:", error);
       toast.error("Failed to load question bank. Please try again.");
-      navigate("/manage/question-banks");
+      navigate("/admin/question-banks");
     } finally {
       setIsLoading(false);
     }
@@ -233,7 +233,7 @@ export default function QuestionsManagement() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
               <div>
                 <button
-                  onClick={() => navigate("/manage/question-banks")}
+                  onClick={() => navigate("/admin/question-banks")}
                   className="mb-4 text-blue-600 hover:text-blue-800 flex items-center"
                 >
                   <svg

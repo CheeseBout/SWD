@@ -11,13 +11,13 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ChevronDownIcon,
-  ChatAlt2Icon,
   ShieldCheckIcon,
   BriefcaseIcon,
   DocumentTextIcon,
 } from "@heroicons/react/outline";
 import { StarIcon } from "@heroicons/react/solid";
 import { format } from "date-fns";
+import { ratingService } from "@/services/rating/ratingService";
 
 export default function TherapistDetail() {
   const { therapistId } = useParams();
@@ -28,6 +28,8 @@ export default function TherapistDetail() {
   const [activeTab, setActiveTab] = useState("about");
   const [showAllCertificates, setShowAllCertificates] = useState(false);
   const [availabilities, setAvailabilities] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [showAllReviews, setShowAllReviews] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -38,6 +40,11 @@ export default function TherapistDetail() {
           therapistId
         );
         setTherapist(therapistResponse.data);
+        // Get reviews
+        const reviewsResponse = await ratingService.getRatingByTherapistId(
+          therapistId
+        );
+        setReviews(reviewsResponse.data);
 
         // Fetch user data using userID from therapist data
         const userResponse = await userService.getUserById(
@@ -45,26 +52,20 @@ export default function TherapistDetail() {
         );
         setUser(userResponse.data.user);
 
-        // Fetch availability - API returns data nested under data.availability
+        // Fetch availability
         try {
           const availabilityResponse = await therapistService.getAvailability(
             therapistId
           );
-          console.log("Raw availability data:", availabilityResponse);
-
-          // Make sure we're setting the correct part of the response
           if (
             availabilityResponse.data &&
             availabilityResponse.data.availability
           ) {
             setAvailabilities(availabilityResponse.data.availability);
           } else {
-            console.log("No availability data structure found in response");
             setAvailabilities([]);
           }
         } catch (availabilityError) {
-          console.log("Error fetching availability:", availabilityError);
-          // Don't set error state, just set availabilities to empty array
           setAvailabilities([]);
         }
       } catch (err) {
@@ -77,10 +78,6 @@ export default function TherapistDetail() {
 
     fetchData();
   }, [therapistId]);
-
-  useEffect(() => {
-    console.log("Current availabilities:", availabilities);
-  }, [availabilities]);
 
   if (loading) {
     return (
@@ -127,54 +124,34 @@ export default function TherapistDetail() {
   const today = new Date();
   const age = today.getFullYear() - dob.getFullYear();
 
-  // Helper function to check if a time slot is in the past
-  const isTimeSlotValid = (startHour) => {
-    const now = new Date();
-    const slotTime = new Date(startHour);
-    // For testing, consider all dates valid, remove this condition in production
-    return true; // or return slotTime > now;
-  };
-
-  // Helper function to get available time slots that are not occupied and in the future
+  // Helper function to get available time slots
   const getValidTimeSlots = () => {
     if (!availabilities || availabilities.length === 0) {
-      console.log("No availabilities found");
       return [];
     }
 
     const validSlots = [];
     availabilities.forEach((availability) => {
-      console.log("Processing availability:", availability);
-
       if (
         !availability.timeAvailable ||
         availability.timeAvailable.length === 0
       ) {
-        console.log("No timeAvailable in this availability object");
         return;
       }
 
       availability.timeAvailable.forEach((slot) => {
-        console.log("Checking slot:", slot);
-        console.log("Is occupied:", slot.isOccupied);
-
-        // Only add slots that are not occupied and are in the future (for testing, we accept all)
-        if (!slot.isOccupied && isTimeSlotValid(slot.startHour)) {
+        if (!slot.isOccupied) {
           validSlots.push({
             _id: slot._id,
             startHour: slot.startHour,
             endHour: slot.endHour,
             date: new Date(slot.startHour).toISOString().split("T")[0],
-            availabilityId: availability._id, // Add this to track parent availability
+            availabilityId: availability._id,
           });
-          console.log("Added valid slot:", slot);
-        } else {
-          console.log("Slot rejected - isOccupied:", slot.isOccupied);
         }
       });
     });
 
-    console.log("Final valid slots:", validSlots);
     return validSlots.sort(
       (a, b) => new Date(a.startHour) - new Date(b.startHour)
     );
@@ -182,7 +159,6 @@ export default function TherapistDetail() {
 
   const renderAvailabilitySection = () => {
     const validSlots = getValidTimeSlots();
-    console.log("Slots to render:", validSlots);
 
     return (
       <div>
@@ -260,7 +236,6 @@ export default function TherapistDetail() {
           </div>
         )}
 
-        {/* Contact section remains the same... */}
         <div className="mt-12 text-center">
           <h3 className="text-xl font-bold text-gray-800 mb-3">
             Don't see a time that works for you?
@@ -379,7 +354,7 @@ export default function TherapistDetail() {
                       <StarIcon
                         key={i}
                         className={`h-5 w-5 ${
-                          i < Math.round(therapist.rating || 0)
+                          i < Math.round(therapist.averageRating || 0)
                             ? "text-yellow-400"
                             : "text-gray-300"
                         }`}
@@ -390,7 +365,7 @@ export default function TherapistDetail() {
                     {therapist.rating || "New"}
                   </span>
                   <span className="ml-1 text-sm text-gray-500">
-                    ({therapist.reviewCount} reviews)
+                    ({therapist?.ratingCount} reviews)
                   </span>
                 </div>
 
@@ -567,6 +542,79 @@ export default function TherapistDetail() {
                     </div>
                   </div>
                 </div>
+                {reviews.length > 0 && (
+                  <div className="bg-gray-50 p-5 rounded-xl hover:shadow-md transition-shadow duration-300">
+                    <div className="flex justify-between items-center mb-3">
+                      <div>
+                        <div className="text-sm font-medium text-blue-500 uppercase tracking-wider mb-1">
+                          Reviews
+                        </div>
+                        <div className="text-lg font-medium text-gray-800">
+                          {reviews.length}{" "}
+                          {reviews.length === 1 ? "review" : "reviews"}
+                        </div>
+                      </div>
+                      {reviews.length > 2 && (
+                        <button
+                          onClick={() => setShowAllReviews(!showAllReviews)}
+                          className="text-blue-500 hover:text-blue-700 text-sm font-medium flex items-center"
+                        >
+                          {showAllReviews ? "Show Less" : "View All"}
+                          <ChevronDownIcon
+                            className={`h-4 w-4 ml-1 transform transition-transform ${
+                              showAllReviews ? "rotate-180" : ""
+                            }`}
+                          />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="space-y-4 mt-4">
+                      {(showAllReviews ? reviews : reviews.slice(0, 2)).map(
+                        (review) => (
+                          <div
+                            key={review._id}
+                            className="bg-white p-4 rounded-lg shadow-sm"
+                          >
+                            <div className="flex items-center mb-3">
+                              <img
+                                src={review.userID.photoURL}
+                                alt={review.userID.fullname}
+                                className="w-10 h-10 rounded-full object-cover mr-3"
+                              />
+                              <div>
+                                <div className="font-medium text-gray-800">
+                                  {review.userID.fullname}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {format(
+                                    new Date(review.createdAt),
+                                    "MMM dd, yyyy"
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex mb-2">
+                              {[...Array(5)].map((_, i) => (
+                                <StarIcon
+                                  key={i}
+                                  className={`h-5 w-5 ${
+                                    i < review.rate
+                                      ? "text-yellow-400"
+                                      : "text-gray-300"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+
+                            <p className="text-gray-700">{review.content}</p>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Contact CTA */}
@@ -581,7 +629,7 @@ export default function TherapistDetail() {
                 </div>
                 <div className="flex gap-3">
                   <Link
-                    to={`/book/${therapist._id}`}
+                    to={`/bookReservation/${therapist._id}`}
                     className="btn bg-white text-blue-600 hover:bg-blue-50"
                   >
                     <CalendarIcon className="h-5 w-5 mr-1" />

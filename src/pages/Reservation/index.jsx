@@ -82,15 +82,15 @@ export default function YourReservation() {
         userID,
         filterStatus,
         currentPage,
-        20
+        10
       );
 
       // Sort reservations by updatedAt in descending order
-      const sortedReservations = [...response.reservations].sort((a, b) => {
-        return new Date(b.updatedAt) - new Date(a.updatedAt);
-      });
+      // const sortedReservations = [...response.reservations].sort((a, b) => {
+      //   return new Date(b.updatedAt) - new Date(a.updatedAt);
+      // });
 
-      setReservations(sortedReservations);
+      setReservations(response.reservations);
       setTotalPages(response.pages);
       setIsLoadingList(false);
     };

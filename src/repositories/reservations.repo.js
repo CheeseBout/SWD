@@ -80,7 +80,7 @@ class ReservationRepo {
 
   async getReservationById(id) {
     return await RESERVATION.findById(id)
-      .populate("userID", "fullname photoURL")
+      .populate("userID", "fullname photoURL email")
       .populate("coupleTherapistID", "fullname photoURL")
       .populate("packageID", "name price");
   }
@@ -88,13 +88,6 @@ class ReservationRepo {
   async createReservation(reservationData) {
     const reservation = await RESERVATION.create(reservationData);
     return await reservation.save();
-  }
-
-  async getReservationById(id) {
-    return await RESERVATION.findById(id)
-      .populate("userID", "fullname")
-      .populate("coupleTherapistID", "fullname")
-      .populate("packageID", "name price");
   }
 
   async updateReservation(id, updateData) {

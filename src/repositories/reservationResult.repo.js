@@ -28,6 +28,7 @@ class ReservationResultRepo {
 
   async findAll(filter = {}, skip = 0, limit = 10) {
     try {
+      // Add proper MongoDB sorting by updatedAt
       const results = await RESERVATIONRESULT.find(filter)
         .populate({
           path: "reservationID",
@@ -37,16 +38,12 @@ class ReservationResultRepo {
             { path: "packageID", select: "name price" },
           ],
         })
+        .sort({ updatedAt: -1 }) // Sort by updatedAt in descending order
         .skip(skip)
         .limit(limit)
         .lean(); // Use lean() to convert to plain JavaScript objects
 
-      // Sort the results in-memory
-      return results.sort((a, b) => {
-        // Sort by _id which includes a timestamp
-        // This is a reasonable fallback when createdAt sorting isn't available
-        return b._id.toString().localeCompare(a._id.toString());
-      });
+      return results;
     } catch (error) {
       console.error("Error in findAll method:", error);
       return [];

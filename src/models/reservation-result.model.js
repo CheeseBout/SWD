@@ -36,6 +36,9 @@ const reservationResultSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+reservationResultSchema.index({ updatedAt: -1 });
+
 const RESERVATIONRESULT = mongoose.model(
   "ReservationResult",
   reservationResultSchema

@@ -1,19 +1,46 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./styles.css";
 import { therapistService } from "../../services/api";
+import { categoryService } from "../../services/category/categoryService";
 import { toast } from "react-toastify";
 
 export function VerificationModal({ onClose, userId }) {
   const [isOpen, setIsOpen] = useState(false);
-  // Simplified form data
+  const [categories, setCategories] = useState([]);
+
   const [verificationForm, setVerificationForm] = useState({
     description: "",
     category: "",
   });
 
-  // Animation control - mount animation
+  const categoriesFetchedRef = useRef(false);
+
   useEffect(() => {
-    // Trigger the entrance animation after component mounts
+    if (categoriesFetchedRef.current || categories.length > 0) return;
+
+    const fetchCategories = async () => {
+      try {
+        categoriesFetchedRef.current = true;
+        const response = await categoryService.getAllCategories();
+        console.log("Categories API response:", response);
+
+        if (response && response.data && Array.isArray(response.data)) {
+          setCategories(response.data);
+          console.log("Categories set to state:", response.data);
+        } else {
+          console.error("Unexpected categories data format:", response);
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        toast.error("Failed to load categories");
+      }
+    };
+
+    fetchCategories();
+    console.log("VerificationModal mounted with userId:", userId);
+  }, []);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       setIsOpen(true);
     }, 10);
@@ -21,16 +48,14 @@ export function VerificationModal({ onClose, userId }) {
     return () => clearTimeout(timer);
   }, []);
 
-  // Handle close with animation
   const handleAnimatedClose = () => {
     setIsOpen(false);
-    // Wait for animation to complete before unmounting
+
     setTimeout(() => {
       onClose();
     }, 300);
   };
 
-  // Handle input change for form fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setVerificationForm({
@@ -42,7 +67,6 @@ export function VerificationModal({ onClose, userId }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Đảm bảo truyền đủ cả userId và data object
       const response = await therapistService.updateTherapistProfile(userId, {
         description: verificationForm.description,
         category: verificationForm.category,
@@ -72,7 +96,7 @@ export function VerificationModal({ onClose, userId }) {
           ${isOpen ? "scale-100 opacity-100" : "scale-95 opacity-0"}`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Header */}
+        {}
         <div className="flex justify-between items-center p-4 border-b">
           <h3 className="text-xl font-semibold text-gray-900">
             Complete Your Basic Information
@@ -97,10 +121,10 @@ export function VerificationModal({ onClose, userId }) {
           </button>
         </div>
 
-        {/* Modal Body with Form */}
+        {}
         <form onSubmit={handleSubmit}>
           <div className="p-6">
-            {/* Description input section */}
+            {}
             <div className="mb-4 transition-all duration-300 hover:shadow-md p-2 rounded-lg">
               <label
                 htmlFor="description"
@@ -120,7 +144,7 @@ export function VerificationModal({ onClose, userId }) {
               ></textarea>
             </div>
 
-            {/* Category selection section */}
+            {}
             <div className="mb-6 transition-all duration-300 hover:shadow-md p-2 rounded-lg">
               <label
                 htmlFor="category"
@@ -137,11 +161,15 @@ export function VerificationModal({ onClose, userId }) {
                 required
               >
                 <option value="">Select a category</option>
-                <option value="Marriage Counseling">Marriage Counseling</option>
-                <option value="Family Therapy">Family Therapy</option>
-                <option value="Child Psychology">Child Psychology</option>
-                <option value="Depression Therapy">Depression Therapy</option>
-                <option value="Anxiety Treatment">Anxiety Treatment</option>
+                {categories && categories.length > 0 ? (
+                  categories.map((category) => (
+                    <option key={category._id} value={category._id}>
+                      {category.name}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>Loading categories...</option>
+                )}
               </select>
             </div>
 
@@ -151,7 +179,7 @@ export function VerificationModal({ onClose, userId }) {
             </p>
           </div>
 
-          {/* Modal Footer */}
+          {}
           <div className="flex justify-end gap-2 p-4 border-t">
             <button
               type="button"

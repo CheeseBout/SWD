@@ -1,6 +1,7 @@
 import { useState, useContext, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../../contexts/AuthContextObject";
+import { therapistService } from "../../services/api";
 
 const NavBar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -8,10 +9,44 @@ const NavBar = () => {
   const { user, isAuthenticated } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
+  const [therapistData, setTherapistData] = useState(null);
+  const [isTherapistVerified, setIsTherapistVerified] = useState(false);
 
   const dropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
   const mobileMenuButtonRef = useRef(null);
+  const dataFetchedRef = useRef(false);
+
+  // Fetch therapist data if user is a therapist
+  useEffect(() => {
+    const fetchTherapistData = async () => {
+      if (
+        !user?._id ||
+        user?.role !== "couple_therapist" ||
+        dataFetchedRef.current
+      ) {
+        return;
+      }
+
+      try {
+        dataFetchedRef.current = true;
+        console.log("Fetching therapist data for NavBar");
+        const response = await therapistService.getTherapistIdByUserId(
+          user._id
+        );
+        console.log("Therapist data in Navbar:", response);
+
+        if (response) {
+          setTherapistData(response);
+          setIsTherapistVerified(response.isUpdatedInformation === true);
+        }
+      } catch (error) {
+        console.error("Error fetching therapist data in NavBar:", error);
+      }
+    };
+
+    fetchTherapistData();
+  }, [user]);
 
   const getInitials = () => {
     if (!user) return "U";
@@ -62,6 +97,16 @@ const NavBar = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("therapistId");
     window.location.href = "/login";
+  };
+
+  // Modified function to check therapist verification status
+  const shouldShowDashboard = () => {
+    if (user?.role === "admin") {
+      return true; // Admins always see dashboard
+    } else if (user?.role === "couple_therapist") {
+      return isTherapistVerified; // Therapists see dashboard only if verified
+    }
+    return false;
   };
 
   const getDashboardPath = () => {
@@ -128,24 +173,21 @@ const NavBar = () => {
           </div>
 
           <div className="hidden md:flex md:items-center md:space-x-6 mr-12">
-            {[
-              "Find a Therapist",
-              "Quizzes",
-              "Blogs",
-              "About Us",
-            ].map((item, index) => (
-              <button
-                key={index}
-                onClick={() =>
-                  handleNavigation(
-                    `/${item.toLowerCase().replace(/\s+/g, "-")}`
-                  )
-                }
-                className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-all duration-200 hover:scale-105 relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-blue-600 after:transition-all hover:after:w-full"
-              >
-                {item}
-              </button>
-            ))}
+            {["Find a Therapist", "Quizzes", "Blogs", "About Us"].map(
+              (item, index) => (
+                <button
+                  key={index}
+                  onClick={() =>
+                    handleNavigation(
+                      `/${item.toLowerCase().replace(/\s+/g, "-")}`
+                    )
+                  }
+                  className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-all duration-200 hover:scale-105 relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-blue-600 after:transition-all hover:after:w-full"
+                >
+                  {item}
+                </button>
+              )
+            )}
           </div>
 
           <div className="hidden md:flex md:items-center md:space-x-4">
@@ -195,16 +237,13 @@ const NavBar = () => {
                     >
                       Your Profile
                     </button>
-                    {(user?.role === "admin" ||
-                      user?.role === "couple_therapist") && (
-                      <>
-                        <button
-                          className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
-                          onClick={() => handleNavigation(getDashboardPath())}
-                        >
-                          Dashboard
-                        </button>
-                      </>
+                    {shouldShowDashboard() && (
+                      <button
+                        className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-150"
+                        onClick={() => handleNavigation(getDashboardPath())}
+                      >
+                        Dashboard
+                      </button>
                     )}
                     <button
                       className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors duration-150"
@@ -274,8 +313,7 @@ const NavBar = () => {
                     {user?.fullname || user?.username || "User"}
                   </span>
                 </div>
-                {(user?.role === "admin" ||
-                  user?.role === "couple_therapist") && (
+                {shouldShowDashboard() && (
                   <button
                     className="block w-full text-left px-3 py-3 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
                     onClick={() => handleNavigation(getDashboardPath())}

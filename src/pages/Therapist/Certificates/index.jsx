@@ -2,11 +2,13 @@ import { useState, useEffect, useContext } from "react";
 import TherapistSidebar from "../../../components/SideBar/TherapistSidebar";
 import { toast } from "react-toastify";
 import { certificateServices } from "../../../services/certificate/certificateServices";
+import { categoryService } from "../../../services/category/categoryService";
 import { AuthContext } from "../../../contexts/AuthContextObject";
 import dayjs from "dayjs";
 
 export default function TherapistCertificates() {
   const [certificates, setCertificates] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -14,11 +16,35 @@ export default function TherapistCertificates() {
     issuedDate: "",
     expiryDate: "",
     documentURL: "",
-    category: "General",
+    category: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useContext(AuthContext);
   const therapistId = localStorage.getItem("therapistId");
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await categoryService.getAllCategories();
+        console.log("Categories response:", response);
+
+        if (response?.data) {
+          setCategories(response.data);
+          if (response.data.length > 0) {
+            setFormData((prev) => ({
+              ...prev,
+              category: response.data[0]._id || "",
+            }));
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        toast.error("Failed to load categories");
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     const fetchCertificates = async () => {
@@ -58,7 +84,6 @@ export default function TherapistCertificates() {
     setIsSubmitting(true);
 
     try {
-      // Validate form data
       if (
         !formData.title ||
         !formData.issuedDate ||
@@ -76,7 +101,7 @@ export default function TherapistCertificates() {
         setIsSubmitting(false);
         return;
       }
-      // Format dates for API
+
       const payload = {
         ...formData,
         issuedDate: dayjs(formData.issuedDate).toISOString(),
@@ -86,7 +111,6 @@ export default function TherapistCertificates() {
       await certificateServices.createCertificate(payload);
       toast.success("Certificate submitted for verification");
 
-      // Refresh certificates list
       const response = await certificateServices.getCertificateByTherapistId(
         therapistId
       );
@@ -110,7 +134,6 @@ export default function TherapistCertificates() {
     }
   };
 
-  // Helper function to get status badge styling
   const getStatusBadgeClass = (status) => {
     switch (status) {
       case "approved":
@@ -128,12 +151,12 @@ export default function TherapistCertificates() {
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="flex">
-        {/* Sidebar */}
+        {}
         <div className="sticky top-0 h-screen">
           <TherapistSidebar />
         </div>
 
-        {/* Main Content */}
+        {}
         <div className="flex-1 p-6 max-w-7xl mx-auto">
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
@@ -311,7 +334,7 @@ export default function TherapistCertificates() {
         </div>
       </div>
 
-      {/* Add Certificate Modal */}
+      {}
       {showAddModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center bg-black/30 backdrop-blur-sm">
           <div className="bg-white rounded-lg max-w-lg w-full p-6 shadow-xl transform transition-all">
@@ -395,13 +418,15 @@ export default function TherapistCertificates() {
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
-                  <option value="General">General</option>
-                  <option value="Family & Marriage">Family & Marriage</option>
-                  <option value="Relationship">Relationship</option>
-                  <option value="Communication">Communication</option>
-                  <option value="Conflict Resolution">
-                    Conflict Resolution
-                  </option>
+                  {categories.length > 0 ? (
+                    categories.map((category) => (
+                      <option key={category._id} value={category._id}>
+                        {category.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">Loading categories...</option>
+                  )}
                 </select>
               </div>
 

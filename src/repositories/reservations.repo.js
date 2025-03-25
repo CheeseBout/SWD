@@ -12,6 +12,7 @@ class ReservationRepo {
     const reservations = await RESERVATION.find(filter)
       .skip(skip)
       .limit(limit)
+      .sort({ updatedAt: -1 }) // Add this line to sort by updatedAt descending
       .populate("userID", "fullname photoURL")
       .populate({
         path: "coupleTherapistID",

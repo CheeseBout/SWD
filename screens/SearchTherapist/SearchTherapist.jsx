@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -7,6 +8,7 @@ import {
   TouchableOpacity,
   TextInput,
   Button,
+  BackHandler,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { fetchSearchTherapistList } from "../../services/therapistServices";
@@ -17,34 +19,97 @@ export default function SearchTherapistResultScreen({ navigation }) {
   const [therapistList, setTherapistList] = useState([]);
   const [filteredTherapists, setFilteredTherapists] = useState([]);
   const [sortBy, setSortBy] = useState("rating"); // Options: rating, experience, reviews
+  const isMounted = useRef(true);
+
+  // Handle hardware back button
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        if (navigation.canGoBack()) {
+          // Clean up before going back
+          setTherapistList([]);
+          setFilteredTherapists([]);
+        }
+        return false; // Allow default back behavior
+      }
+    );
+
+    return () => {
+      backHandler.remove();
+      isMounted.current = false;
+    };
+  }, []);
+
+  // Safe navigation with cleanup
+  const safeNavigate = (routeName, params = {}) => {
+    // Reset states before navigating to prevent memory issues
+    setTherapistList([]);
+    setFilteredTherapists([]);
+
+    // Navigate using navigate instead of push to avoid stacking screens
+    navigation.navigate(routeName, params);
+  };
+
+  // Safe cleanup when screen loses focus and rehydration when focused
+  useFocusEffect(
+    useCallback(() => {
+      // Component is mounted and focused
+      isMounted.current = true;
+
+      // Only fetch data if needed and component is mounted
+      if (therapistList.length === 0 && isMounted.current) {
+        fetchData();
+      }
+
+      return () => {
+        // Cleanup when losing focus
+        if (isMounted.current) {
+          // Reset states that might cause memory leaks
+        }
+      };
+    }, [therapistList.length])
+  );
+
+  const fetchData = async () => {
+    try {
+      const response = await fetchSearchTherapistList("");
+      setTherapistList(response || []);
+      setFilteredTherapists(response || []);
+    } catch (error) {
+      console.log("Error while fetching couple therapist", error);
+      setTherapistList([]);
+      setFilteredTherapists([]);
+    }
+  };
 
   useEffect(() => {
-    // Initial fetch without any query parameters
-    const fetchData = async () => {
-      try {
-        const response = await fetchSearchTherapistList("");
-        setTherapistList(response || []);
-        setFilteredTherapists(response || []);
-        console.log(response);
-      } catch (error) {
-        console.log("Error while fetching couple therapist", error);
-        setTherapistList([]);
-        setFilteredTherapists([]);
-      }
-    };
-
     fetchData();
+
+    // Cleanup function when component unmounts
+    return () => {
+      // Clean up any resources
+      setTherapistList([]);
+      setFilteredTherapists([]);
+    };
   }, []);
+
+  // Navigate to result screen with proper params
+  const navigateToResults = (query, therapist = null) => {
+    const params = { searchQuery: query };
+    if (therapist) {
+      params.selectedTherapist = therapist;
+    }
+
+    safeNavigate("SearchTherapistResult", params);
+  };
 
   // Filter therapists based on search query
   const filterTherapists = async () => {
     try {
-      const response = await fetchSearchTherapistList(searchQuery);
-      setFilteredTherapists(response || []);
-      console.log(response);
+      navigateToResults(searchQuery);
     } catch (error) {
       console.log("Error filtering therapists:", error);
-      setFilteredTherapists([]);
     }
   };
 
@@ -78,65 +143,85 @@ export default function SearchTherapistResultScreen({ navigation }) {
   };
 
   // Render each therapist card
-  const renderTherapistCard = ({ item }) => (
-    <TouchableOpacity
-      style={styles.therapistCard}
-      onPress={() =>
-        navigation.navigate("TherapistDetail", { therapist: item })
+  const renderTherapistCard = ({ item }) => {
+    // Helper function to extract category name
+    const getCategoryName = () => {
+      if (!item.categoryInfo) return "General";
+
+      if (Array.isArray(item.categoryInfo) && item.categoryInfo.length > 0) {
+        // Handle array of category objects
+        return item.categoryInfo
+          .map((cat) => cat.category || cat.name)
+          .join(", ");
+      } else if (typeof item.categoryInfo === "object") {
+        // Handle single category object
+        return (
+          item.categoryInfo.category || item.categoryInfo.name || "General"
+        );
+      } else if (typeof item.category === "string") {
+        // Fallback to item.category if it's a string
+        return item.category;
       }
-    >
-      <Image
-        source={{
-          uri: item?.userInfo?.photoURL || "https://via.placeholder.com/150",
-        }}
-        style={styles.therapistImage}
-      />
-      <View style={styles.therapistInfo}>
-        <View style={styles.nameContainer}>
-          <Text style={styles.therapistName}>
-            {item?.userInfo?.fullname || "Unknown"}
-          </Text>
-          {item?.userInfo?.isVerified && (
-            <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-          )}
-        </View>
 
-        <Text style={styles.therapistCategory}>
-          {item?.category || "General"}
-        </Text>
-        <Text style={styles.therapistLocation}>
-          {item?.userInfo?.address || "No location specified"}
-        </Text>
+      return "General";
+    };
 
-        <View style={styles.therapistDetails}>
-          <View style={styles.detailItem}>
-            <Ionicons name="star" size={14} color="#FFD700" />
-            <Text style={styles.detailText}>
-              {item.rating || "New"}{" "}
-              {item.rating ? `(${item.reviewCount || 0} reviews)` : ""}
+    return (
+      <TouchableOpacity
+        style={styles.therapistCard}
+        onPress={() => navigateToResults(item?.userInfo?.fullname || "", item)}
+      >
+        <Image
+          source={{
+            uri: item?.userInfo?.photoURL || "https://via.placeholder.com/150",
+          }}
+          style={styles.therapistImage}
+        />
+        <View style={styles.therapistInfo}>
+          <View style={styles.nameContainer}>
+            <Text style={styles.therapistName}>
+              {item?.userInfo?.fullname || "Unknown"}
             </Text>
+            {item?.userInfo?.isVerified && (
+              <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+            )}
           </View>
 
-          {item?.certificates && item.certificates.length > 0 && (
+          <Text style={styles.therapistCategory}>{getCategoryName()}</Text>
+          <Text style={styles.therapistLocation}>
+            {item?.userInfo?.address || "No location specified"}
+          </Text>
+
+          <View style={styles.therapistDetails}>
             <View style={styles.detailItem}>
-              <Ionicons name="school-outline" size={14} color="#666" />
+              <Ionicons name="star" size={14} color="#FFD700" />
               <Text style={styles.detailText}>
-                {item.certificates.length} Certificate
-                {item.certificates.length > 1 ? "s" : ""}
+                {item.rating || "New"}{" "}
+                {item.rating ? `(${item.reviewCount || 0} reviews)` : ""}
               </Text>
             </View>
-          )}
 
-          <View style={styles.detailItem}>
-            <Ionicons name="location-outline" size={14} color="#666" />
-            <Text style={styles.detailText}>
-              {item?.userInfo?.address || "No location"}
-            </Text>
+            {item?.certificates && item.certificates.length > 0 && (
+              <View style={styles.detailItem}>
+                <Ionicons name="school-outline" size={14} color="#666" />
+                <Text style={styles.detailText}>
+                  {item.certificates.length} Certificate
+                  {item.certificates.length > 1 ? "s" : ""}
+                </Text>
+              </View>
+            )}
+
+            <View style={styles.detailItem}>
+              <Ionicons name="location-outline" size={14} color="#666" />
+              <Text style={styles.detailText}>
+                {item?.userInfo?.address || "No location"}
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>

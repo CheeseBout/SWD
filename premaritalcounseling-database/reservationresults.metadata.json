@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"1"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_","ns":"premaritalcounseling-database.reservationresults"},{"v":{"$numberInt":"1"},"key":{"updatedAt":{"$numberInt":"-1"}},"name":"updatedAt_-1","ns":"premaritalcounseling-database.reservationresults"}],"collectionName":"reservationresults","type":"collection"}
